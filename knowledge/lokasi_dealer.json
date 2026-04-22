@@ -1,0 +1,29 @@
+{
+    "dealer": "PT Dwindo Berlian Samjaya",
+    "branches": [
+        {
+            "name": "Dwindo Bintaro",
+            "slug": "dwindo-bintaro",
+            "address": "Jl. HR Rasuna Said, Pd. Jaya, Kec. Pd. Aren, Kota Tangerang Selatan, Banten 15220",
+            "phone": "021-7458383",
+            "maps_direction": "https://www.google.com/maps/dir/Current+Location/-6.2783819,106.7188049",
+            "embed_map": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d698.3380892731157!2d106.71880491653305!3d-6.278381906134115!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69fb0775c929ed%3A0xe98c090456dc7056!2sPT.%20Dwindo%20Berlian%20Samjaya!5e1!3m2!1sid!2sid!4v1776841397944!5m2!1sid!2sid\" width=\"600\" height=\"450\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"no-referrer-when-downgrade\"></iframe>"
+        },
+        {
+            "name": "Dwindo Radin Inten",
+            "slug": "dwindo-radin-inten",
+            "address": "Jl. Radin Inten II, RT.8/RW.7, Duren Sawit, Kec. Duren Sawit, Kota Jakarta Timur, DKI Jakarta 13440",
+            "phone": "021-29483888",
+            "maps_direction": "https://www.google.com/maps/dir/Current+Location/-6.2207727,106.9236931",
+            "embed_map": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d246.92698674666028!2d106.92369314000732!3d-6.220772667828223!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e698caf64692497%3A0x58b0448c2480802!2sDwindo%20Berlian%20Samjaya!5e1!3m2!1sid!2sid!4v1776841566695!5m2!1sid!2sid\" width=\"600\" height=\"450\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"no-referrer-when-downgrade\"></iframe>"
+        },
+        {
+            "name": "Dwindo Cakung",
+            "slug": "dwindo-cakung",
+            "address": "Jl. Raya Bekasi No.KM.26, RT.6/RW.1, Ujung Menteng, Kec. Cakung, Kota Jakarta Timur, DKI Jakarta 13960",
+            "phone": "021-22461888",
+            "maps_direction": "https://www.google.com/maps/dir/Current+Location/-6.1891645,106.9642866",
+            "embed_map": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d246.94179750175996!2d106.96428655734945!3d-6.189164539299405!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e698be791cfa057%3A0x88510c7d8597527e!2sPT%20DWINDO%20BERLIAN%20SAMJAYA%20-%20MITSUBISHI%20DWINDO%20MENTENG%20CAKUNG!5e1!3m2!1sid!2sid!4v1776841692448!5m2!1sid!2sid\" width=\"600\" height=\"450\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"no-referrer-when-downgrade\"></iframe>"
+        }
+    ]
+}

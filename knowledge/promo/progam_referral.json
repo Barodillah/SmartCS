@@ -1,0 +1,120 @@
+{
+    "program": {
+        "name": "Referral Program Mitsubishi",
+        "provider": "PT MMKSI",
+        "reward": "Reward jutaan rupiah via Gopay",
+        "period": {
+            "start": "2025-03-01",
+            "end": "2026-07-31"
+        },
+        "summary": "Program rekomendasi pembelian kendaraan Mitsubishi untuk keluarga/kerabat dengan reward untuk pemberi referensi"
+    },
+    "benefits": [
+        "Reward jutaan rupiah",
+        "Tanpa batas jumlah referral",
+        "Pencairan cepat ke Gopay (< 3 hari setelah validasi)"
+    ],
+    "requirements": {
+        "general": [
+            "WNI minimal 17 tahun",
+            "Memiliki KTP (dan NPWP saat validasi)",
+            "Pemberi & penerima adalah individu (bukan perusahaan)"
+        ],
+        "referrer": [
+            "Memiliki kendaraan Mitsubishi",
+            "Terdaftar di aplikasi MMID",
+            "Memiliki akun Gopay"
+        ],
+        "receiver": [
+            "Membeli kendaraan Mitsubishi (Passenger Car)",
+            "Registrasi MMID dengan nomor yang sama dengan SPK/Faktur",
+            "Melakukan aktivasi garansi"
+        ]
+    },
+    "flow": {
+        "referrer_steps": [
+            "Registrasi & login ke MMID",
+            "Input nomor HP kerabat",
+            "Pantau status di menu referral"
+        ],
+        "receiver_steps": [
+            "Registrasi MMID",
+            "Aktivasi garansi kendaraan",
+            "Konfirmasi referral (setuju / tolak)"
+        ]
+    },
+    "important_rules": {
+        "phone_match": "Nomor HP penerima harus sama dengan SPK/Faktur",
+        "activation_required": "Reward hanya valid setelah aktivasi garansi",
+        "multi_purchase": "Jika beli >1 unit, harus daftar ulang referral",
+        "validation_time": "Max 14 hari kerja setelah aktivasi garansi"
+    },
+    "status_flow": [
+        {
+            "status": "added",
+            "label": "Berhasil Ditambah",
+            "description": "Nomor penerima berhasil dimasukkan"
+        },
+        {
+            "status": "activated",
+            "label": "Aktivasi Garansi & Match",
+            "description": "Penerima sudah aktivasi & setuju referral"
+        },
+        {
+            "status": "verified",
+            "label": "Terverifikasi Dapat Hadiah",
+            "description": "Reward disetujui"
+        },
+        {
+            "status": "rejected",
+            "label": "Tidak Lolos Verifikasi",
+            "description": "Tidak memenuhi syarat"
+        }
+    ],
+    "do_and_dont": {
+        "referrer": {
+            "do": [
+                "Pastikan penerima menyetujui referral",
+                "Gunakan nomor HP yang benar",
+                "Siapkan KTP & NPWP",
+                "Pastikan punya Gopay"
+            ],
+            "dont": [
+                "Hapus akun atau uninstall MMID",
+                "Input data tidak valid",
+                "Salah input nomor HP"
+            ]
+        },
+        "receiver": {
+            "do": [
+                "Gunakan nomor HP yang sama",
+                "Aktivasi garansi via MMID"
+            ],
+            "dont": [
+                "Lewatkan konfirmasi referral",
+                "Gunakan akun sales/dealer",
+                "Hapus akun saat proses"
+            ]
+        }
+    },
+    "reward_process": {
+        "trigger": "Setelah aktivasi garansi & kendaraan diterima",
+        "verification_time": "Maksimal 14 hari kerja",
+        "delivery": "Dikirim ke Gopay < 3 hari setelah validasi",
+        "validation": [
+            "Verifikasi oleh MMKSI",
+            "Konfirmasi via Customer Care",
+            "Validasi dokumen KTP & NPWP"
+        ]
+    },
+    "supported_models": [
+        "Pajero Sport",
+        "Xforce",
+        "Xpander Cross",
+        "Xpander",
+        "L300"
+    ],
+    "contact": {
+        "customer_care": "0804-1300-300"
+    }
+}

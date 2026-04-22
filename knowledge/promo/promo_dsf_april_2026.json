@@ -1,0 +1,261 @@
+{
+    "meta": {
+        "brand": "Mitsubishi Motors",
+        "distributor": "PT Mitsubishi Motors Krama Yudha Sales Indonesia (MMKSI)",
+        "periode": "April 2026",
+        "note": "Semua program berlaku dengan syarat dan ketentuan"
+    },
+    "models": [
+        {
+            "name": "Destinator",
+            "slug": "destinator",
+            "programs": {
+                "trade_in": "DSS Motor (Jabodetabek & Bandung)",
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "tenor_max": "6 tahun",
+                        "scheme": "ADDM"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "1.99%",
+                        "tenor_max": "6 tahun"
+                    },
+                    "bunga_0": [
+                        "0% 1 tahun (DP 65%)",
+                        "Spesial hingga 3 tahun"
+                    ],
+                    "smart_cash": {
+                        "interest": "0% 1 tahun",
+                        "dp": {
+                            "exceed_gls": "65%",
+                            "ultimate": "70%"
+                        },
+                        "bonus": [
+                            "Asuransi All Risk"
+                        ],
+                        "area": "Pulau Jawa",
+                        "exclude": [
+                            "Ultimate Premium"
+                        ],
+                        "valid_until": "2026-04-30"
+                    }
+                },
+                "benefits": [
+                    "Gratis kaca film Solargard",
+                    "Gratis servis hingga 60.000 km / 4 tahun",
+                    "Garansi 120.000 km / 4 tahun",
+                    "SMART Silver hingga 60.000 km / 4 tahun",
+                    "Garansi ban 1 pcs hingga 20.000 km / 1 tahun"
+                ]
+            }
+        },
+        {
+            "name": "Xforce",
+            "slug": "xforce",
+            "programs": {
+                "cashback": true,
+                "trade_in": "DSS Motor (Jabodetabek & Bandung)",
+                "finance": {
+                    "dp_ringan": {
+                        "dp_min": "15%",
+                        "scheme": [
+                            "ADDB",
+                            "ADDM"
+                        ],
+                        "tenor_max": "7 tahun (Exceed)"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "25%",
+                        "interest_start": "1.99%"
+                    },
+                    "smart_cash": {
+                        "interest": "0% hingga 2 tahun",
+                        "dp_min": "55%",
+                        "bonus": [
+                            "Asuransi",
+                            "Diskon admin (tenor 1 tahun)"
+                        ]
+                    },
+                    "anniversary": {
+                        "installment_start": "5.5 juta",
+                        "dp": "55%",
+                        "interest": "0% hingga 2 tahun"
+                    }
+                },
+                "benefits": [
+                    "Kaca film Solargard",
+                    "Servis hingga 50.000 km / 4 tahun",
+                    "Extended warranty 1 tahun / 20.000 km",
+                    "SMART Silver 50.000 km / 4 tahun",
+                    "Asuransi kecelakaan Rp 4 juta",
+                    "Asuransi ban Rp 1.4 juta"
+                ]
+            }
+        },
+        {
+            "name": "Xpander Cross",
+            "slug": "xpander-cross",
+            "programs": {
+                "cashback": true,
+                "trade_in": "DSS Motor (Jabodetabek & Bandung)",
+                "finance": {
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "tenor": "6-7 tahun (DP min 20%)"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "1.99%"
+                    },
+                    "bunga_0": {
+                        "tenor": "hingga 2 tahun",
+                        "dp_min": "55%"
+                    },
+                    "anniversary": {
+                        "installment_start": "5.5 juta",
+                        "dp": "55%",
+                        "interest": "0%"
+                    },
+                    "h1t": {
+                        "dp": "50%",
+                        "interest": "0%",
+                        "scheme": "50% DP, 5% cicilan, 45% pelunasan",
+                        "area": [
+                            "Jabodetabek",
+                            "Banten",
+                            "Sumatera"
+                        ]
+                    }
+                },
+                "benefits": [
+                    "Kaca film Solargard",
+                    "SMART Silver 50.000 km / 4 tahun",
+                    "Asuransi kecelakaan Rp 10 juta",
+                    "Asuransi ban Rp 1.4 juta"
+                ]
+            }
+        },
+        {
+            "name": "Xpander",
+            "slug": "xpander",
+            "programs": {
+                "cashback": true,
+                "trade_in": "DSS Motor (Jabodetabek & Bandung)",
+                "finance": {
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "tenor": "6-7 tahun"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "1.99%"
+                    },
+                    "bunga_0": [
+                        "0% hingga 2 tahun (DP 55%)",
+                        "Exceed Tourer hingga 3 tahun"
+                    ],
+                    "h1t": {
+                        "dp": "50%",
+                        "interest": "0%"
+                    }
+                },
+                "benefits": [
+                    "Kaca film Konica Minolta",
+                    "SMART Silver 50.000 km / 4 tahun",
+                    "Asuransi kecelakaan Rp 5 juta",
+                    "Asuransi ban Rp 1 juta"
+                ]
+            }
+        },
+        {
+            "name": "Pajero Sport",
+            "slug": "pajero-sport",
+            "programs": {
+                "cashback": true,
+                "trade_in": "DSS Motor (Jabodetabek & Bandung)",
+                "finance": {
+                    "dp_ringan": {
+                        "dp_min": "15%"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "1.99%"
+                    },
+                    "bunga_0": [
+                        "0% 1 tahun (DP 65%)",
+                        "Spesial hingga 3 tahun"
+                    ],
+                    "h1t": {
+                        "dp": "50%",
+                        "interest": "0%"
+                    }
+                },
+                "benefits": [
+                    "Kaca film V-Kool",
+                    "SMART Silver 50.000 km / 4 tahun"
+                ]
+            }
+        },
+        {
+            "name": "Triton",
+            "slug": "triton",
+            "programs": {
+                "finance": {
+                    "dp_ringan": {
+                        "dp_min": "15%",
+                        "interest_start": "4%"
+                    },
+                    "bunga_0": {
+                        "tenor": "hingga 2 tahun",
+                        "dp": [
+                            "40% (1 tahun)",
+                            "60% (2 tahun)"
+                        ]
+                    }
+                },
+                "benefits": [
+                    "Gratis sparepart hingga 40.000 km / 3 tahun",
+                    "Gratis ban MT (varian tertentu)"
+                ]
+            }
+        },
+        {
+            "name": "L300",
+            "slug": "l300",
+            "programs": {
+                "cashback": true,
+                "finance": {
+                    "dp_ringan": {
+                        "dp_min": "10%"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "5.5%"
+                    },
+                    "bunga_0": {
+                        "tenor": "hingga 3 tahun",
+                        "dp": [
+                            "40%",
+                            "50%",
+                            "60%"
+                        ]
+                    },
+                    "smart_cash": {
+                        "interest": "0% 1 tahun",
+                        "dp_min": "55%",
+                        "bonus": [
+                            "Asuransi TLO",
+                            "Diskon admin"
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "contact": {
+        "halo_dipo_star": "0804-1-235235"
+    }
+}

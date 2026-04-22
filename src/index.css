@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'MMC';
+  src: url('/font/MMC-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'MMC';
+  src: url('/font/MMC-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'MMC';
+  src: url('/font/MMC-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MMC Office';
+  src: url('/font/MMCOFFICE-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'MMC Office';
+  src: url('/font/MMCOFFICE-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'MMC Office';
+  src: url('/font/MMCOFFICE-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@theme {
+  --font-display: "MMC", sans-serif;
+  --font-body: "MMC Office", sans-serif;
+  --color-brand-red: #E60012;
+  --color-brand-red-dark: #B5000F;
+  --color-dark: #111111;
+  --color-dark2: #1A1A1A;
+  --color-gray700: #444444;
+  --color-gray500: #777777;
+  --color-gray100: #E5E5E5;
+  --color-white: #FFFFFF;
+}
+
+@layer base {
+  .font-display { font-family: var(--font-display); }
+  .font-body { font-family: var(--font-body); }
+}
