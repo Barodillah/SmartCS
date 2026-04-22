@@ -23,10 +23,14 @@ const FeaturedModels = () => {
                             whileHover={{ y: -10 }}
                             className="bg-white group"
                         >
-                            <div className="relative h-64 overflow-hidden">
-                                <img src={model.img} alt={model.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                                <div className="absolute top-4 left-4">
-                                    <span className="bg-[#E60012] text-white font-display font-bold text-[9px] tracking-widest uppercase px-3 py-1" style={{ clipPath: ANGULAR_CLIP }}>
+                            <div className="relative h-64 bg-gray-50/50 group-hover:bg-gray-100/50 transition-colors duration-500 rounded-t-xl">
+                                <img 
+                                    src={model.img} 
+                                    alt={model.name} 
+                                    className="relative z-10 w-full h-full object-contain transition-all duration-700 group-hover:scale-[1.15] group-hover:-translate-y-6 group-hover:-rotate-1 group-hover:drop-shadow-2xl" 
+                                />
+                                <div className="absolute top-4 left-4 z-20">
+                                    <span className={`${model.name === 'Fuso Canter' ? 'bg-[#FE5E00]' : 'bg-[#E60012]'} text-white font-display font-bold text-[9px] tracking-widest uppercase px-3 py-1 shadow-sm`} style={{ clipPath: ANGULAR_CLIP }}>
                                         {model.badge}
                                     </span>
                                 </div>
@@ -34,14 +38,14 @@ const FeaturedModels = () => {
                             <div className="p-8">
                                 <h3 className="font-display font-black text-2xl uppercase text-[#111111] mb-2">{model.name}</h3>
                                 <div className="text-gray-400 text-xs mb-6 font-medium">Mulai Dari</div>
-                                <div className="font-display font-bold text-xl text-[#E60012] mb-8">
+                                <div className={`font-display font-bold text-xl ${model.name === 'Fuso Canter' ? 'text-[#FE5E00]' : 'text-[#E60012]'} mb-8`}>
                                     {formatCurrency(model.price)}
                                 </div>
                                 <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
-                                    <Link to="/price-list" className="text-[10px] font-display font-bold uppercase tracking-widest text-[#111111] hover:text-[#E60012]">
+                                    <Link to="/price-list" className={`text-[10px] font-display font-bold uppercase tracking-widest text-[#111111] ${model.name === 'Fuso Canter' ? 'hover:text-[#FE5E00]' : 'hover:text-[#E60012]'}`}>
                                         Lihat Detail
                                     </Link>
-                                    <AngularButton variant="primary" className="!px-4 !py-2 !text-[9px]" onClick={() => window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Saya ingin memesan ${model.name}` } }))}>Pesan Sekarang</AngularButton>
+                                    <AngularButton variant="primary" className={`!px-4 !py-2 !text-[9px] ${model.name === 'Fuso Canter' ? '!bg-[#FE5E00] hover:!bg-[#cc4b00]' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Saya ingin memesan ${model.name}` } }))}>Pesan Sekarang</AngularButton>
                                 </div>
                             </div>
                         </motion.div>

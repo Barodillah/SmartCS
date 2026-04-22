@@ -1,0 +1,41 @@
+import React from 'react';
+import { Menu, Bell, User } from 'lucide-react';
+import { ANGULAR_CLIP } from '../../utils/constants';
+
+const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
+    return (
+        <header className="h-16 bg-white border-b border-[#E5E5E5] flex items-center justify-between px-6 z-30">
+            <div className="flex items-center gap-4">
+                <button 
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden text-[#444444] hover:text-[#E60012] transition-colors"
+                >
+                    <Menu size={24} />
+                </button>
+                <div className="hidden sm:block">
+                    <span className="font-display font-bold text-[#111111] uppercase tracking-wider text-sm">
+                        SmartCS Panel
+                    </span>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+                <button className="relative p-2 text-gray-500 hover:text-[#E60012] transition-colors">
+                    <Bell size={20} />
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#E60012] rounded-full border border-white"></span>
+                </button>
+                <div className="flex items-center gap-3 pl-4 border-l border-[#E5E5E5]">
+                    <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-[13px] font-bold text-[#111111]">CS Admin</span>
+                        <span className="text-[11px] text-gray-500">Dwindo Bintaro</span>
+                    </div>
+                    <div className="w-9 h-9 bg-[#111111] flex items-center justify-center text-white cursor-pointer hover:bg-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                        <User size={18} />
+                    </div>
+                </div>
+            </div>
+        </header>
+    );
+};
+
+export default PanelHeader;

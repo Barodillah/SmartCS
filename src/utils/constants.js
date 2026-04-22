@@ -34,9 +34,9 @@ export const models = [
     badge: "POPULAR"
   },
   {
-    name: "New Xpander Cross",
-    price: 345000000,
-    img: "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/KzIqqmDuBd6MLITV93GzqKmBAvjmbZUubkFqsEJA.webp?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T053648Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776836208&X-Goog-Signature=9a9fc1245f8c5b803364c0ec4ec1d88ebaba402af51d5d58054ee9bd48068d9961ab7badb8d9a8570c8caab5c0375ccc9c9d08c69521a4a93f573a7d9cefcca59a29e81e45130d51f0bcc8cb327d42d51fc1230ec9200e27d10d9c4b797651af7b80401f18181f4fd6c82e143115d3ecf15f30420ec8531c8dab060fec1c469d656842e3c9f83f78fd994d7ab67b7911ad9f706398d56e75e8f32b7815b20d50ca02bddcc671173cb7e980bc1f3cd84cf9ddd8a354ea3703e12cf44bf7515b03d39f85b5ff852bba046ae0f8d9175f26911b00e000c9bf31889db6c271178006026c642dfdec4ddf722be4cd3871168e8ef0a5099f6f3fe5448f0026ee0af418",
-    badge: "PROMO"
+    name: "Fuso Canter",
+    price: 452500000,
+    img: "https://www.ktbfuso.co.id/wp-content/uploads/2023/02/CANTER-FE-73.webp",
+    badge: "KENDARAAN NIAGA"
   }
 ];

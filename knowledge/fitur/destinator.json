@@ -1,0 +1,152 @@
+{
+    "kendaraan": {
+        "model_identity": {
+            "full_name": "Mitsubishi Destinator",
+            "market_segment": "Premium Family SUV 7-Seater",
+            "positioning": "Confidence Booster for Energetic Family",
+            "concept": "Gravitas and Dynamism",
+            "accolades": "Car of The Year 2025",
+            "manufacturing": "Cikarang, Indonesia (MMKI)"
+        },
+        "technical_specifications": {
+            "engine": {
+                "code": "4B40 1.5L MIVEC Turbo",
+                "configuration": "4-Silinder Segaris, 16 Katup DOHC",
+                "displacement": "1.499 cc",
+                "induction_system": "Turbocharged dengan Water-Cooled Intercooler",
+                "combustion_cycle": "Atkinson Cycle (High expansion ratio - Spesifikasi Indonesia)",
+                "fuel_system": "Direct Injection / Dual Injection System",
+                "performance": {
+                    "max_power": "163 PS (120 kW) @ 5.000 rpm",
+                    "max_torque": "250 Nm @ 2.500–4.000 rpm",
+                    "compression_ratio": "11:1"
+                }
+            },
+            "transmission": {
+                "type": "Continuously Variable Transmission (CVT)",
+                "features": "8-Speed Simulation Manual Mode"
+            },
+            "chassis_and_dimensions": {
+                "overall_dimensions": {
+                    "length": "4.680 mm",
+                    "width": "1.840 mm",
+                    "height": "1.780 mm",
+                    "wheelbase": "2.815 mm"
+                },
+                "ground_clearance": {
+                    "standard": "214 mm",
+                    "maximum": "244 mm (tanpa undercover)"
+                },
+                "suspension": {
+                    "front": "MacPherson Strut",
+                    "rear": "Torsion Beam"
+                },
+                "braking_system": "Ventilated Discs (All 4 wheels)",
+                "tires": "225/55 R18 Bridgestone Turanza 6 ENLITEN"
+            }
+        },
+        "driving_dynamics": {
+            "drive_modes": [
+                {
+                    "mode": "Normal",
+                    "description": "Keseimbangan ideal untuk aktivitas harian"
+                },
+                {
+                    "mode": "Wet",
+                    "description": "Stabilitas maksimal di jalan basah/hujan"
+                },
+                {
+                    "mode": "Gravel",
+                    "description": "Cengkeraman optimal di jalan berbatu/tidak rata"
+                },
+                {
+                    "mode": "Mud",
+                    "description": "Daya cengkeram tinggi di medan berlumpur/lunak"
+                },
+                {
+                    "mode": "Tarmac",
+                    "description": "Respons akselerasi dan kemudi tajam di aspal berliku"
+                }
+            ],
+            "control_systems": {
+                "ayc": "Active Yaw Control untuk stabilitas menikung",
+                "traction_control": "Terintegrasi dengan drive modes"
+            }
+        },
+        "interior_features": {
+            "infotainment": {
+                "main_display": "12,3 inci Smart-link Display Audio",
+                "instrument_cluster": "8 inci Digital Meter Cluster",
+                "audio": "Dynamic Sound Yamaha Premium 8-speaker",
+                "connectivity": "Wireless Apple CarPlay & Android Auto"
+            },
+            "comfort": {
+                "ac_system": "Dual-Zone Automatic dengan kisi-kisi plafon (3 baris)",
+                "seats": "Synthetic Leather dengan Anti-temperature Rise Function",
+                "ambient_light": "64 pilihan warna custom",
+                "convenience": "Meja lipat (baris 2), laci bawah kursi, wireless charging"
+            },
+            "utility": {
+                "row_2_folding": "40:20:40 split",
+                "row_3_folding": "50:50 flat-floor",
+                "charging_ports": "USB Type A & C di semua baris"
+            }
+        },
+        "technology_connectivity": {
+            "system_name": "Mitsubishi Connect",
+            "safety_services": [
+                "Automatic Collision Notification (ACN)",
+                "Roadside Assistance (bCall)"
+            ],
+            "remote_features": [
+                "Remote Door Lock/Unlock",
+                "Car Finder (Horn & Light control)"
+            ],
+            "parental_controls": [
+                "Speed Alert (Batas kecepatan)",
+                "Curfew Alert (Batas waktu penggunaan)"
+            ]
+        },
+        "safety_diamond_sense": {
+            "suite_name": "Mitsubishi Diamond Sense (ADAS)",
+            "active_features": [
+                "Adaptive Cruise Control (ACC)",
+                "Forward Collision Mitigation (FCM)",
+                "Blind Spot Warning (BSW) with Lane Change Assist",
+                "Rear Cross Traffic Alert (RCTA)",
+                "Automatic High Beam (AHB)",
+                "Leading Car Departure Notification (LCDN)"
+            ],
+            "passive_features": {
+                "airbags": "6-7 SRS Airbags (Front, Side, Curtain)",
+                "structure": "Reinforced Impact Safety Evolution (RISE) body",
+                "ancap_rating": "5 Bintang ASEAN NCAP (Oktober 2025)"
+            }
+        },
+        "strategic_analysis": {
+            "key_advantages": [
+                "Ground clearance tertinggi (244 mm) sangat superior untuk banjir/medan berat",
+                "Sistem audio high-end kolaborasi eksklusif dengan Yamaha",
+                "Fleksibilitas 5 mode berkendara yang tidak dimiliki kompetitor sekelas"
+            ],
+            "mitigation_strategies": [
+                {
+                    "perceived_weakness": "Mesin 1.5L Turbo dengan transmisi CVT",
+                    "selling_point_pivot": "Angka ini adalah kompensasi dari torsi 250 Nm yang memberikan keamanan akselerasi instan. Untuk rute luar kota, teknologi Atkinson Cycle menjamin efisiensi yang setara dengan mobil bensin non-turbo"
+                },
+                {
+                    "perceived_weakness": "Karakter suspensi cenderung kaku (stiff)",
+                    "selling_point_pivot": "Kekakuan ini esensial untuk stabilitas berkendara (anti-limbung) mengingat mobil memiliki ground clearance 244 mm. Memberikan kendali presisi saat beban penuh 7 penumpang"
+                },
+                {
+                    "perceived_weakness": "Kapasitas tangki bahan bakar kecil (45 Liter)",
+                    "selling_point_pivot": "Didesain kompak untuk memberikan ruang kaki (legroom) baris ketiga yang paling lega di kelasnya dengan lantai kabin yang lebih rendah"
+                }
+            ],
+            "competitor_comparison": {
+                "vs_toyota_innova_zenix_g": "Destinator unggul pada Torsi (250Nm vs 205Nm), Ground Clearance (244mm vs 185mm), dan fitur ADAS Diamond Sense yang tidak ada di Zenix tipe G",
+                "vs_honda_brv": "Destinator memiliki tenaga (163PS vs 121PS) and torsi jauh lebih besar, serta interior jauh lebih premium dengan Panoramic Sunroof dan Yamaha Audio"
+            }
+        }
+    }
+}

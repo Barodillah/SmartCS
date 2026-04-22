@@ -1,13 +1,136 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone } from 'lucide-react';
+import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
 import priceListData from '../../knowledge/price_list.json';
 import dealerData from '../../knowledge/lokasi_dealer.json';
 import promoData from '../../knowledge/promo/promo_dsf_april_2026.json';
 import referralData from '../../knowledge/promo/progam_referral.json';
+import destinatorData from '../../knowledge/fitur/destinator.json';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// --- Chat API Base URL ---
+const CHAT_API_BASE = 'https://csdwindo.com/api/chat';
+
+// --- Chat API Helpers ---
+const chatAPI = {
+    createSession: async (deviceInfo) => {
+        try {
+            const res = await fetch(`${CHAT_API_BASE}/session.php?action=create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(deviceInfo)
+            });
+            return await res.json();
+        } catch (e) { console.error('Session create error:', e); return null; }
+    },
+    closeSession: async (sessionId) => {
+        try {
+            const res = await fetch(`${CHAT_API_BASE}/session.php?action=close`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
+            return await res.json();
+        } catch (e) { console.error('Session close error:', e); return null; }
+    },
+    sendMessage: async (sessionId, senderType, message, metadata = null) => {
+        try {
+            const res = await fetch(`${CHAT_API_BASE}/message.php?action=send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, sender_type: senderType, message, metadata })
+            });
+            return await res.json();
+        } catch (e) { console.error('Message send error:', e); return null; }
+    }
+};
+
+// --- Device Info Detection ---
+const getDeviceInfo = () => {
+    const ua = navigator.userAgent;
+    let deviceType = 'desktop';
+    if (/Mobi|Android/i.test(ua)) deviceType = 'mobile';
+    else if (/Tablet|iPad/i.test(ua)) deviceType = 'tablet';
+
+    let browser = 'Unknown';
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('SamsungBrowser')) browser = 'Samsung Browser';
+    else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
+    else if (ua.includes('Edg')) browser = 'Edge';
+    else if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+
+    let os = 'Unknown';
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Mac OS')) os = 'macOS';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+    else if (ua.includes('Linux')) os = 'Linux';
+
+    return { user_agent: ua, device_type: deviceType, browser, os };
+};
+
+// --- Jakarta Time Helpers ---
+const getCurrentJakartaTime = () => {
+    const now = new Date();
+    const jakartaOptions = { timeZone: 'Asia/Jakarta' };
+    const jakartaDate = new Date(now.toLocaleString('en-US', jakartaOptions));
+    
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    
+    return {
+        date: jakartaDate,
+        dayName: days[jakartaDate.getDay()],
+        day: jakartaDate.getDate(),
+        month: months[jakartaDate.getMonth()],
+        monthNum: jakartaDate.getMonth() + 1,
+        year: jakartaDate.getFullYear(),
+        hours: jakartaDate.getHours(),
+        minutes: jakartaDate.getMinutes(),
+        formatted: `${days[jakartaDate.getDay()]}, ${jakartaDate.getDate()} ${months[jakartaDate.getMonth()]} ${jakartaDate.getFullYear()}`,
+        timeFormatted: `${String(jakartaDate.getHours()).padStart(2, '0')}:${String(jakartaDate.getMinutes()).padStart(2, '0')} WIB`,
+        isoDate: `${jakartaDate.getFullYear()}-${String(jakartaDate.getMonth() + 1).padStart(2, '0')}-${String(jakartaDate.getDate()).padStart(2, '0')}`
+    };
+};
+
+const getBookingDates = () => {
+    const jakarta = getCurrentJakartaTime();
+    const dates = [];
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    
+    // Determine start: if before 23:59, tomorrow is available (H-1 rule)
+    // We offer 3 days starting from tomorrow
+    for (let i = 1; i <= 3; i++) {
+        const d = new Date(jakarta.date);
+        d.setDate(d.getDate() + i);
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        dates.push({
+            iso,
+            dayName: days[d.getDay()],
+            day: d.getDate(),
+            month: months[d.getMonth()],
+            year: d.getFullYear(),
+            formatted: `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+        });
+    }
+    return dates;
+};
+
+// --- Fetch Slot Availability ---
+const fetchSlotJam = async (tanggal) => {
+    try {
+        const response = await fetch(`https://csdwindo.com/api-book/slot-jam/?tanggal=${tanggal}`);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Slot API Error:', error);
+        return { status: false };
+    }
+};
 
 // --- Markdown Parser ---
 const parseMarkdown = (text) => {
@@ -87,8 +210,73 @@ const fetchNopolData = async (nopol) => {
     }
 };
 
+// --- Build Fitur/Feature Context ---
+const buildFiturContext = () => {
+    const allFitur = [destinatorData];
+    let text = '';
+    
+    // Generic deep traversal to extract all text from any JSON structure
+    const extractText = (obj, prefix = '', depth = 0) => {
+        let result = '';
+        if (depth > 6) return result; // prevent infinite recursion
+        
+        for (const [key, value] of Object.entries(obj)) {
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            
+            if (typeof value === 'string') {
+                result += `- ${label}: ${value}\n`;
+            } else if (typeof value === 'number') {
+                result += `- ${label}: ${value}\n`;
+            } else if (Array.isArray(value)) {
+                if (value.length > 0 && typeof value[0] === 'string') {
+                    result += `- ${label}: ${value.join(', ')}\n`;
+                } else if (value.length > 0 && typeof value[0] === 'object') {
+                    result += `**${label}:**\n`;
+                    value.forEach(item => {
+                        if (item.mode && item.description) {
+                            result += `  - ${item.mode}: ${item.description}\n`;
+                        } else if (item.name && item.price_start) {
+                            result += `  - ${item.name}: Rp ${item.price_start.toLocaleString('id-ID')}${item.highlight ? ` (${item.highlight})` : ''}\n`;
+                        } else if (item.perceived_weakness && item.selling_point_pivot) {
+                            result += `  - FAQ "${item.perceived_weakness}": ${item.selling_point_pivot}\n`;
+                        } else if (item.aspek && item.pengalihan_selling_point) {
+                            result += `  - FAQ "${item.aspek}": ${item.pengalihan_selling_point}\n`;
+                        } else {
+                            // Generic object in array
+                            const vals = Object.values(item).filter(v => typeof v === 'string');
+                            if (vals.length > 0) result += `  - ${vals.join(' — ')}\n`;
+                        }
+                    });
+                }
+            } else if (typeof value === 'object' && value !== null) {
+                result += `\n**${label}:**\n`;
+                result += extractText(value, label, depth + 1);
+            }
+        }
+        return result;
+    };
+    
+    for (const fiturFile of allFitur) {
+        const k = fiturFile.kendaraan;
+        if (!k) continue;
+        
+        // Header — try multiple possible name fields
+        const modelName = k.model_identity?.full_name || k.nama_model || 'Unknown';
+        const segment = k.model_identity?.market_segment || k.tipe || '';
+        const accolades = k.model_identity?.accolades || k.penghargaan || '';
+        
+        text += `\n### ${modelName.toUpperCase()} — ${segment}\n`;
+        if (accolades) text += `🏆 ${accolades}\n`;
+        
+        // Extract everything under kendaraan
+        text += extractText(k, '', 0);
+        text += '\n';
+    }
+    return text;
+};
+
 // --- Build System Prompt with Data Context ---
-const buildSystemPrompt = (nopolContext = '') => {
+const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
     // Build price list context (compact, no image URLs)
     const buildPassengerPriceContext = () => {
         const cars = priceListData.passenger_car;
@@ -176,7 +364,18 @@ const buildSystemPrompt = (nopolContext = '') => {
         return text;
     };
 
+    // Current time context
+    const jakartaTime = getCurrentJakartaTime();
+    const bookingDates = getBookingDates();
+    const bookingDatesText = bookingDates.map((d, i) => `${i + 1}. ${d.formatted} (${d.iso})`).join('\n');
+
     return `Kamu adalah **DINA** — **Dwindo Intelligent Assistant**, asisten Customer Satisfaction resmi **PT Dwindo Berlian Samjaya**, dealer resmi **Mitsubishi Motors** di area Jabodetabek.
+
+## Waktu Saat Ini
+- Hari: **${jakartaTime.dayName}**
+- Tanggal: **${jakartaTime.formatted}**
+- Jam: **${jakartaTime.timeFormatted}**
+- Zona Waktu: **WIB (Asia/Jakarta)**
 
 ## Identitas & Gaya Komunikasi
 - Nama kamu: **DINA** (Dwindo Intelligent Assistant)
@@ -190,18 +389,72 @@ const buildSystemPrompt = (nopolContext = '') => {
 - **Fokuskan tujuan user terlebih dahulu.** Jangan langsung dump semua informasi.
 - Jika user bertanya soal **harga/info unit**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail harga lengkap untuk unit tersebut saja.
 - Jika user bertanya soal **promo**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail promo untuk unit tersebut dari data referensi promo.
-- Jika user bertanya soal **booking service**: Pertama-tama tanyakan **Nomor Polisi (Nopol)** kendaraannya saja. Jangan tanyakan hal lain dulu.
+- Jika user bertanya soal **booking service**: Ikuti alur booking service di bawah.
 - Jika user bertanya **lokasi/alamat**: Langsung berikan informasi cabang dealer yang relevan.
 - Jika user bertanya **test drive**: Tanyakan model yang diminati dan jadwal yang diinginkan, lalu minta nama & nomor HP.
 
-## Alur Booking Service (PENTING — IKUTI URUTAN INI)
-1. Customer bilang ingin booking service → Tanyakan **Nomor Polisi (Nopol)** saja.
-2. Setelah dapat nopol, sistem akan mencari data kendaraan. Jika ditemukan:
-   - Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-). Contoh: jika telp asli 082168077050, tampilkan **xxxx-xxxx-7050**.
-   - Tunjukkan riwayat service terakhir (maksimal 3 terbaru).
-   - Minta customer **konfirmasi** apakah data tersebut benar.
-3. Setelah customer konfirmasi benar → Tanyakan keluhan/kebutuhan service dan jadwal yang diinginkan.
-4. Setelah lengkap → Sampaikan bahwa data akan diteruskan ke Service Advisor.
+## Alur Booking Service (PENTING — IKUTI URUTAN INI DENGAN KETAT)
+
+### LANGKAH 1: Tanyakan Nopol
+Customer bilang ingin booking service → Tanyakan **Nomor Polisi (Nopol)** kendaraannya.
+**PENTING:** Saat menanyakan nopol, SELALU informasikan bahwa booking service ini adalah untuk **Mitsubishi Dwindo Bintaro**. Jika customer ingin booking di cabang lain, persilakan menghubungi cabang terkait.
+Contoh: "Baik, untuk booking service di **Mitsubishi Dwindo Bintaro**, boleh diinformasikan nomor polisi (nopol) kendaraannya? 😊 Jika ingin booking di cabang lain, silakan beri tahu kami ya."
+
+### LANGKAH 2: Konfirmasi Data Kendaraan
+Setelah dapat nopol, sistem akan mencari data kendaraan. Jika ditemukan:
+- Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-). Contoh: jika telp asli 082168077050, tampilkan **xxxx-xxxx-7050**.
+- Tunjukkan riwayat service terakhir (maksimal 3 terbaru).
+- Minta customer **konfirmasi** apakah data tersebut benar.
+
+**ATURAN KONFIRMASI (SANGAT PENTING):**
+- Jika customer menjawab "**tidak benar**", "**salah**", "**bukan**", "**tidak sesuai**" → Data TIDAK sesuai, minta data manual.
+- Jika customer menjawab **APA PUN SELAIN menolak/menyangkal** (misalnya: "ya", "benar", "ok", "oke", "betul", "yap", "iya", "sip", "lanjut", "next", atau respon lainnya yang BUKAN penolakan eksplisit) → Data dianggap **BENAR/SESUAI**, lanjut ke langkah 3.
+- Intinya: HANYA jika customer secara eksplisit mengatakan data TIDAK benar, barulah dianggap tidak sesuai. Selain itu, SELALU anggap data benar.
+
+### LANGKAH 3: Tanyakan Service Rutin & Keluhan
+Setelah data terkonfirmasi → Tanyakan:
+- **Service rutin berapa km?** (berapa ribu km)
+- **Apakah ada kendala/keluhan pada kendaraan?**
+
+**ATURAN SERVICE RUTIN:**
+- Service pertama: 1.000 km
+- Setelah itu kelipatan per **10.000 km / 6 bulan**
+- **Kelipatan GANJIL** (10.000 km, 30.000 km, 50.000 km, 70.000 km, dst) = **Service Kecil** → Estimasi waktu pengerjaan: **sekitar 2 jam**
+- **Kelipatan GENAP** (20.000 km, 40.000 km, 60.000 km, 80.000 km, dst) = **Service Besar** → Estimasi waktu pengerjaan: **lebih dari 2 jam** (lebih lama dari service kecil)
+- Jika customer menyampaikan ada **keluhan/kendala** → Sampaikan bahwa **estimasi waktu belum bisa ditentukan**, harus dilakukan **pengecekan di tempat** oleh teknisi.
+
+Setelah customer menjawab service rutin & keluhan, **informasikan jenis service** (kecil/besar) dan estimasi waktunya sebelum lanjut ke langkah 4.
+
+### LANGKAH 4: Tanyakan Jadwal (Tanggal & Jam)
+Setelah mengetahui jenis service → Tanyakan jadwal booking:
+
+**Pilihan tanggal (tawarkan 3 hari ke depan):**
+${bookingDatesText}
+
+**Aturan jam booking:**
+- Jam tersedia: **08:00, 09:00, 10:00, 11:00, 13:00** (TIDAK ada jam 12:00)
+- Jam HARUS bulat (tidak boleh 08:30, 09:30, dll)
+- **Khusus jam 13:00 (siang):** HANYA untuk **service kecil**. Jika customer butuh service besar, jam 13:00 TIDAK tersedia.
+- Kapasitas per jam: jam 08:00-11:00 maksimal **6 booking**, jam 13:00 maksimal **3 booking**
+
+**Aturan booking:**
+- Booking harus dilakukan **minimal H-1 sebelum jam 23:59 WIB**
+- Jika slot jam sudah penuh (mencapai kapasitas maksimal), informasikan bahwa jam tersebut sudah penuh dan tawarkan jam lain yang masih tersedia.
+
+${slotContext ? `### Data Ketersediaan Slot Saat Ini (dari sistem)\n${slotContext}\n` : ''}
+Presentasikan pilihan tanggal dan jam yang tersedia dengan jelas. Setelah customer memilih, konfirmasi jadwalnya.
+
+### LANGKAH 5: Konfirmasi & Selesai
+Setelah jadwal terkonfirmasi → Berikan ringkasan lengkap booking:
+- Nama pemilik
+- Kendaraan
+- Jenis service (kecil/besar)
+- Keluhan (jika ada)
+- Tanggal & jam booking
+- Lokasi: **Mitsubishi Dwindo Bintaro**
+- Estimasi waktu pengerjaan
+
+Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan dikonfirmasi kembali.
 
 ## Alur Umum Lainnya (Pembelian, Test Drive, dll)
 1. Identifikasi kebutuhan customer.
@@ -237,15 +490,46 @@ ${buildPromoContext()}
 ### Program Referral
 ${buildReferralContext()}
 
+### Fitur & Spesifikasi Kendaraan
+${buildFiturContext()}
+
 ## Format Jawaban
 - Gunakan **markdown formatting** (bold, italic, list, dll).
-- Setiap jawaban HARUS diakhiri dengan **3 quick answer** relevan, di baris baru, diawali 💬:
+- Setiap jawaban HARUS diakhiri dengan **3 quick reply** di baris baru, diawali 💬.
+- Quick reply BUKAN pertanyaan lanjutan dari kamu, melainkan **pilihan jawaban yang KEMUNGKINAN BESAR akan dijawab oleh customer** berdasarkan konteks percakapan saat ini.
+- Tujuannya: memudahkan customer menjawab dengan sekali klik tanpa perlu mengetik.
 
-💬 Contoh quick answer 1
-💬 Contoh quick answer 2
-💬 Contoh quick answer 3
+**Aturan Quick Reply:**
+- Buat quick reply singkat (2-6 kata), langsung to the point.
+- Quick reply harus sesuai konteks — contoh:
+  - Saat menanyakan nopol: 💬 B 1234 XYZ (contoh format)
+  - Saat konfirmasi data: 💬 Ya, benar / 💬 Data tidak sesuai
+  - Saat menanyakan service: 💬 Service 10.000 km / 💬 Service 20.000 km / 💬 Ada keluhan
+  - Saat menanyakan jadwal: 💬 [tanggal pilihan 1] / 💬 [tanggal pilihan 2] / 💬 [tanggal pilihan 3]
+  - Saat menanyakan jam: 💬 Jam 08:00 / 💬 Jam 09:00 / 💬 Jam 10:00
+  - Saat tanya model: 💬 Xpander / 💬 Pajero Sport / 💬 Destinator
+  - Saat tanya kebutuhan umum: 💬 Info Harga / 💬 Booking Service / 💬 Lokasi Dealer
+- JANGAN buat quick reply berupa pertanyaan panjang. Buat sesingkat mungkin.
 
-## Aturan Penting
+Contoh format:
+💬 Ya, benar
+💬 Service 10.000 km
+💬 Jam 09:00
+
+## Informasi Produk Penting
+- **Kendaraan terbaru Mitsubishi adalah DESTINATOR** — Premium Family SUV 7-Seater, Car of The Year 2025.
+- Jika customer bertanya soal kendaraan terbaru, mobil baru Mitsubishi, atau rekomendasi SUV keluarga, SELALU rekomendasikan **Destinator** dan gunakan data fitur yang tersedia di atas.
+
+## ⛔ PERINGATAN KERAS — ANTI HALUSINASI
+- **DILARANG KERAS** membuat, mengarang, atau mengira-ngira informasi yang TIDAK ada di data referensi yang diberikan.
+- **JANGAN PERNAH** mengarang spesifikasi, fitur, harga, promo, atau detail kendaraan yang tidak tercantum dalam data di atas.
+- **JANGAN PERNAH** menyebutkan angka harga, diskon, atau cicilan yang tidak ada dalam data referensi.
+- **JANGAN PERNAH** menambahkan fitur kendaraan yang tidak disebutkan dalam data.
+- Jika customer bertanya sesuatu yang **TIDAK ADA di data referensi**, jawab dengan jujur: "Mohon maaf, untuk informasi lebih detail mengenai hal tersebut, DINA sarankan untuk menghubungi tim kami langsung ya." dan sertakan tag **[WHATSAPP]**.
+- **Lebih baik jujur tidak tahu daripada memberikan informasi yang salah.**
+- Setiap jawaban HARUS berdasarkan data yang tersedia. Jika ragu, arahkan ke dealer langsung.
+
+## Aturan Penting Lainnya
 - JANGAN membuat informasi palsu. Jika tidak tahu, arahkan ke dealer langsung.
 - Harga OTR Jabodetabek, bisa berubah sewaktu-waktu.
 - Promo bersifat periodik, arahkan ke dealer langsung.
@@ -253,25 +537,163 @@ ${buildReferralContext()}
 - Jika kamu **tidak bisa menjawab** pertanyaan, atau customer meminta **nomor WhatsApp / kontak CS / bicara dengan manusia**, sertakan tag **[WHATSAPP]** di awal jawaban agar sistem menampilkan tombol "Hubungi CS Kami" yang mengarah ke WhatsApp.`;
 };
 
+const getInitialMessages = () => {
+    const now = Date.now();
+    return [
+        { id: now, type: 'bot', text: 'Halo! 👋 Saya **DINA** — *Dwindo Intelligent Assistant*.' },
+        { id: now + 1, type: 'bot', text: 'Ada yang bisa DINA bantu hari ini? 😊' }
+    ];
+};
+
 const VirtualCS = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [messages, setMessages] = useState([
-        { id: 1, type: 'bot', text: 'Halo! 👋 Saya **DINA** — *Dwindo Intelligent Assistant*.' },
-        { id: 2, type: 'bot', text: 'Ada yang bisa DINA bantu hari ini? 😊' }
-    ]);
+    const [messages, setMessages] = useState(getInitialMessages());
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState('DINA sedang mengetik...');
     const [quickQuestions, setQuickQuestions] = useState([
         'Info Harga Kendaraan',
         'Booking Service',
         'Lokasi Dealer'
     ]);
+    const [sessionId, setSessionId] = useState(null);
     const chatEndRef = useRef(null);
     const inputRef = useRef(null);
     const conversationHistory = useRef([]);
     const nopolContext = useRef('');
+    const slotContext = useRef('');
     const pendingMessage = useRef(null);
+
+    // --- Session Management ---
+    const initSession = async () => {
+        // Check localStorage for existing active session
+        const existingSession = localStorage.getItem('dina_active_session');
+        if (existingSession) {
+            setSessionId(existingSession);
+            // Fetch history from API to restore chat on refresh
+            try {
+                const res = await fetch(`${CHAT_API_BASE}/message.php?action=history&session_id=${existingSession}`);
+                const data = await res.json();
+                if (data.status && data.data?.messages?.length > 0) {
+                    const loadedMessages = [];
+                    const loadedHistory = [];
+                    
+                    data.data.messages.forEach((msg, index) => {
+                        if (msg.sender_type === 'user' || msg.sender_type === 'bot' || msg.sender_type === 'cs') {
+                            const utcDateStr = msg.created_at.includes('Z') ? msg.created_at : msg.created_at.replace(' ', 'T') + 'Z';
+                            const msgId = new Date(utcDateStr).getTime() + index; // + index to ensure unique IDs if messages have same timestamp
+                            
+                            loadedMessages.push({
+                                id: msgId,
+                                type: msg.sender_type === 'cs' ? 'bot' : msg.sender_type,
+                                text: msg.message
+                            });
+                            
+                            loadedHistory.push({
+                                role: msg.sender_type === 'user' ? 'user' : 'assistant',
+                                content: msg.message
+                            });
+                        }
+                    });
+                    
+                    if (loadedMessages.length > 0) {
+                        setMessages(loadedMessages);
+                        conversationHistory.current = loadedHistory;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to restore session history', err);
+            }
+            return existingSession;
+        }
+        // Create new session
+        const deviceInfo = getDeviceInfo();
+        const result = await chatAPI.createSession(deviceInfo);
+        if (result?.status && result.data?.session_id) {
+            const newId = result.data.session_id;
+            localStorage.setItem('dina_active_session', newId);
+            setSessionId(newId);
+            return newId;
+        }
+        return null;
+    };
+
+    // Initialize session on first chat open
+    useEffect(() => {
+        if (isOpen && !sessionId) {
+            initSession();
+        }
+    }, [isOpen]);
+
+    // Save message to backend (fire-and-forget)
+    const saveMessageToBackend = (senderType, message, metadata = null) => {
+        const sid = sessionId || localStorage.getItem('dina_active_session');
+        if (!sid) return;
+        chatAPI.sendMessage(sid, senderType, message, metadata).catch(() => {});
+    };
+
+    // Clear chat & create new session
+    const handleClearChat = async () => {
+        if (isLoading) return;
+        const currentSession = sessionId || localStorage.getItem('dina_active_session');
+        
+        // Close current session
+        if (currentSession) {
+            chatAPI.closeSession(currentSession);
+            // Save to closed sessions list
+            const closedSessions = JSON.parse(localStorage.getItem('dina_closed_sessions') || '[]');
+            if (!closedSessions.includes(currentSession)) {
+                closedSessions.unshift(currentSession);
+                localStorage.setItem('dina_closed_sessions', JSON.stringify(closedSessions.slice(0, 50)));
+            }
+        }
+
+        // Reset state
+        setMessages(getInitialMessages());
+        setQuickQuestions(['Info Harga Kendaraan', 'Booking Service', 'Lokasi Dealer']);
+        conversationHistory.current = [];
+        nopolContext.current = '';
+        slotContext.current = '';
+
+        // Create new session
+        const deviceInfo = getDeviceInfo();
+        const result = await chatAPI.createSession(deviceInfo);
+        if (result?.status && result.data?.session_id) {
+            const newId = result.data.session_id;
+            localStorage.setItem('dina_active_session', newId);
+            setSessionId(newId);
+        } else {
+            localStorage.removeItem('dina_active_session');
+            setSessionId(null);
+        }
+    };
+
+    // Rotating loading status messages
+    const loadingMessages = [
+        'DINA sedang mengetik...',
+        'Sedang membaca database...',
+        'Mencari data akurat...',
+        'Memproses informasi...',
+        'Menyiapkan jawaban terbaik...',
+        'Mengecek data terbaru...',
+        'Sedang menganalisis...',
+        'Memverifikasi informasi...'
+    ];
+
+    useEffect(() => {
+        if (!isLoading) {
+            setLoadingStatus('DINA sedang mengetik...');
+            return;
+        }
+        let index = 0;
+        setLoadingStatus(loadingMessages[0]);
+        const interval = setInterval(() => {
+            index = (index + 1) % loadingMessages.length;
+            setLoadingStatus(loadingMessages[index]);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [isLoading]);
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -396,13 +818,106 @@ const VirtualCS = () => {
         return ctx;
     };
 
+    // Extract date pattern from user text for slot checking
+    const extractDateFromText = (text) => {
+        const clean = text.toLowerCase();
+        const bookingDates = getBookingDates();
+        
+        // Check for ISO date pattern (2026-04-25)
+        const isoMatch = text.match(/(\d{4}-\d{2}-\d{2})/);
+        if (isoMatch) return isoMatch[1];
+        
+        // Check for DD/MM/YYYY or DD-MM-YYYY
+        const dmyMatch = text.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+        if (dmyMatch) {
+            return `${dmyMatch[3]}-${String(dmyMatch[2]).padStart(2, '0')}-${String(dmyMatch[1]).padStart(2, '0')}`;
+        }
+
+        // Check for day numbers matching booking dates
+        for (const d of bookingDates) {
+            const dayStr = String(d.day);
+            const dayName = d.dayName.toLowerCase();
+            // Match "tanggal 25" or just the day name
+            if (clean.includes(`tanggal ${dayStr}`) || clean.includes(`tgl ${dayStr}`) || clean.includes(dayName)) {
+                return d.iso;
+            }
+        }
+
+        // Check for "besok"/"besuk" → tomorrow
+        if (clean.includes('besok') || clean.includes('besuk')) {
+            return bookingDates[0]?.iso || null;
+        }
+        // Check for "lusa" → day after tomorrow
+        if (clean.includes('lusa')) {
+            return bookingDates[1]?.iso || null;
+        }
+
+        // Check for option number "1", "2", "3" or "pilihan 1" etc
+        const optMatch = clean.match(/(?:pilihan|opsi|nomor|no\.?)?\s*([1-3])/);
+        if (optMatch && isBookingContext()) {
+            const idx = parseInt(optMatch[1]) - 1;
+            if (bookingDates[idx]) return bookingDates[idx].iso;
+        }
+
+        return null;
+    };
+
+    // Build slot context string for the system prompt
+    const buildSlotContext = (slotData, targetDate) => {
+        if (!slotData.status) return '';
+
+        const maxPerHour = { '08:00': 6, '09:00': 6, '10:00': 6, '11:00': 6, '13:00': 3 };
+        
+        let ctx = `**Ketersediaan Slot untuk ${slotData.hari}, ${slotData.tanggal}:**\n`;
+        ctx += `Total booking hari ini: ${slotData.total_booking}\n\n`;
+        
+        const jamEntries = slotData.jam || {};
+        const availableSlots = [];
+        const fullSlots = [];
+
+        for (const [jam, count] of Object.entries(jamEntries)) {
+            // Skip jam 12:00 and 14:00 (not offered)
+            if (jam === '12:00' || jam === '14:00') continue;
+            
+            const max = maxPerHour[jam] || 6;
+            const remaining = max - count;
+            
+            if (remaining > 0) {
+                availableSlots.push({ jam, remaining, count, max });
+                ctx += `- Jam **${jam}**: ${remaining} slot tersisa (${count}/${max} terisi)\n`;
+            } else {
+                fullSlots.push(jam);
+                ctx += `- Jam **${jam}**: **PENUH** (${count}/${max})\n`;
+            }
+        }
+
+        if (fullSlots.length > 0) {
+            ctx += `\n⚠️ Jam yang sudah PENUH: ${fullSlots.join(', ')}\n`;
+        }
+        if (availableSlots.length === 0) {
+            ctx += `\n❌ SEMUA SLOT untuk tanggal ini sudah PENUH. Sarankan tanggal lain.\n`;
+        }
+
+        ctx += `\nINSTRUKSI: Tawarkan HANYA jam yang masih tersedia (remaining > 0). Jangan tawarkan jam yang sudah PENUH. Ingat jam 13:00 HANYA untuk service kecil.`;
+
+        return ctx;
+    };
+
     const handleSend = async (text = inputValue) => {
         if (!text.trim() || isLoading) return;
+
+        // Ensure we have a session
+        if (!sessionId && !localStorage.getItem('dina_active_session')) {
+            await initSession();
+        }
 
         const userMsg = { id: Date.now(), type: 'user', text };
         setMessages(prev => [...prev, userMsg]);
         setInputValue('');
         setIsLoading(true);
+
+        // Save user message to backend
+        saveMessageToBackend('user', text);
 
         // Add to conversation history
         conversationHistory.current.push({ role: 'user', content: text });
@@ -430,6 +945,31 @@ const VirtualCS = () => {
             }
         }
 
+        // Check if user mentioned a date in booking context — fetch slot availability
+        if (isBookingContext()) {
+            const detectedDate = extractDateFromText(text);
+            if (detectedDate) {
+                try {
+                    const slotData = await fetchSlotJam(detectedDate);
+                    if (slotData.status) {
+                        const ctx = buildSlotContext(slotData, detectedDate);
+                        slotContext.current = ctx;
+                        conversationHistory.current.push({
+                            role: 'system',
+                            content: `[SISTEM] Data ketersediaan slot booking untuk tanggal ${detectedDate}:\n${ctx}`
+                        });
+                    } else {
+                        conversationHistory.current.push({
+                            role: 'system',
+                            content: `[SISTEM] Tidak dapat mengambil data slot untuk tanggal ${detectedDate}. Informasikan ke customer bahwa sistem sedang gangguan dan minta untuk mencoba lagi.`
+                        });
+                    }
+                } catch (err) {
+                    console.error('Slot fetch error:', err);
+                }
+            }
+        }
+
         try {
             const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -442,7 +982,7 @@ const VirtualCS = () => {
                 body: JSON.stringify({
                     model: import.meta.env.VITE_OPENROUTER_MODEL,
                     messages: [
-                        { role: 'system', content: buildSystemPrompt(nopolContext.current) },
+                        { role: 'system', content: buildSystemPrompt(nopolContext.current, slotContext.current) },
                         ...conversationHistory.current
                     ],
                     temperature: 0.7,
@@ -457,6 +997,9 @@ const VirtualCS = () => {
 
                 // Add to conversation history
                 conversationHistory.current.push({ role: 'assistant', content: rawText });
+
+                // Save bot response to backend
+                saveMessageToBackend('bot', rawText);
 
                 // Extract quick questions
                 const { cleanText, questions } = extractQuickQuestions(rawText);
@@ -632,6 +1175,14 @@ const VirtualCS = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
+                                <button
+                                    onClick={handleClearChat}
+                                    disabled={isLoading}
+                                    title="Bersihkan Chat"
+                                    className="text-white hover:text-[#E60012] transition-colors disabled:opacity-30"
+                                >
+                                    <RotateCcw size={16} />
+                                </button>
                                 <button onClick={() => setIsFullscreen(!isFullscreen)} className="hidden md:block text-white hover:text-[#E60012] transition-colors">
                                     {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                                 </button>
@@ -666,6 +1217,10 @@ const VirtualCS = () => {
                                             ) : (
                                                 msg.text
                                             )}
+                                        </div>
+
+                                        <div className="text-[10px] text-gray-400 mt-1 px-1">
+                                            {new Date(msg.id).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                         </div>
 
                                         {/* Emergency Location Button */}
@@ -707,12 +1262,12 @@ const VirtualCS = () => {
                                 );
                             })}
 
-                            {/* Typing indicator */}
+                            {/* Typing indicator with rotating status */}
                             {isLoading && (
                                 <div className="flex justify-start">
                                     <div className="bg-white border border-[#E5E5E5] p-3 flex items-center gap-2" style={{ borderRadius: '0 12px 12px 12px' }}>
                                         <Loader2 size={14} className="animate-spin text-[#E60012]" />
-                                        <span className="text-[12px] text-gray-400 italic">DINA sedang mengetik...</span>
+                                        <span className="text-[12px] text-gray-400 italic transition-opacity duration-300" key={loadingStatus}>{loadingStatus}</span>
                                     </div>
                                 </div>
                             )}

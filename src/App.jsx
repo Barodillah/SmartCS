@@ -1,25 +1,50 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navigation from './components/layout/Navigation';
-import Footer from './components/layout/Footer';
-import VirtualCS from './components/VirtualCS';
+
+// Public Views
+import PublicLayout from './components/layout/PublicLayout';
 import Home from './pages/Home';
 import PriceList from './pages/PriceList';
 import DealerLocation from './pages/DealerLocation';
+import ChatHistory from './pages/ChatHistory';
+
+// Panel Views
+import PanelLayout from './components/layout/PanelLayout';
+import Dashboard from './pages/panel/Dashboard';
+import PanelChat from './pages/panel/PanelChat';
+import BookingService from './pages/panel/BookingService';
+import { TestDrive, Prospect, Emergency, Sparepart, Users, KnowledgeHub } from './pages/panel/GenericPages';
 
 function App() {
     return (
         <BrowserRouter>
-            <div className="min-h-screen bg-white font-body text-[#444444] selection:bg-[#E60012] selection:text-white">
-                <Navigation />
-                <Routes>
+            <Routes>
+                {/* Public Website Routes */}
+                <Route element={<PublicLayout />}>
                     <Route path="/" element={<Home />} />
                     <Route path="/price-list" element={<PriceList />} />
                     <Route path="/lokasi-dealer" element={<DealerLocation />} />
-                </Routes>
-                <Footer />
-                <VirtualCS />
-            </div>
+                    <Route path="/chat-history" element={<ChatHistory />} />
+                </Route>
+
+                {/* Admin/CS Panel Routes */}
+                <Route path="/panel" element={<PanelLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="chat" element={<PanelChat />} />
+                    <Route path="booking" element={<BookingService />} />
+                    <Route path="test-drive" element={<TestDrive />} />
+                    <Route path="prospect" element={<Prospect />} />
+                    <Route path="emergency" element={<Emergency />} />
+                    <Route path="sparepart" element={<Sparepart />} />
+                    <Route path="users" element={<Users />} />
+                    
+                    {/* Knowledge base sub-routes */}
+                    <Route path="knowledge/price-list" element={<KnowledgeHub title="Price List" />} />
+                    <Route path="knowledge/promo" element={<KnowledgeHub title="Promo" />} />
+                    <Route path="knowledge/fitur" element={<KnowledgeHub title="Fitur" />} />
+                    <Route path="knowledge/service" element={<KnowledgeHub title="Service" />} />
+                </Route>
+            </Routes>
         </BrowserRouter>
     );
 }

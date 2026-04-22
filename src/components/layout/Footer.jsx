@@ -16,10 +16,10 @@ const Footer = () => {
             <div className="max-w-[1400px] mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
                     <div className="col-span-1 lg:col-span-1">
-                        <div className="flex items-center gap-3 mb-8">
-                            <img src="/logo/mitsubishi-motors/logo_text_white.png" alt="Mitsubishi Motors" className="h-6 md:h-8 object-contain" />
+                        <div className="flex items-center gap-2 mb-8">
+                            <img src="/logo/logo_dwindo_white.png" alt="Dwindo Bintaro" className="h-6 md:h-7 object-contain" />
                             <div className="border-l border-white/20 pl-3">
-                                <span className="block font-display font-bold text-[#E60012] text-[10px] tracking-[0.2em] uppercase mt-1">Dwindo Bintaro</span>
+                                <span className="block font-display font-bold text-white text-[10px] tracking-[0.2em] uppercase">PT Dwindo Berlian Samjaya</span>
                             </div>
                         </div>
                         <p className="text-gray-500 text-sm font-light leading-relaxed mb-6 italic">
