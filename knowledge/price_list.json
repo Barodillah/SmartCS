@@ -6,7 +6,7 @@
     },
     "commercial_car": {
         "canter": {
-            "image": "https://www.ktbfuso.co.id/wp-content/uploads/2023/02/CANTER-FE-73.webp",
+            "image": "https://csdwindo.com/media/ktb/CANTER-FE-73.webp",
             "categories": {
                 "economical": [
                     {
@@ -106,7 +106,7 @@
             }
         },
         "fighter_x": {
-            "image": "https://www.ktbfuso.co.id/wp-content/uploads/2023/02/fighterX.webp",
+            "image": "https://csdwindo.com/media/ktb/fighterX.webp",
             "categories": {
                 "6x4": [
                     {
@@ -212,7 +212,7 @@
             }
         },
         "tractor_head": {
-            "image": "https://www.ktbfuso.co.id/wp-content/uploads/2023/02/tractor-head.webp",
+            "image": "https://csdwindo.com/media/ktb/tractor-head.webp",
             "categories": {
                 "head_unit": [
                     {
@@ -231,8 +231,7 @@
     },
     "passenger_car": {
         "destinator": {
-            "tag": "Line up terbaru",
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/sJqnTckI2EgKKa48IYboaLZw5G8UR7vhk8agT6rL.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T064250Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776840170&X-Goog-Signature=69b9a8113a3631e06aae17a370668e8cfd7e84b89d67b18979d4d02275c12a735fe3d78dcb42c901d82c914afa81d529fd2c3917abb712e27e3bf33f3c8dc5b653a447967fe8eaf3c5d6c0606987ff2fe2db2939ecff7c2f046d5754ed26f8815a41fa9d57fea6b4cf8691294a84526c424efebf4953348e417e7acd9618f5d490331cbebf111a397a79ce9699cbb11e016489d510c37abb043593759ff5b24d733bc604f5068b3842d34bc2d9b72e610ee432175971541d8d16b4e55eb4c9a9aa6d5071b29c92e1a2a3649e9d8e602b7b2dbbc0eec760ff4ff607ba938106ede4fdf7b1d3d752155501c7c6bf59ecda5ab6c67240e64314a289600a4f76d086",
+            "image": "https://csdwindo.com/media/mmksi/destinator.png",
             "items": [
                 {
                     "type": "55th Anniversary Edition",
@@ -257,7 +256,7 @@
             }
         },
         "xforce": {
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/eAVURLuZ3mzJtym2zYs7QGAsBma5UJ574ZNqm4np.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T053706Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776836226&X-Goog-Signature=8d5ad173ed285a86a77764792318a6437ad1604393a1707a11215663c5e89e90dbe7628e5b0a243915c81cad43d54962d5b0e82e5b5779a476527269f319201f47f08bd1c810b0826bc5eade615414b577cedae48ef3e441113fecc8c5842c6b471b18326a367b15be22377246490c2324bdb7fc1f4067efcfff548b1c385e183ee86d87f44ee53e83d2fe3c194202020c457a6eaace7569032b0cfb9f017d1cf14007e2d717547cb793e3cf626c4d70bb9202648bd51fa2cecc9c49e8b8f5d5d14be5c834cc871e6b69e3a2e2b34af145fa26858a8d80f19c604a3de99a28ea59077faf8ea2a7b9a43819a8b1e64c7093ae86191524a09f67e4a659cb03e55b",
+            "image": "https://csdwindo.com/media/mmksi/xforce.png",
             "items": [
                 {
                     "type": "55th Anniversary Edition",
@@ -285,7 +284,7 @@
             }
         },
         "new_xpander": {
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/lHoHRwOWLOGiTD1TrJEbDlL5Fg9fAcdtLVNERaYf.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T060801Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776838081&X-Goog-Signature=6aeef84cba43384d5ac8ae053d8b8be92c67904a5979262ab30820badd6a6953d2aa1c489f0ab2eef74d378260347e8d0057809956d116e2f685f184ac4e9c2dd775870e7bbddff610d0c84048a885227644784b9762f514c80ae271f53b8bc90a143c13b950dfec393e92a4107f7838a8407bc8d930aa67fbd9fa86b50df2a0b6cb2b6ea0defaf8f61fa1b701a3745fd8b05008f74af7b8f40aa3ab7f607e894527917983c04e8e81f919bb9f6b5187ae242b0a9f474446ac612621e3180d87eef989ab4dd7873cb85a594fc47f17b99d0245bbaec25abf0c8fb3d50a135fdbed32c67574ff7b6779bf4707140b3069f08dbb1e0083df660fe45a190af7e192",
+            "image": "https://csdwindo.com/media/mmksi/xpander.png",
             "items": [
                 {
                     "type": "Ultimate CVT (Black Interior)",
@@ -317,7 +316,7 @@
             }
         },
         "new_xpander_cross": {
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/KzIqqmDuBd6MLITV93GzqKmBAvjmbZUubkFqsEJA.webp?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T061445Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776838485&X-Goog-Signature=143509f4daeb39a4cac7b702440575219fff81808e2c8775e7481f022674984c5e24f02b2861c1e54213281850c7d012feffd64f35dc1cacd20c64d6c025118c0e174c56665ab46e0252603a1857435c7bae5c222c10f6fa5c3fe69b304bf68f6bf4920085218518592cbf495c562ac0a95f39bd9eb0f335d90012ce46ffe082cb71ee552af29358b682dd1644643d921436b5622c7946073b559182c48c587deee3b308ff883c4756a6331869fdea459d954ed84ca306e49e9716d065dccf79d9b8521af5d93b427f06ef899c2c654a9d4a99df85848fa8fca93a9714b104c9243b8aa91c9571e6f4249d44c0e7586f1873f824465cbf6a6dac4f0da28ac25f",
+            "image": "https://csdwindo.com/media/mmksi/xpander_cross.webp",
             "items": [
                 {
                     "type": "Premium CVT",
@@ -334,7 +333,7 @@
             }
         },
         "new_pajero_sport": {
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/ojZEkLLMx8LE7fE9VDLkj9xiAIs23RzvMykUuidw.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T061201Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776838321&X-Goog-Signature=688b13fac0ddfcf21a0279c3827b96d2bbe6271b4d72543f6037e818883ec19bc8340c92c4263688a58a0086d73716d78ca55fff83bdadfe19de979846dfe9599a69a5c733b86b73484512642df8ae2ad66a0750b18fe01f6ff3fb8e565370bda1b01e1814802daeee292ec37dfc6219f359b2223595fb926f335216a637fcc50978ac5cea88cd3595e8e0192d703d4eaeeccdbab22f951ad0cc20fe9b5dc8f0c7be2f0b69284d3633fcbacf8dcd63fc8236e29fbd3c25a58b3d8e7023c1a87470094e9eff2e22a2b30020ba425b40f0b47ab0922c693c173144f3ac5f6ef5f88d2da68951b12df9cd29a27ac88e5c541b70ecdc67bb577356658fc9bce60276",
+            "image": "https://csdwindo.com/media/mmksi/pajero.png",
             "items": [
                 {
                     "type": "Dakar Ultimate 4x4 AT",
@@ -366,7 +365,7 @@
             }
         },
         "triton": {
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/media-assets/10c232e9-2131-4732-9437-4e81888b6f97/conversions/1721150273-24my-tr-dcab-rhd-p-h-exterior-front-left-u28png-optimized.webp?GoogleAccessId=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com&Expires=1777443358&Signature=d5EnqdEb%2B0zd0Z5owdfTR%2FVMeB2F41uxhT5BEPAOdYPlf80GIUQ%2Bdk8j55oBSNUCWZzlEk0%2FWCTRhoHU1wuXSmQ2a3A73emkl18VqPVZk52XDOmV%2BaXiHRT6EvpUhPg%2FnoG9OVCtGTIg7bKQToffdnIV0HI7FaC78LTMfYF%2F3%2FKuIuvFoj3lHox5TKYDjU%2Bf7kBdLu3%2Fn7cWyycJO3OUBKZ%2FP%2Bxi1vck5NxnO5RkJumiYuUQ02xf2k5nkm%2Bdwl0OXM5sWsFQudtXLAQbA%2BgpwUiVvqP71Tb05tV9GYy82Csx7o9JYM7f66stPWgDSpcAEjnYeVVF464bXpbFojnmlQ%3D%3D",
+            "image": "https://csdwindo.com/media/mmksi/triton.webp",
             "items": [
                 {
                     "type": "DC Ultimate 4x4 AT",
@@ -395,7 +394,7 @@
             ]
         },
         "l300": {
-            "image": "https://storage.googleapis.com/gcmkscsp001/public/products/highlights/FizHDpmxQZw79KTFXYYK9Au53vgephtDCNtJ9cJw.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com%2F20260422%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260422T061201Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&ts=1776838321&X-Goog-Signature=968bcf9027a264cb78edb48ad00154a129197e204bda0c0332710cda65a52063a9ccc8b2d67162f31bcbeec0488a96d76d77f2145120c3165f2ef324b2d112287e05a988a6cb0787f24c7fad9d1fafb625209112feda938ef1b284757df3599e9a22c9e9a1e3b1cedb4c00308d018498eae8b349b375f93a4ccb16403dee7322b2b5d30bf2aaf02b7d6e8254937c3b5eeefd4dac211fa3c93376dcaf8b7bb81689ae8ebf017e7f2679c16ba97ea48285967b9f7f8e87c423a23b78f430efe85a42ab1da1fe20b867694183bef427419e4fd22821d685c5e282f9fb6d36cbda46e19db26663eba773c91451c89f1b827c9921c6de0434920cb4b3973832cf141a",
+            "image": "https://csdwindo.com/media/mmksi/l300.png",
             "items": [
                 {
                     "type": "CC 4x2 MT",

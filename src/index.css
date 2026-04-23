@@ -55,3 +55,20 @@
   .font-display { font-family: var(--font-display); }
   .font-body { font-family: var(--font-body); }
 }
+
+@layer utilities {
+  @keyframes blink {
+    0%, 100% { border-color: transparent }
+    50% { border-color: #E60012 }
+  }
+  .animate-blink {
+    animation: blink 0.8s step-end infinite;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%) skewX(-15deg); }
+    100% { transform: translateX(200%) skewX(-15deg); }
+  }
+  .animate-shimmer {
+    animation: shimmer 3s infinite;
+  }
+}

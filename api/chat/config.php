@@ -19,7 +19,8 @@ define('DB_NAME', '');
 define('DB_USER', 'u444914729_smartcs');
 define('DB_PASS', '');
 
-function getDB() {
+function getDB()
+{
     static $pdo = null;
     if ($pdo === null) {
         try {
@@ -42,7 +43,8 @@ function getDB() {
 }
 
 // --- UUID v4 Generator ---
-function generateUUID() {
+function generateUUID()
+{
     $data = random_bytes(16);
     $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // version 4
     $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // variant RFC 4122
@@ -50,17 +52,21 @@ function generateUUID() {
 }
 
 // --- JSON Response Helper ---
-function jsonResponse($status, $message = '', $data = null, $httpCode = 200) {
+function jsonResponse($status, $message = '', $data = null, $httpCode = 200)
+{
     http_response_code($httpCode);
     $response = ['status' => $status];
-    if ($message) $response['message'] = $message;
-    if ($data !== null) $response['data'] = $data;
+    if ($message)
+        $response['message'] = $message;
+    if ($data !== null)
+        $response['data'] = $data;
     echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
 // --- Get Client IP ---
-function getClientIP() {
+function getClientIP()
+{
     $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'];
     foreach ($headers as $header) {
         if (!empty($_SERVER[$header])) {
@@ -72,7 +78,8 @@ function getClientIP() {
 }
 
 // --- Get POST JSON Body ---
-function getPostBody() {
+function getPostBody()
+{
     $raw = file_get_contents('php://input');
     $data = json_decode($raw, true);
     return is_array($data) ? $data : [];

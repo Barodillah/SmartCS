@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
-import priceListData from '../../knowledge/price_list.json';
+let priceListData = defaultPriceListData;
+import defaultPriceListData from '../../knowledge/price_list.json';
 import dealerData from '../../knowledge/lokasi_dealer.json';
 import promoData from '../../knowledge/promo/promo_dsf_april_2026.json';
 import referralData from '../../knowledge/promo/progam_referral.json';
 import destinatorData from '../../knowledge/fitur/destinator.json';
+import simulasiKreditData from '../../knowledge/simulasi_kredit.json';
+import sparepartData from '../../knowledge/sparepart.json';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -364,6 +367,43 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         return text;
     };
 
+    const buildSimulasiKreditContext = () => {
+        let text = `**Region:** ${simulasiKreditData.region}\n\n`;
+        text += `**Suku Bunga Flat MUF (2025):**\n`;
+        for (const [tenorKey, rate] of Object.entries(simulasiKreditData.interest_rates_flat_muf_2025)) {
+            text += `- ${tenorKey.replace(/_/g, ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+        }
+        text += `\n**Rate Asuransi All Risk (OJK Region 2):**\n`;
+        for (const [cat, rate] of Object.entries(simulasiKreditData.insurance_rates_ojk_region2_all_risk)) {
+            text += `- ${cat.replace(/_/g, ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+        }
+        text += `\n**Biaya-biaya:**\n`;
+        text += `- Admin Fee MUF: Rp ${simulasiKreditData.fees.admin_fee.MUF.toLocaleString('id-ID')}\n`;
+        text += `- Admin Fee BCA Finance: Rp ${simulasiKreditData.fees.admin_fee.BCA_Finance.toLocaleString('id-ID')}\n`;
+        text += `- Provisi: ${(simulasiKreditData.fees.provision_rate * 100)}% dari Plafon Kredit\n`;
+        text += `- Fidusia:\n`;
+        simulasiKreditData.fees.fidusia_ranges.forEach(r => {
+            text += `  - Plafon s/d Rp ${r.max_loan.toLocaleString('id-ID')}: Rp ${r.fee.toLocaleString('id-ID')}\n`;
+        });
+        text += `\n**Program Spesial:**\n`;
+        const sc = simulasiKreditData.special_programs.Smart_Cash;
+        text += `- Smart Cash (${sc.provider}): Bunga ${sc.interest}%, DP min ${(sc.min_dp * 100)}%, Tenor ${sc.tenor_months} bulan\n`;
+        return text;
+    };
+
+    const buildSparepartContext = () => {
+        let text = '';
+        sparepartData.forEach(vehicle => {
+            text += `\n**${vehicle.kendaraan}**\n`;
+            vehicle.items.forEach(item => {
+                const hargaFormatted = item.harga.toLocaleString('id-ID');
+                text += `- [${item.tipe_produk}] ${item.kode_produk} — ${item.deskripsi} | Qty: ${item.qty_service} | Harga: Rp ${hargaFormatted} | Status: ${item.status}\n`;
+            });
+        });
+        text += `\nKendaraan yang tersedia datanya: ${sparepartData.map(v => v.kendaraan).join(', ')}\n`;
+        return text;
+    };
+
     // Current time context
     const jakartaTime = getCurrentJakartaTime();
     const bookingDates = getBookingDates();
@@ -428,21 +468,29 @@ Setelah customer menjawab service rutin & keluhan, **informasikan jenis service*
 ### LANGKAH 4: Tanyakan Jadwal (Tanggal & Jam)
 Setelah mengetahui jenis service → Tanyakan jadwal booking:
 
-**Pilihan tanggal (tawarkan 3 hari ke depan):**
+**Saran tanggal terdekat (3 hari ke depan sebagai rekomendasi):**
 ${bookingDatesText}
 
-**Aturan jam booking:**
+**PENTING:** Tanggal di atas hanyalah **SARAN/rekomendasi**. Customer **BOLEH memilih tanggal kapan pun** yang mereka inginkan, TIDAK terbatas hanya pada 3 tanggal di atas. Jika customer menyebutkan tanggal lain (misalnya minggu depan, bulan depan, dll), TERIMA dan proses seperti biasa. JANGAN PERNAH menolak atau membatasi pilihan tanggal customer.
+
+**Aturan jam booking (Senin-Sabtu):**
 - Jam tersedia: **08:00, 09:00, 10:00, 11:00, 13:00** (TIDAK ada jam 12:00)
 - Jam HARUS bulat (tidak boleh 08:30, 09:30, dll)
 - **Khusus jam 13:00 (siang):** HANYA untuk **service kecil**. Jika customer butuh service besar, jam 13:00 TIDAK tersedia.
 - Kapasitas per jam: jam 08:00-11:00 maksimal **6 booking**, jam 13:00 maksimal **3 booking**
 
+**Aturan jam booking HARI MINGGU (khusus):**
+- Jam tersedia HANYA: **08:00, 09:00, 10:00, 11:00** (jam 13:00 TIDAK tersedia di hari Minggu)
+- Kapasitas per jam: maksimal **3 booking** saja per jam
+- Informasikan ke customer bahwa di hari Minggu jam penerimaan lebih terbatas
+
 **Aturan booking:**
 - Booking harus dilakukan **minimal H-1 sebelum jam 23:59 WIB**
 - Jika slot jam sudah penuh (mencapai kapasitas maksimal), informasikan bahwa jam tersebut sudah penuh dan tawarkan jam lain yang masih tersedia.
+- Jika tanggal yang dipilih customer ternyata **hari libur nasional**, informasikan ke customer bahwa tanggal tersebut libur beserta keterangannya, dan sarankan tanggal lain.
 
 ${slotContext ? `### Data Ketersediaan Slot Saat Ini (dari sistem)\n${slotContext}\n` : ''}
-Presentasikan pilihan tanggal dan jam yang tersedia dengan jelas. Setelah customer memilih, konfirmasi jadwalnya.
+Presentasikan saran tanggal terdekat dan jam yang tersedia dengan jelas, namun selalu persilakan customer memilih tanggal lain jika mereka menginginkan. Setelah customer memilih, konfirmasi jadwalnya.
 
 ### LANGKAH 5: Konfirmasi & Selesai
 Setelah jadwal terkonfirmasi → Berikan ringkasan lengkap booking:
@@ -461,6 +509,43 @@ Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan di
 2. Berikan informasi yang relevan (harga, lokasi, dll).
 3. Kumpulkan data: **Nama Lengkap** dan **Nomor HP/WhatsApp**.
 4. Konfirmasi dan sampaikan akan ditindaklanjuti oleh tim.
+
+## Alur Simulasi Kredit (PENTING — IKUTI RUMUS DENGAN AKURAT)
+
+Anda adalah asisten cerdas untuk dealer Mitsubishi Jabodetabek. Tugas Anda adalah menghitung simulasi kredit secara akurat berdasarkan data yang diberikan dan memberikan saran leasing terbaik.
+
+**Rumus Utama yang HARUS Digunakan:**
+1. **Plafon Kredit (PK):** Harga OTR - DP Murni
+2. **Total Bunga:** PK × Suku Bunga Flat × Tenor (Tahun)
+3. **Angsuran per Bulan:** (PK + Total Bunga) / Tenor (Bulan)
+4. **Total Down Payment (TDP):**
+   - **Skema ADDM (Angsuran Dibayar Di Muka):** DP + Angsuran bulan 1 + Admin + Provisi + Fidusia + Asuransi
+   - **Skema ADDB (Angsuran Dibayar Di Belakang):** DP + Admin + Provisi + Fidusia + Asuransi
+
+**Logika Rekomendasi:**
+- Jika user ingin bunga 0%, sarankan **Smart Cash (Dipo Star Finance)** dengan syarat DP ≥55%.
+- Jika user mencari TDP paling ringan, sarankan **Skema ADDB**.
+- Jika user nasabah Bank Mandiri, sarankan **Mandiri Utama Finance (MUF)** untuk bunga mulai 2,66%.
+
+**Output HARUS berisi:**
+1. **Rincian Plafon Kredit** (Harga OTR, DP, Plafon)
+2. **Cicilan Bulanan** (Bunga, Total Bunga, Angsuran/bulan)
+3. **Rincian TDP** (DP + Biaya Admin + Provisi + Fidusia + Asuransi + Angsuran ke-1 jika ADDM)
+4. **Analisis & Rekomendasi Leasing** yang paling menguntungkan sesuai profil user
+
+**Aturan Asuransi:**
+- Kategori 3 (Harga 200jt-400jt): Rate All Risk 2,08%/tahun
+- Kategori 4 (Harga 400jt-800jt): Rate All Risk 1,20%/tahun
+- TLO: gunakan rate 0,38%-0,44% (estimasi 0,40%)
+- Kombinasi: All Risk tahun 1, TLO tahun sisanya
+- Asuransi per tahun = Harga OTR × Rate Asuransi
+
+**Aturan DP:**
+- DP reguler minimal 15-20% dari harga OTR
+- Jika DP < 15%, informasikan bahwa DP terlalu rendah dan sarankan minimal 15%
+
+### Data Referensi Simulasi Kredit
+${buildSimulasiKreditContext()}
 
 ## Alur Emergency / Darurat (PENTING)
 - Layanan **Emergency** adalah layanan **service datang ke lokasi** (road service), KHUSUS untuk kendaraan yang **benar-benar mogok dan tidak bisa jalan**.
@@ -492,6 +577,17 @@ ${buildReferralContext()}
 
 ### Fitur & Spesifikasi Kendaraan
 ${buildFiturContext()}
+
+### Data Sparepart Service Berkala
+${buildSparepartContext()}
+
+## Alur Pertanyaan Sparepart (PENTING)
+- Jika customer bertanya tentang **sparepart, suku cadang, onderdil, part, oli, filter, gasket**, atau komponen kendaraan lainnya:
+  1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan.
+  2. **Cek di data sparepart** yang tersedia di atas.
+  3. Jika **ditemukan**, tampilkan informasi lengkap: kode produk, deskripsi, harga, qty service, dan status ketersediaan. Format dalam tabel/list yang rapi.
+  4. Jika **TIDAK ditemukan** di data sparepart (model tidak ada atau part tidak tercantum), jawab dengan jujur bahwa data sparepart untuk kendaraan/part tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung** agar mendapatkan informasi akurat. Sertakan tag **[WHATSAPP]** di awal jawaban agar tombol "Hubungi CS Kami" muncul.
+  5. Jangan pernah mengarang atau mengira-ngira harga/kode sparepart yang tidak ada di data.
 
 ## Format Jawaban
 - Gunakan **markdown formatting** (bold, italic, list, dll).
@@ -558,6 +654,7 @@ const VirtualCS = () => {
         'Lokasi Dealer'
     ]);
     const [sessionId, setSessionId] = useState(null);
+    const sessionIdRef = useRef(null);
     const chatEndRef = useRef(null);
     const inputRef = useRef(null);
     const conversationHistory = useRef([]);
@@ -565,12 +662,25 @@ const VirtualCS = () => {
     const slotContext = useRef('');
     const pendingMessage = useRef(null);
 
+    // Fetch dynamic price list on mount
+    useEffect(() => {
+        fetch('https://csdwindo.com/api/pricelist/index.php')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status && data.data) {
+                    priceListData = data.data;
+                }
+            })
+            .catch(e => console.error('Failed to fetch dynamic price list', e));
+    }, []);
+
     // --- Session Management ---
     const initSession = async () => {
         // Check localStorage for existing active session
         const existingSession = localStorage.getItem('dina_active_session');
         if (existingSession) {
             setSessionId(existingSession);
+            sessionIdRef.current = existingSession;
             // Fetch history from API to restore chat on refresh
             try {
                 const res = await fetch(`${CHAT_API_BASE}/message.php?action=history&session_id=${existingSession}`);
@@ -579,15 +689,34 @@ const VirtualCS = () => {
                     const loadedMessages = [];
                     const loadedHistory = [];
                     
+                    let lastBotQuestions = null;
+                    
                     data.data.messages.forEach((msg, index) => {
                         if (msg.sender_type === 'user' || msg.sender_type === 'bot' || msg.sender_type === 'cs') {
                             const utcDateStr = msg.created_at.includes('Z') ? msg.created_at : msg.created_at.replace(' ', 'T') + 'Z';
                             const msgId = new Date(utcDateStr).getTime() + index; // + index to ensure unique IDs if messages have same timestamp
                             
+                            let finalText = msg.message;
+                            let isEmergency = false;
+                            let showWhatsApp = false;
+
+                            if (msg.sender_type === 'bot' || msg.sender_type === 'cs') {
+                                const { cleanText, questions } = extractQuickQuestions(msg.message);
+                                isEmergency = msg.message.includes('[EMERGENCY]');
+                                showWhatsApp = msg.message.includes('[WHATSAPP]');
+                                finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').trim();
+                                
+                                if (questions && questions.length > 0) {
+                                    lastBotQuestions = questions;
+                                }
+                            }
+                            
                             loadedMessages.push({
                                 id: msgId,
                                 type: msg.sender_type === 'cs' ? 'bot' : msg.sender_type,
-                                text: msg.message
+                                text: finalText,
+                                isEmergency,
+                                showWhatsApp
                             });
                             
                             loadedHistory.push({
@@ -600,6 +729,9 @@ const VirtualCS = () => {
                     if (loadedMessages.length > 0) {
                         setMessages(loadedMessages);
                         conversationHistory.current = loadedHistory;
+                        if (lastBotQuestions) {
+                            setQuickQuestions(lastBotQuestions);
+                        }
                     }
                 }
             } catch (err) {
@@ -607,13 +739,25 @@ const VirtualCS = () => {
             }
             return existingSession;
         }
-        // Create new session
+        // No existing session — don't create yet, wait until user sends first message
+        return null;
+    };
+
+    // Create session on demand (lazy — only when user sends first message)
+    const ensureSession = async () => {
+        const existing = sessionIdRef.current || localStorage.getItem('dina_active_session');
+        if (existing) {
+            sessionIdRef.current = existing;
+            return existing;
+        }
+
         const deviceInfo = getDeviceInfo();
         const result = await chatAPI.createSession(deviceInfo);
         if (result?.status && result.data?.session_id) {
             const newId = result.data.session_id;
             localStorage.setItem('dina_active_session', newId);
             setSessionId(newId);
+            sessionIdRef.current = newId;
             return newId;
         }
         return null;
@@ -628,12 +772,12 @@ const VirtualCS = () => {
 
     // Save message to backend (fire-and-forget)
     const saveMessageToBackend = (senderType, message, metadata = null) => {
-        const sid = sessionId || localStorage.getItem('dina_active_session');
+        const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
         if (!sid) return;
         chatAPI.sendMessage(sid, senderType, message, metadata).catch(() => {});
     };
 
-    // Clear chat & create new session
+    // Clear chat & reset (no new session created until user sends message)
     const handleClearChat = async () => {
         if (isLoading) return;
         const currentSession = sessionId || localStorage.getItem('dina_active_session');
@@ -649,24 +793,15 @@ const VirtualCS = () => {
             }
         }
 
-        // Reset state
+        // Reset state — no new session yet
         setMessages(getInitialMessages());
         setQuickQuestions(['Info Harga Kendaraan', 'Booking Service', 'Lokasi Dealer']);
         conversationHistory.current = [];
         nopolContext.current = '';
         slotContext.current = '';
-
-        // Create new session
-        const deviceInfo = getDeviceInfo();
-        const result = await chatAPI.createSession(deviceInfo);
-        if (result?.status && result.data?.session_id) {
-            const newId = result.data.session_id;
-            localStorage.setItem('dina_active_session', newId);
-            setSessionId(newId);
-        } else {
-            localStorage.removeItem('dina_active_session');
-            setSessionId(null);
-        }
+        localStorage.removeItem('dina_active_session');
+        setSessionId(null);
+        sessionIdRef.current = null;
     };
 
     // Rotating loading status messages
@@ -833,14 +968,28 @@ const VirtualCS = () => {
             return `${dmyMatch[3]}-${String(dmyMatch[2]).padStart(2, '0')}-${String(dmyMatch[1]).padStart(2, '0')}`;
         }
 
-        // Check for day numbers matching booking dates
+        // Check for day numbers matching booking dates (suggested dates)
         for (const d of bookingDates) {
             const dayStr = String(d.day);
             const dayName = d.dayName.toLowerCase();
-            // Match "tanggal 25" or just the day name
             if (clean.includes(`tanggal ${dayStr}`) || clean.includes(`tgl ${dayStr}`) || clean.includes(dayName)) {
                 return d.iso;
             }
+        }
+
+        // Check for arbitrary "tanggal X" or "tgl X" beyond the 3 suggested dates
+        const tanggalMatch = clean.match(/(?:tanggal|tgl)\s+(\d{1,2})/);
+        if (tanggalMatch && isBookingContext()) {
+            const dayNum = parseInt(tanggalMatch[1]);
+            const jakarta = getCurrentJakartaTime();
+            // Assume current month/year if day is >= today, otherwise next month
+            let targetMonth = jakarta.monthNum;
+            let targetYear = jakarta.year;
+            if (dayNum < jakarta.day) {
+                targetMonth += 1;
+                if (targetMonth > 12) { targetMonth = 1; targetYear += 1; }
+            }
+            return `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         }
 
         // Check for "besok"/"besuk" → tomorrow
@@ -866,7 +1015,14 @@ const VirtualCS = () => {
     const buildSlotContext = (slotData, targetDate) => {
         if (!slotData.status) return '';
 
-        const maxPerHour = { '08:00': 6, '09:00': 6, '10:00': 6, '11:00': 6, '13:00': 3 };
+        // Detect if target date is a Sunday
+        const targetDateObj = new Date(targetDate + 'T00:00:00');
+        const isSunday = targetDateObj.getDay() === 0;
+
+        // Sunday: only 08:00-11:00, max 3 per hour. Other days: normal capacity.
+        const maxPerHour = isSunday
+            ? { '08:00': 3, '09:00': 3, '10:00': 3, '11:00': 3 }
+            : { '08:00': 6, '09:00': 6, '10:00': 6, '11:00': 6, '13:00': 3 };
         
         let ctx = `**Ketersediaan Slot untuk ${slotData.hari}, ${slotData.tanggal}:**\n`;
         ctx += `Total booking hari ini: ${slotData.total_booking}\n\n`;
@@ -906,9 +1062,10 @@ const VirtualCS = () => {
     const handleSend = async (text = inputValue) => {
         if (!text.trim() || isLoading) return;
 
-        // Ensure we have a session
-        if (!sessionId && !localStorage.getItem('dina_active_session')) {
-            await initSession();
+        // Ensure we have a session (create lazily on first message)
+        if (!sessionIdRef.current && !localStorage.getItem('dina_active_session')) {
+            const newSid = await ensureSession();
+            console.log('[DINA] Session created:', newSid);
         }
 
         const userMsg = { id: Date.now(), type: 'user', text };
@@ -917,6 +1074,7 @@ const VirtualCS = () => {
         setIsLoading(true);
 
         // Save user message to backend
+        console.log('[DINA] Saving user msg, sessionRef:', sessionIdRef.current, 'localStorage:', localStorage.getItem('dina_active_session'));
         saveMessageToBackend('user', text);
 
         // Add to conversation history
@@ -957,6 +1115,12 @@ const VirtualCS = () => {
                         conversationHistory.current.push({
                             role: 'system',
                             content: `[SISTEM] Data ketersediaan slot booking untuk tanggal ${detectedDate}:\n${ctx}`
+                        });
+                    } else if (slotData.keterangan_libur) {
+                        // Holiday detected
+                        conversationHistory.current.push({
+                            role: 'system',
+                            content: `[SISTEM] Tanggal ${slotData.tanggal || detectedDate} adalah HARI LIBUR: **${slotData.keterangan_libur}**. Bengkel TIDAK beroperasi pada tanggal tersebut. Informasikan ke customer bahwa tanggal tersebut libur (sebutkan keterangan liburnya: "${slotData.keterangan_libur}"), dan sarankan untuk memilih tanggal lain.`
                         });
                     } else {
                         conversationHistory.current.push({

@@ -11,7 +11,7 @@ const DealerLocation = () => {
     }, []);
 
     return (
-        <div className="min-h-screen pt-18 bg-[#F5F5F5] font-body">
+        <div className="min-h-screen pt-16 bg-[#F5F5F5] font-body">
             {/* Header Section */}
             <div className="bg-[#111111] py-16 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">

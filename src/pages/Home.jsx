@@ -4,6 +4,7 @@ import Services from '../components/sections/Services';
 import FeaturedModels from '../components/sections/FeaturedModels';
 import VirtualCSHub from '../components/sections/VirtualCSHub';
 import Advantage from '../components/sections/Advantage';
+import Updates from '../components/sections/Updates';
 
 const Home = () => {
     return (
@@ -13,6 +14,7 @@ const Home = () => {
             <FeaturedModels />
             <VirtualCSHub />
             <Advantage />
+            <Updates />
         </main>
     );
 };

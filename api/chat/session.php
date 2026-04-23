@@ -158,9 +158,10 @@ function adminListSessions() {
     $stmt = $db->query("
         SELECT s.*,
             (SELECT COUNT(*) FROM chat_messages WHERE session_id = s.id) as total_messages,
-            (SELECT message FROM chat_messages WHERE session_id = s.id AND sender_type = 'user' ORDER BY created_at ASC LIMIT 1) as first_user_message
+            (SELECT message FROM chat_messages WHERE session_id = s.id AND sender_type = 'user' ORDER BY created_at ASC LIMIT 1) as first_user_message,
+            (SELECT MAX(created_at) FROM chat_messages WHERE session_id = s.id) as last_message_at
         FROM chat_sessions s
-        ORDER BY s.created_at DESC
+        ORDER BY COALESCE((SELECT MAX(created_at) FROM chat_messages WHERE session_id = s.id), s.created_at) DESC
         LIMIT 100
     ");
     $sessions = $stmt->fetchAll();

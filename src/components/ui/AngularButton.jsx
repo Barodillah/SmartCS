@@ -12,7 +12,7 @@ const AngularButton = ({ children, variant = 'primary', className = '', onClick 
         <button
             onClick={onClick}
             style={{ clipPath: ANGULAR_CLIP }}
-            className={`relative px-8 py-3 font-display font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-300 ${styles[variant]} ${className}`}
+            className={`relative overflow-hidden px-8 py-3 font-display font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-300 ${styles[variant]} ${className}`}
         >
             {children}
         </button>

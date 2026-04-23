@@ -1,0 +1,47 @@
+{
+    "region": "Jabodetabek (Wilayah 2)",
+    "interest_rates_flat_muf_2025": {
+        "1_year": 0.0266,
+        "2_years": 0.0280,
+        "3_years": 0.0288,
+        "4_years": 0.0350,
+        "5_years": 0.0450
+    },
+    "insurance_rates_ojk_region2_all_risk": {
+        "cat_3_200jt_400jt": 0.0208,
+        "cat_4_400jt_800jt": 0.0120
+    },
+    "fees": {
+        "admin_fee": {
+            "MUF": 4000000,
+            "BCA_Finance": 1800000
+        },
+        "provision_rate": 0.01,
+        "fidusia_ranges": [
+            {
+                "max_loan": 50000000,
+                "fee": 115000
+            },
+            {
+                "max_loan": 100000000,
+                "fee": 300000
+            },
+            {
+                "max_loan": 500000000,
+                "fee": 700000
+            },
+            {
+                "max_loan": 1000000000,
+                "fee": 1500000
+            }
+        ]
+    },
+    "special_programs": {
+        "Smart_Cash": {
+            "interest": 0.0,
+            "min_dp": 0.55,
+            "tenor_months": 11,
+            "provider": "Dipo Star Finance"
+        }
+    }
+}

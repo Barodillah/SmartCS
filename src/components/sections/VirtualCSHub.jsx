@@ -5,21 +5,6 @@ import SectionTag from '../ui/SectionTag';
 import AngularButton from '../ui/AngularButton';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.2
-        }
-    }
-};
-
-const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-};
-
 const VirtualCSHub = () => {
     return (
         <section className="py-24 bg-[#0A0A0A] relative overflow-hidden">
@@ -30,55 +15,60 @@ const VirtualCSHub = () => {
             <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 items-center gap-16">
 
                 {/* Left Column - Content */}
-                <motion.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-100px" }}
-                >
-                    <motion.div variants={itemVariants}>
+                <div>
+                    <div>
                         <SectionTag>Layanan Cerdas</SectionTag>
-                    </motion.div>
+                    </div>
 
-                    <motion.h2 variants={itemVariants} className="font-display font-black text-[40px] md:text-[56px] text-white uppercase leading-[1.1] mb-6 tracking-tighter">
+                    <h2 className="font-display font-black text-[40px] md:text-[56px] text-white uppercase leading-[1.1] mb-6 tracking-tighter">
                         DINA<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E60012] to-[#ff4d4d] italic pr-2 text-[20px] md:text-[28px] block mt-2">Dwindo Intelligent Assistant</span>
-                    </motion.h2>
+                        <div className="relative inline-block overflow-hidden">
+                            <motion.span
+                                initial={{ width: 0 }}
+                                whileInView={{ width: "100%" }}
+                                transition={{ duration: 2, ease: "steps(27, end)" }}
+                                viewport={{ once: true }}
+                                className="text-transparent bg-clip-text bg-gradient-to-r from-[#E60012] to-[#ff4d4d] italic pr-2 text-[20px] md:text-[28px] block mt-2 whitespace-nowrap overflow-hidden border-r-2 border-[#E60012] animate-blink"
+                            >
+                                Dwindo Intelligent Assistant
+                            </motion.span>
+                        </div>
+                    </h2>
 
-                    <motion.p variants={itemVariants} className="text-gray-400 font-light text-lg mb-10 leading-relaxed max-w-lg">
+                    <p className="text-gray-400 font-light text-lg mb-10 leading-relaxed max-w-lg">
                         Teknologi AI kami siap memberikan asisten eksklusif 24/7. Mulai dari konsultasi model terbaru, ketersediaan suku cadang, hingga penjadwalan servis—semuanya dalam satu ketukan cerdas.
-                    </motion.p>
+                    </p>
 
-                    <motion.ul variants={itemVariants} className="space-y-4 mb-10">
+                    <ul className="space-y-4 mb-10">
                         {['Respon Instan Tanpa Antre', 'Integrasi Booking Langsung', 'Info Promo Terkini & Akurat'].map((item, idx) => (
-                            <motion.li
+                            <li
                                 key={item}
-                                whileHover={{ x: 5 }}
                                 className="flex items-center gap-4 text-white/90 font-display font-semibold text-[14px] tracking-wide p-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 transition-all cursor-default"
                             >
                                 <div className="w-8 h-8 rounded-full bg-[#E60012]/10 flex items-center justify-center flex-shrink-0">
                                     <CheckCircle2 size={16} className="text-[#E60012]" />
                                 </div>
                                 {item}
-                            </motion.li>
+                            </li>
                         ))}
-                    </motion.ul>
+                    </ul>
 
-                    <motion.div variants={itemVariants}>
-                        <AngularButton variant="primary" onClick={() => document.getElementById('chat-trigger')?.click()} className="group">
-                            <span className="flex items-center gap-2">
+                    <div>
+                        <AngularButton variant="primary" onClick={() => document.getElementById('chat-trigger')?.click()} className="group overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 translate-x-[-100%] animate-shimmer"></div>
+                            <span className="flex items-center gap-2 relative z-10">
                                 Tanya DINA Sekarang
                                 <Sparkles size={16} className="group-hover:animate-pulse" />
                             </span>
                         </AngularButton>
-                    </motion.div>
-                </motion.div>
+                    </div>
+                </div>
 
                 {/* Right Column - Mock UI */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9, rotateY: 15 }}
-                    whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
-                    transition={{ duration: 1, ease: "easeOut" }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
                     viewport={{ once: true }}
                     className="relative perspective-[1000px]"
                 >
@@ -119,31 +109,34 @@ const VirtualCSHub = () => {
                                 </div>
                             </motion.div>
 
-                            {/* Typing Indicator */}
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                whileInView={{ opacity: [0, 1, 0] }}
-                                transition={{ delay: 1.5, duration: 1.5 }}
-                                className="flex justify-start"
-                            >
-                                <div className="bg-[#E60012]/20 border border-[#E60012]/30 p-4 rounded-2xl rounded-tl-sm w-16 flex justify-center gap-1">
-                                    <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></motion.div>
-                                    <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></motion.div>
-                                    <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></motion.div>
-                                </div>
-                            </motion.div>
+                            {/* Typing & Bot Bubble Group */}
+                            <div className="grid grid-cols-1">
+                                {/* Typing Indicator */}
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    whileInView={{ opacity: [0, 1, 0] }}
+                                    transition={{ delay: 1.5, duration: 1.5, times: [0, 0.2, 1] }}
+                                    className="col-start-1 row-start-1 flex justify-start"
+                                >
+                                    <div className="bg-[#E60012]/20 border border-[#E60012]/30 p-4 rounded-2xl rounded-tl-sm w-16 flex justify-center gap-1">
+                                        <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></motion.div>
+                                        <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></motion.div>
+                                        <motion.div animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></motion.div>
+                                    </div>
+                                </motion.div>
 
-                            {/* Bot Bubble */}
-                            <motion.div
-                                initial={{ opacity: 0, x: -20, height: 0 }}
-                                whileInView={{ opacity: 1, x: 0, height: 'auto' }}
-                                transition={{ delay: 3, duration: 0.5 }}
-                                className="flex justify-start overflow-hidden"
-                            >
-                                <div className="bg-gradient-to-r from-[#E60012]/20 to-transparent border-l-2 border-[#E60012] text-white/90 text-sm p-4 max-w-[90%] font-light">
-                                    Tersedia slot pada pukul 10:00 WIB dan 14:00 WIB besok. Ingin saya bantu <b>booking</b> sekarang untuk Xforce Anda?
-                                </div>
-                            </motion.div>
+                                {/* Bot Bubble */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20, height: 0 }}
+                                    whileInView={{ opacity: 1, x: 0, height: 'auto' }}
+                                    transition={{ delay: 3, duration: 0.5 }}
+                                    className="col-start-1 row-start-1 flex justify-start overflow-hidden"
+                                >
+                                    <div className="bg-[#E60012]/20 border border-[#E60012]/30 text-white/90 text-sm p-4 rounded-2xl rounded-tl-sm max-w-[90%] font-light">
+                                        Tersedia slot pada pukul 10:00 WIB dan 14:00 WIB besok. Ingin saya bantu <b>booking</b> sekarang untuk Xforce Anda?
+                                    </div>
+                                </motion.div>
+                            </div>
                         </div>
                     </motion.div>
 

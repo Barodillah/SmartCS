@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search } from 'lucide-react';
+import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../../utils/constants';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const CHAT_API_BASE = 'https://csdwindo.com/api/chat';
 
@@ -26,6 +28,73 @@ const DeviceIcon = ({ type }) => {
     if (type === 'mobile') return <Smartphone size={14} className="text-gray-400" />;
     if (type === 'tablet') return <Tablet size={14} className="text-gray-400" />;
     return <Monitor size={14} className="text-gray-400" />;
+};
+
+// Extract coordinates from message text
+const extractCoordinates = (text) => {
+    if (!text) return null;
+    // Match patterns like: -6.2719, 106.6999 or -6.2719,106.6999
+    const match = text.match(/(-?\d+\.\d+)[,\s]+\s*(-?\d+\.\d+)/);
+    if (match) {
+        const lat = parseFloat(match[1]);
+        const lng = parseFloat(match[2]);
+        // Basic validation for lat/lng range
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            return { lat, lng };
+        }
+    }
+    return null;
+};
+
+// Leaflet map component for coordinate display
+const LocationMap = ({ lat, lng }) => {
+    const mapRef = useRef(null);
+    const mapInstanceRef = useRef(null);
+
+    useEffect(() => {
+        if (!mapRef.current || mapInstanceRef.current) return;
+
+        const map = L.map(mapRef.current, {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false
+        }).setView([lat, lng], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const icon = L.divIcon({
+            html: `<div style="width:24px;height:24px;background:#E60012;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 24],
+            className: ''
+        });
+
+        L.marker([lat, lng], { icon }).addTo(map);
+        mapInstanceRef.current = map;
+
+        return () => { map.remove(); mapInstanceRef.current = null; };
+    }, [lat, lng]);
+
+    return (
+        <div className="mt-2 overflow-hidden border border-[#E5E5E5] bg-white" style={{ borderRadius: '8px' }}>
+            <div ref={mapRef} style={{ width: '100%', height: '180px' }} />
+            <div className="p-2 flex items-center justify-between gap-2 border-t border-[#E5E5E5]">
+                <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                    <MapPin size={12} className="text-[#E60012]" />
+                    <span>{lat.toFixed(6)}, {lng.toFixed(6)}</span>
+                </div>
+                <a
+                    href={`https://www.google.com/maps?q=${lat},${lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-[#E60012] hover:underline flex items-center gap-1"
+                >
+                    <Navigation size={10} /> Buka Maps
+                </a>
+            </div>
+        </div>
+    );
 };
 
 const PanelChat = () => {
@@ -149,7 +218,7 @@ const PanelChat = () => {
                 <div className="bg-[#fcfcfc] border-b border-[#E5E5E5] grid grid-cols-12 gap-4 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider shrink-0 hidden md:grid">
                     <div className="col-span-1">Status</div>
                     <div className="col-span-4">Konteks Percakapan</div>
-                    <div className="col-span-2">Waktu</div>
+                    <div className="col-span-2">Pesan Terakhir</div>
                     <div className="col-span-2">Jml Pesan</div>
                     <div className="col-span-3">Info User</div>
                 </div>
@@ -178,7 +247,7 @@ const PanelChat = () => {
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${session.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                                             {session.status}
                                         </span>
-                                        <span className="text-[11px] text-gray-400">{formatDate(session.created_at)}</span>
+                                        <span className="text-[11px] text-gray-400">{formatDate(session.last_message_at || session.created_at)}</span>
                                     </div>
 
                                     <div className="col-span-1 hidden md:block">
@@ -193,7 +262,7 @@ const PanelChat = () => {
                                     </div>
                                     <div className="col-span-2 hidden md:flex items-center gap-2 text-[12px] text-gray-500">
                                         <Clock size={12} />
-                                        <span>{formatDate(session.created_at)}</span>
+                                        <span>{formatDate(session.last_message_at || session.created_at)}</span>
                                     </div>
                                     <div className="col-span-2 text-[12px] text-gray-500 mb-2 md:mb-0">
                                         <span className="font-bold text-[#111111]">{session.total_messages}</span> pesan interaksi
@@ -259,7 +328,9 @@ const PanelChat = () => {
                                             {formatDate(selectedSession.created_at)}
                                         </span>
                                     </div>
-                                    {messages.filter(msg => msg.sender_type !== 'system').map((msg) => (
+                                    {messages.filter(msg => msg.sender_type !== 'system').map((msg) => {
+                                        const coords = msg.sender_type === 'user' ? extractCoordinates(msg.message) : null;
+                                        return (
                                         <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : 'items-start'}`}>
                                             <div
                                                 className={`max-w-[85%] p-3.5 text-[13px] leading-relaxed shadow-sm ${
@@ -283,11 +354,17 @@ const PanelChat = () => {
                                                     />
                                                 )}
                                             </div>
+                                            {coords && (
+                                                <div className="max-w-[85%] mt-1">
+                                                    <LocationMap lat={coords.lat} lng={coords.lng} />
+                                                </div>
+                                            )}
                                             <div className="text-[10px] font-medium text-gray-400 mt-1 px-1">
                                                 {formatMessageTime(msg.created_at)}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                     <div ref={messagesEndRef} className="h-2" />
                                 </>
                             )}

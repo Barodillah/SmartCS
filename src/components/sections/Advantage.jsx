@@ -15,7 +15,7 @@ const STEPS = [
         phase: 'Pengalaman',
         title: '20+ Tahun Pengalaman',
         description: 'Lebih dari dua dekade kami hadir melayani keluarga Indonesia. Dedikasi kami dalam menghadirkan standar global Mitsubishi Motors secara konsisten telah membuktikan bahwa kualitas, keamanan, dan kepuasan pelanggan adalah urat nadi layanan kami.',
-        image: 'https://res.cloudinary.com/adiramoservice/q_50,f_auto/v1/prod/bengkel/bengkel-mitsubishi-mitsubishi-dwindo-bintaro-(pt.-dwindo-berlian-samjaya)--tangerang_1',
+        image: 'https://csdwindo.com/media/bintarobg.png',
     },
     {
         id: '02',

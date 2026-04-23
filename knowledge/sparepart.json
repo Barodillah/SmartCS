@@ -1,0 +1,203 @@
+[
+    {
+        "kendaraan": "DESTINATOR",
+        "items": [
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ321200",
+                "deskripsi": "0W 20 SP (1L)",
+                "qty_service": 5,
+                "harga": 129000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "MD050317",
+                "deskripsi": "GASKET, ENG OIL PAN DRAIN PLUG",
+                "qty_service": 1,
+                "harga": 20000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "MD360935",
+                "deskripsi": "OIL FILTER",
+                "qty_service": 1,
+                "harga": 55000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "7850A002",
+                "deskripsi": "AIR REFRESHER ASSY",
+                "qty_service": 1,
+                "harga": 168000,
+                "status": "Available"
+            }
+        ]
+    },
+    {
+        "kendaraan": "NEW PAJERO SPORT",
+        "items": [
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ321022",
+                "deskripsi": "10W - 30 CF4 GP SEMI SYNTHETIC (1L)",
+                "qty_service": 8,
+                "harga": 105000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "MF660035",
+                "deskripsi": "GASKET, ENG OIL LINE",
+                "qty_service": 1,
+                "harga": 9000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "1230A182",
+                "deskripsi": "OIL FILTER (4N15)",
+                "qty_service": 1,
+                "harga": 210000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "7803A112",
+                "deskripsi": "AIR REFRESHER ASSY",
+                "qty_service": 1,
+                "harga": 330000,
+                "status": "Available"
+            }
+        ]
+    },
+    {
+        "kendaraan": "NEW XPANDER",
+        "items": [
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ321200",
+                "deskripsi": "0W 20 SP (1L)",
+                "qty_service": 4,
+                "harga": 129000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "MD050317",
+                "deskripsi": "GASKET, ENG OIL PAN DRAIN PLUG",
+                "qty_service": 1,
+                "harga": 17000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "1230A237",
+                "deskripsi": "OIL FILTER",
+                "qty_service": 1,
+                "harga": 46750,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "27274W010P",
+                "deskripsi": "AIR REFRESHER ASSY",
+                "qty_service": 1,
+                "harga": 477700,
+                "status": "Available"
+            }
+        ]
+    },
+    {
+        "kendaraan": "XFORCE",
+        "items": [
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ321200",
+                "deskripsi": "0W 20 SP (1L)",
+                "qty_service": 4,
+                "harga": 129000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ100723",
+                "deskripsi": "ENGINE FLUSH",
+                "qty_service": 1,
+                "harga": 140000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "MF660035",
+                "deskripsi": "GASKET, ENG OIL LINE",
+                "qty_service": 1,
+                "harga": 9000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "1230A237",
+                "deskripsi": "OIL FILTER",
+                "qty_service": 1,
+                "harga": 55000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "7850A002",
+                "deskripsi": "AIR REFRESHER ASSY",
+                "qty_service": 1,
+                "harga": 168000,
+                "status": "Available"
+            }
+        ]
+    },
+    {
+        "kendaraan": "NEW XPANDER CROSS",
+        "items": [
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ321200",
+                "deskripsi": "0W 20 SP (1L)",
+                "qty_service": 4,
+                "harga": 129000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Oil",
+                "kode_produk": "MZ100723",
+                "deskripsi": "ENGINE FLUSH",
+                "qty_service": 1,
+                "harga": 140000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "MD050317",
+                "deskripsi": "GASKET, ENG OIL PAN DRAIN PLUG",
+                "qty_service": 1,
+                "harga": 17000,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "1230A237",
+                "deskripsi": "OIL FILTER",
+                "qty_service": 1,
+                "harga": 46750,
+                "status": "Available"
+            },
+            {
+                "tipe_produk": "Part",
+                "kode_produk": "27274W010P",
+                "deskripsi": "AIR REFRESHER ASSY",
+                "qty_service": 1,
+                "harga": 477700,
+                "status": "Available"
+            }
+        ]
+    }
+]

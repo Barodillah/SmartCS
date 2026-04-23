@@ -14,6 +14,7 @@ import Dashboard from './pages/panel/Dashboard';
 import PanelChat from './pages/panel/PanelChat';
 import BookingService from './pages/panel/BookingService';
 import { TestDrive, Prospect, Emergency, Sparepart, Users, KnowledgeHub } from './pages/panel/GenericPages';
+import PanelPriceList from './pages/panel/PanelPriceList';
 
 function App() {
     return (
@@ -39,7 +40,7 @@ function App() {
                     <Route path="users" element={<Users />} />
                     
                     {/* Knowledge base sub-routes */}
-                    <Route path="knowledge/price-list" element={<KnowledgeHub title="Price List" />} />
+                    <Route path="knowledge/price-list" element={<PanelPriceList />} />
                     <Route path="knowledge/promo" element={<KnowledgeHub title="Promo" />} />
                     <Route path="knowledge/fitur" element={<KnowledgeHub title="Fitur" />} />
                     <Route path="knowledge/service" element={<KnowledgeHub title="Service" />} />
