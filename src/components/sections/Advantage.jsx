@@ -15,7 +15,7 @@ const STEPS = [
         phase: 'Pengalaman',
         title: '20+ Tahun Pengalaman',
         description: 'Lebih dari dua dekade kami hadir melayani keluarga Indonesia. Dedikasi kami dalam menghadirkan standar global Mitsubishi Motors secara konsisten telah membuktikan bahwa kualitas, keamanan, dan kepuasan pelanggan adalah urat nadi layanan kami.',
-        image: 'https://csdwindo.com/media/bintarobg.png',
+        image: '/media/bintarobg.png',
     },
     {
         id: '02',
@@ -23,7 +23,7 @@ const STEPS = [
         phase: 'Teknisi',
         title: 'Teknisi Tersertifikasi',
         description: 'Kendaraan Anda ditangani eksklusif oleh tim ahli profesional yang telah melewati kalibrasi keterampilan dan sertifikasi ketat langsung dari Mitsubishi Motors. Diagnosa presisi untuk menjaga setiap performa tetap optimal tanpa kompromi.',
-        image: 'https://www.mitsubishi-motors.co.id/modules/aftersales/perawatan-kendaraan.webp',
+        image: '/media/services/booking-service.webp',
     },
     {
         id: '03',
@@ -31,7 +31,7 @@ const STEPS = [
         phase: 'Lokasi',
         title: 'Lokasi Strategis',
         description: 'Terletak di jantung bisnis Bintaro dengan akses mobilitas yang sangat mudah. Lounge premium, ruang tunggu yang nyaman, hingga zona perawatan ekspres khusus kami rancang untuk kelancaran investasi waktu berharga Anda.',
-        image: 'https://bintarojaya.id/strbintarojaya/aboutus/UBQM7efpxoN1GPLKclBLP1o04puviJzJR4MPu48O.png',
+        image: '/media/bintaro-jaya.png',
     }
 ];
 

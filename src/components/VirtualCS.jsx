@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw } from 'lucide-react';
+import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
 let priceListData = defaultPriceListData;
 import defaultPriceListData from '../../knowledge/price_list.json';
@@ -10,6 +10,10 @@ import referralData from '../../knowledge/promo/progam_referral.json';
 import destinatorData from '../../knowledge/fitur/destinator.json';
 import simulasiKreditData from '../../knowledge/simulasi_kredit.json';
 import sparepartData from '../../knowledge/sparepart.json';
+import perawatanBerkalaData from '../../knowledge/mitsubishi_perawatan_berkala.json';
+import aksesorisData from '../../knowledge/aksesoris.json';
+import extendedSmartPackageData from '../../knowledge/extended_smart_package.json';
+import SimulasiKreditModal from './SimulasiKreditModal';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -176,6 +180,9 @@ const parseMarkdown = (text) => {
     // Strikethrough
     html = html.replace(/~~(.+?)~~/g, '<del class="text-gray-400">$1</del>');
 
+    // Images
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full max-h-[300px] object-contain rounded-lg my-2 shadow-sm border border-gray-200 bg-white/5" />');
+
     // Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#E60012] underline hover:text-[#B5000F]">$1</a>');
 
@@ -280,13 +287,14 @@ const buildFiturContext = () => {
 
 // --- Build System Prompt with Data Context ---
 const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
-    // Build price list context (compact, no image URLs)
+    // Build price list context
     const buildPassengerPriceContext = () => {
         const cars = priceListData.passenger_car;
         let text = '';
         for (const [key, data] of Object.entries(cars)) {
             const name = key.split('_').join(' ');
             text += `\n**${name.toUpperCase()}**\n`;
+            if (data.image) text += `[GAMBAR: ${data.image}]\n`;
             if (data.items) {
                 data.items.forEach(item => {
                     text += `- ${item.type}: Rp ${item.price.toLocaleString('id-ID')}\n`;
@@ -309,6 +317,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         for (const [key, data] of Object.entries(cars)) {
             const name = key.split('_').join(' ');
             text += `\n**${name.toUpperCase()}**\n`;
+            if (data.image) text += `[GAMBAR: ${data.image}]\n`;
             if (data.categories) {
                 for (const [cat, items] of Object.entries(data.categories)) {
                     text += `  Kategori ${cat.split('_').join(' ')}:\n`;
@@ -368,39 +377,229 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
     };
 
     const buildSimulasiKreditContext = () => {
-        let text = `**Region:** ${simulasiKreditData.region}\n\n`;
-        text += `**Suku Bunga Flat MUF (2025):**\n`;
-        for (const [tenorKey, rate] of Object.entries(simulasiKreditData.interest_rates_flat_muf_2025)) {
-            text += `- ${tenorKey.replace(/_/g, ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+        let text = `**Region:** ${simulasiKreditData.metadata.region} (${simulasiKreditData.metadata.last_updated})\n\n`;
+        
+        text += `**Data OTR Tangerang (Referensi):**\n`;
+        if (simulasiKreditData.mitsubishi_models_otr_tangerang) {
+            for (const [model, variants] of Object.entries(simulasiKreditData.mitsubishi_models_otr_tangerang)) {
+                text += `- ${model.replace(/_/g, ' ')}:\n`;
+                for (const [vName, price] of Object.entries(variants)) {
+                    if (typeof price === 'number') {
+                        text += `  • ${vName.replace(/_/g, ' ')}: Rp ${price.toLocaleString('id-ID')}\n`;
+                    }
+                }
+            }
+        } else {
+            text += `(Lihat harga OTR dari referensi Daftar Harga Passenger Car)\n`;
         }
-        text += `\n**Rate Asuransi All Risk (OJK Region 2):**\n`;
-        for (const [cat, rate] of Object.entries(simulasiKreditData.insurance_rates_ojk_region2_all_risk)) {
-            text += `- ${cat.replace(/_/g, ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+        
+        text += `\n**Pilihan Leasing & Suku Bunga:**\n`;
+        for (const [provider, data] of Object.entries(simulasiKreditData.leasing_providers)) {
+            const pName = provider.replace(/_/g, ' ');
+            text += `- **${pName}**${data.is_captive ? ' (Captive Finance)' : ''}:\n`;
+            
+            if (data.programs) {
+                data.programs.forEach(prog => {
+                    text += `  • Program: ${prog.name}\n`;
+                    if (prog.interest_rate !== undefined) text += `    - Bunga: ${(prog.interest_rate * 100).toFixed(2)}%\n`;
+                    if (prog.interest_rates_flat) {
+                        text += `    - Suku Bunga Flat:\n`;
+                        for (const [tenor, rate] of Object.entries(prog.interest_rates_flat)) {
+                            text += `      - ${tenor.replace('_', ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+                        }
+                    }
+                    text += `    - Syarat: ${prog.structure || `Min DP ${(prog.min_dp * 100)}%`}\n`;
+                });
+            }
+            
+            if (data.interest_rates_flat_2025) {
+                text += `  • Suku Bunga Flat (2025):\n`;
+                for (const [tenor, rate] of Object.entries(data.interest_rates_flat_2025)) {
+                    text += `    - ${tenor.replace('_', ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+                }
+            }
+            
+            if (data.admin_fee) {
+                text += `  • Admin Fee: Rp ${data.admin_fee.toLocaleString('id-ID')}\n`;
+            }
         }
-        text += `\n**Biaya-biaya:**\n`;
-        text += `- Admin Fee MUF: Rp ${simulasiKreditData.fees.admin_fee.MUF.toLocaleString('id-ID')}\n`;
-        text += `- Admin Fee BCA Finance: Rp ${simulasiKreditData.fees.admin_fee.BCA_Finance.toLocaleString('id-ID')}\n`;
-        text += `- Provisi: ${(simulasiKreditData.fees.provision_rate * 100)}% dari Plafon Kredit\n`;
+        
+        const gf = simulasiKreditData.global_fees_and_insurance;
+        text += `\n**Global Fees & Asuransi:**\n`;
+        text += `- Provisi: ${(gf.provision_rate * 100)}% dari Plafon Kredit\n`;
+        text += `- Asuransi All Risk (Region 2):\n`;
+        for (const [cat, rate] of Object.entries(gf.insurance_all_risk_region2)) {
+            text += `  • ${cat.replace(/_/g, ' ')}: ${(rate * 100).toFixed(2)}%\n`;
+        }
         text += `- Fidusia:\n`;
-        simulasiKreditData.fees.fidusia_ranges.forEach(r => {
-            text += `  - Plafon s/d Rp ${r.max_loan.toLocaleString('id-ID')}: Rp ${r.fee.toLocaleString('id-ID')}\n`;
+        gf.fidusia_ranges.forEach(r => {
+            text += `  • Plafon s/d Rp ${r.max_loan.toLocaleString('id-ID')}: Rp ${r.fee.toLocaleString('id-ID')}\n`;
         });
-        text += `\n**Program Spesial:**\n`;
-        const sc = simulasiKreditData.special_programs.Smart_Cash;
-        text += `- Smart Cash (${sc.provider}): Bunga ${sc.interest}%, DP min ${(sc.min_dp * 100)}%, Tenor ${sc.tenor_months} bulan\n`;
+        
         return text;
     };
 
     const buildSparepartContext = () => {
         let text = '';
-        sparepartData.forEach(vehicle => {
-            text += `\n**${vehicle.kendaraan}**\n`;
-            vehicle.items.forEach(item => {
-                const hargaFormatted = item.harga.toLocaleString('id-ID');
-                text += `- [${item.tipe_produk}] ${item.kode_produk} — ${item.deskripsi} | Qty: ${item.qty_service} | Harga: Rp ${hargaFormatted} | Status: ${item.status}\n`;
-            });
+        const meta = sparepartData.metadata;
+        text += `**${meta.judul}**\n`;
+        text += `${meta.keterangan}\n`;
+        text += `**Catatan:**\n`;
+        meta.catatan_penting.forEach(c => {
+            text += `- ${c}\n`;
         });
-        text += `\nKendaraan yang tersedia datanya: ${sparepartData.map(v => v.kendaraan).join(', ')}\n`;
+        text += `\n**Daftar Spare Part (${meta.total_unique_part} part):**\n`;
+        sparepartData.spare_parts.forEach(part => {
+            const hargaFormatted = part.harga_satuan.toLocaleString('id-ID');
+            text += `- [${part.kategori}] ${part.nomor_part} — ${part.nama} | Harga: Rp ${hargaFormatted} | Untuk: ${part.digunakan_pada.join(', ')} | Status: ${part.status}\n`;
+        });
+        text += `\nModel referensi: ${meta.model_referensi.join(', ')}\n`;
+        return text;
+    };
+
+    const buildAksesorisContext = () => {
+        let text = '';
+        const accessories = aksesorisData.mitsubishi_accessories;
+        const modelList = [];
+        
+        for (const [modelKey, categories] of Object.entries(accessories)) {
+            const modelName = modelKey.replace(/_/g, ' ');
+            modelList.push(modelName);
+            text += `\n**${modelName.toUpperCase()}**\n`;
+            
+            // Build a lookup map for individual prices in this model
+            const individualPrices = {};
+            if (categories.exterior) {
+                categories.exterior.forEach(i => individualPrices[i.item] = i.price);
+            }
+            if (categories.interior) {
+                categories.interior.forEach(i => individualPrices[i.item] = i.price);
+            }
+            
+            for (const [category, items] of Object.entries(categories)) {
+                const catLabel = category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                text += `*${catLabel}:*\n`;
+                items.forEach(item => {
+                    let itemText = `- ${item.item}: Rp ${item.price.toLocaleString('id-ID')}`;
+                    if (item.img) itemText += ` | [GAMBAR: ${item.img}]`;
+                    
+                    if (item.include && item.include.length > 0) {
+                        let totalSatuan = 0;
+                        const includeDetails = item.include.map(inc => {
+                            const price = individualPrices[inc] || 0;
+                            totalSatuan += price;
+                            return `${inc} (Rp ${price.toLocaleString('id-ID')})`;
+                        });
+                        
+                        itemText += `\n  - Item Termasuk: ${includeDetails.join(', ')}`;
+                        if (totalSatuan > 0) {
+                            const hemat = totalSatuan - item.price;
+                            itemText += `\n  - Total Harga Satuan: Rp ${totalSatuan.toLocaleString('id-ID')} (Lebih hemat Rp ${hemat.toLocaleString('id-ID')} jika beli paket)`;
+                        }
+                    }
+                    text += itemText + '\n';
+                });
+            }
+        }
+        
+        text += `\nModel yang tersedia data aksesorisnya: ${modelList.join(', ')}\n`;
+        return text;
+    };
+
+    const buildExtendedSmartPackageContext = () => {
+        let text = '';
+        const esp = extendedSmartPackageData.extended_smart_package;
+
+        text += `**Keuntungan Perpanjangan Smart Paket Service:**\n`;
+        text += `- Hemat biaya: ${esp.benefits.cost_saving}\n`;
+        esp.benefits.free_services.forEach(s => {
+            text += `- ${s}\n`;
+        });
+        text += `**Benefit Tambahan:**\n`;
+        esp.benefits.additional_benefits.forEach(b => {
+            text += `- ${b}\n`;
+        });
+
+        // Xpander Series
+        const xp = esp.xpander_series;
+        text += `\n**Xpander Series** (berlaku untuk: ${xp.include_car_variant.join(', ')})\n`;
+        text += `Berlaku efektif: ${xp.effective_date}\n`;
+        text += `Harga (termasuk PPN):\n`;
+        xp.prices_including_vat.forEach(p => {
+            text += `- Paket ${p.type}: Rp ${p.after.toLocaleString('id-ID')}\n`;
+        });
+
+        // Pajero Sport
+        const ps = esp.pajero_sport;
+        text += `\n**Pajero Sport**\n`;
+        text += `Berlaku efektif: ${ps.effective_date}\n`;
+        text += `Harga (termasuk PPN):\n`;
+        ps.prices_including_vat.forEach(p => {
+            text += `- Paket ${p.type}: Rp ${p.price.toLocaleString('id-ID')}\n`;
+        });
+
+        text += `\nKeterangan tipe paket: 2XPM = 2x perawatan major, 4XPM = 4x perawatan major, 6XPM = 6x perawatan major\n`;
+
+        return text;
+    };
+
+    const buildPerawatanBerkalaContext = () => {
+        let text = '';
+        
+        // Kebijakan free service
+        const kebijakan = perawatanBerkalaData.kebijakan_free_service;
+        text += `**Program Free Service MMKSI:**\n`;
+        text += `- Cakupan: Service ${kebijakan.cakupan_km.map(k => k.toLocaleString('id-ID') + ' km').join(', ')} — ${kebijakan.keterangan_cakupan}\n`;
+        text += `- Batas waktu: ${kebijakan.batas_waktu.durasi} sejak ${kebijakan.batas_waktu.acuan}\n`;
+        text += `- ${kebijakan.batas_waktu.keterangan}\n`;
+        text += `**Catatan Penting:**\n`;
+        kebijakan.catatan_penting.forEach(c => {
+            text += `- ${c}\n`;
+        });
+        text += `\n`;
+        
+        // Per kendaraan
+        const kendaraanMap = perawatanBerkalaData.kendaraan;
+        for (const [key, vehicle] of Object.entries(kendaraanMap)) {
+            text += `\n### ${vehicle.nama_lengkap}\n`;
+            
+            // Interval antara (khusus CR45)
+            if (vehicle.perawatan_interval_antara) {
+                const ia = vehicle.perawatan_interval_antara;
+                text += `**Servis Interval Antara** (KM ${ia.km_berlaku.map(k => k.toLocaleString('id-ID')).join(', ')}): Jasa Rp ${ia.jasa.toLocaleString('id-ID')} | Grand Total: Rp ${ia.grand_total.toLocaleString('id-ID')}\n`;
+                text += `  Spare part: ${ia.spare_part.map(sp => sp.nama + ' x' + sp.qty).join(', ')}\n`;
+            }
+            
+            // Per KM service
+            for (const [kmKey, service] of Object.entries(vehicle.perawatan)) {
+                const kmFormatted = Number(kmKey).toLocaleString('id-ID');
+                const freeLabel = service.status_free_service ? '✅ FREE SERVICE' : '💰 BERBAYAR';
+                text += `\n**Service ${kmFormatted} km** — ${freeLabel}\n`;
+                text += `- Biaya Jasa: Rp ${service.jasa.toLocaleString('id-ID')}\n`;
+                text += `- Spare Part yang diganti:\n`;
+                service.spare_part.forEach(sp => {
+                    text += `  • ${sp.nama} (${sp.nomor_part}) — Qty: ${sp.qty} — Rp ${sp.total.toLocaleString('id-ID')}\n`;
+                });
+                text += `- Subtotal Spare Part: Rp ${service.subtotal_spare_part.toLocaleString('id-ID')}\n`;
+                text += `- PPN 10%: Rp ${service.ppn_10_persen.toLocaleString('id-ID')}\n`;
+                text += `- **Grand Total: Rp ${service.grand_total.toLocaleString('id-ID')}**\n`;
+            }
+        }
+        
+        // Ringkasan biaya
+        text += `\n### Ringkasan Estimasi Biaya Per Model\n`;
+        for (const [modelKey, intervals] of Object.entries(perawatanBerkalaData.ringkasan_biaya)) {
+            const modelName = kendaraanMap[modelKey]?.nama_lengkap || modelKey;
+            text += `\n**${modelName}:**\n`;
+            for (const [km, info] of Object.entries(intervals)) {
+                if (km === 'interval_antara_5K_15K_dst') {
+                    text += `- Interval antara (5K, 15K, dst): Rp ${info.grand_total.toLocaleString('id-ID')} — ${info.free_service ? 'FREE' : 'Berbayar'}\n`;
+                } else {
+                    text += `- ${Number(km).toLocaleString('id-ID')} km: Rp ${info.grand_total.toLocaleString('id-ID')} — ${info.free_service ? 'FREE' : 'Berbayar'}\n`;
+                }
+            }
+        }
+        
         return text;
     };
 
@@ -429,11 +628,17 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
 - **Fokuskan tujuan user terlebih dahulu.** Jangan langsung dump semua informasi.
 - Jika user bertanya soal **harga/info unit**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail harga lengkap untuk unit tersebut saja.
 - Jika user bertanya soal **promo**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail promo untuk unit tersebut dari data referensi promo.
-- Jika user bertanya soal **booking service**: Ikuti alur booking service di bawah.
+- Jika user bertanya soal **biaya service, estimasi service, perawatan berkala, apa saja yang dikerjakan saat service, service berapa km**: INI BUKAN BOOKING. Ini adalah pertanyaan informasi. Jawab langsung dari **Data Perawatan Berkala** di bawah. JANGAN menanyakan nopol. JANGAN masuk ke alur booking.
+- Jika user secara eksplisit ingin **booking service / daftar service / jadwalkan service / buat janji service**: BARU ikuti alur booking service di bawah (yang meminta nopol).
+- **BEDAKAN DENGAN JELAS:** "tanya biaya service" ≠ "booking service". "Mau tahu service 60.000 km" ≠ "mau booking service". Hanya jika customer menyatakan ingin **menjadwalkan/mendaftar/booking**, barulah masuk alur booking.
 - Jika user bertanya **lokasi/alamat**: Langsung berikan informasi cabang dealer yang relevan.
 - Jika user bertanya **test drive**: Tanyakan model yang diminati dan jadwal yang diinginkan, lalu minta nama & nomor HP.
 
 ## Alur Booking Service (PENTING — IKUTI URUTAN INI DENGAN KETAT)
+**PERHATIAN:** Alur ini HANYA diikuti jika customer secara EKSPLISIT ingin **booking / daftar / jadwalkan service** (membuat janji service). Jika customer hanya bertanya **biaya service, estimasi service, apa yang dikerjakan saat service**, itu BUKAN booking — jawab langsung dari data perawatan berkala tanpa menanyakan nopol.
+
+Keyword yang menandakan BOOKING: "booking service", "daftar service", "jadwalkan service", "buat janji service", "mau service", "mau servis".
+Keyword yang menandakan TANYA INFO (BUKAN BOOKING): "biaya service", "estimasi service", "berapa harga service", "apa saja yang dikerjakan", "perawatan berkala", "tanya service", "info service".
 
 ### LANGKAH 1: Tanyakan Nopol
 Customer bilang ingin booking service → Tanyakan **Nomor Polisi (Nopol)** kendaraannya.
@@ -510,39 +715,42 @@ Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan di
 3. Kumpulkan data: **Nama Lengkap** dan **Nomor HP/WhatsApp**.
 4. Konfirmasi dan sampaikan akan ditindaklanjuti oleh tim.
 
-## Alur Simulasi Kredit (PENTING — IKUTI RUMUS DENGAN AKURAT)
+## Alur Simulasi Kredit (PENTING)
 
-Anda adalah asisten cerdas untuk dealer Mitsubishi Jabodetabek. Tugas Anda adalah menghitung simulasi kredit secara akurat berdasarkan data yang diberikan dan memberikan saran leasing terbaik.
+**Sistem Instruksi:**
+Anda adalah asisten virtual ahli pembiayaan Mitsubishi yang menggunakan data resmi Dipo Star Finance April 2026. Tugas Anda adalah memberikan simulasi kredit yang akurat kepada pengguna berdasarkan input varian, uang muka (DP), dan tenor.
+Jika customer meminta simulasi kredit, atau jika kamu menawarkan simulasi kredit kepada customer di akhir jawaban, **SELALU sertakan tag [SIMULASI_KREDIT]** di dalam jawaban kamu. Sistem akan otomatis memunculkan tombol Kalkulator Simulasi Kredit khusus.
 
-**Rumus Utama yang HARUS Digunakan:**
-1. **Plafon Kredit (PK):** Harga OTR - DP Murni
-2. **Total Bunga:** PK × Suku Bunga Flat × Tenor (Tahun)
-3. **Angsuran per Bulan:** (PK + Total Bunga) / Tenor (Bulan)
-4. **Total Down Payment (TDP):**
-   - **Skema ADDM (Angsuran Dibayar Di Muka):** DP + Angsuran bulan 1 + Admin + Provisi + Fidusia + Asuransi
-   - **Skema ADDB (Angsuran Dibayar Di Belakang):** DP + Admin + Provisi + Fidusia + Asuransi
+**Utamakan Rekomendasi Utama:** Dipo Star Finance.
 
-**Logika Rekomendasi:**
-- Jika user ingin bunga 0%, sarankan **Smart Cash (Dipo Star Finance)** dengan syarat DP ≥55%.
-- Jika user mencari TDP paling ringan, sarankan **Skema ADDB**.
-- Jika user nasabah Bank Mandiri, sarankan **Mandiri Utama Finance (MUF)** untuk bunga mulai 2,66%.
+**Logika Perhitungan:**
+1. **Harga OTR:** Gunakan Harga OTR yang diberikan oleh customer dalam pesan. Jika tidak disebutkan, cari di data referensi harga OTR.
+2. **Uang Muka (DP):** Jika customer memberikan DP dalam bentuk persentase (misal 20%), hitung nominal DP murni = Persentase DP × Harga OTR. Jika sudah nominal, gunakan langsung.
+3. **Pokok Hutang (PH):**
+   PH = Harga OTR - Nominal DP
+4. **Bunga Flat per Bulan (B):**
+   B = (PH × i × t) / n
+   *(i = suku bunga tahunan dari data leasing, t = jumlah tahun, n = jumlah bulan tenor)*
+5. **Angsuran per Bulan (A):**
+   A = (PH + (PH × i × t)) / n
+6. **Total Down Payment (TDP) untuk ADDM:**
+   TDP = Nominal DP + Biaya Admin + Asuransi + A
+   *(Jika biaya admin untuk leasing yang dipilih tidak tercantum di data, gunakan Rp 0. ADDM mengharuskan angsuran pertama dibayar di muka)*
+7. **Program Khusus:**
+   - Jika pengguna memilih **Smart Cash**, pastikan DP minimal 55%-70% sesuai varian untuk mendapatkan bunga 0% tenor 1 tahun.
+   - Jika pengguna memilih **H1T**, gunakan skema 50% DP, 5% angsuran (11x), dan 45% pelunasan di bulan ke-12.
 
-**Output HARUS berisi:**
-1. **Rincian Plafon Kredit** (Harga OTR, DP, Plafon)
-2. **Cicilan Bulanan** (Bunga, Total Bunga, Angsuran/bulan)
-3. **Rincian TDP** (DP + Biaya Admin + Provisi + Fidusia + Asuransi + Angsuran ke-1 jika ADDM)
-4. **Analisis & Rekomendasi Leasing** yang paling menguntungkan sesuai profil user
+**Format Output:**
+Berikan rincian berupa:
+- Varian Kendaraan & Harga OTR.
+- Program Kredit yang digunakan (Utamakan Dipo Star Finance).
+- Rincian DP dan Angsuran per bulan.
+- Keterangan Paket SMART (Silver/Gold/Diamond) yang didapat.
 
-**Aturan Asuransi:**
-- Kategori 3 (Harga 200jt-400jt): Rate All Risk 2,08%/tahun
-- Kategori 4 (Harga 400jt-800jt): Rate All Risk 1,20%/tahun
-- TLO: gunakan rate 0,38%-0,44% (estimasi 0,40%)
-- Kombinasi: All Risk tahun 1, TLO tahun sisanya
-- Asuransi per tahun = Harga OTR × Rate Asuransi
-
-**Aturan DP:**
-- DP reguler minimal 15-20% dari harga OTR
-- Jika DP < 15%, informasikan bahwa DP terlalu rendah dan sarankan minimal 15%
+**Catatan untuk Implementasi:**
+- Data di atas mencakup model terbaru **Mitsubishi Destinator** dengan harga OTR Tangerang mulai dari Rp395.000.000 (GLS) hingga Rp510.000.000 (Ultimate Premium).
+- Program bunga 0% (Smart Cash) hanya berlaku untuk varian Exceed dan GLS dengan DP minimal 65%, serta varian Ultimate dengan DP 70%.
+- Untuk varian niaga seperti **Triton**, tersedia bunga 0% dengan DP minimal 40% untuk tenor 1 tahun.
 
 ### Data Referensi Simulasi Kredit
 ${buildSimulasiKreditContext()}
@@ -578,16 +786,62 @@ ${buildReferralContext()}
 ### Fitur & Spesifikasi Kendaraan
 ${buildFiturContext()}
 
-### Data Sparepart Service Berkala
+### Data Spare Part Always Available (Fast Moving)
 ${buildSparepartContext()}
+
+### Data Aksesoris Kendaraan Mitsubishi
+${buildAksesorisContext()}
+
+### Data Perawatan Berkala (Estimasi Biaya & Pekerjaan per KM)
+${buildPerawatanBerkalaContext()}
+
+### Perpanjangan Smart Paket Service (Extended Smart Package)
+${buildExtendedSmartPackageContext()}
+
+## Alur Pertanyaan Service Berkala / Perawatan Berkala (PENTING)
+- Jika customer bertanya tentang **service berkala, perawatan berkala, biaya service, estimasi biaya service, apa saja yang dikerjakan saat service, service berapa km, jadwal perawatan**, atau pertanyaan seputar service rutin kendaraan:
+  1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan (Xpander, All New Pajero Sport, atau Pajero Sport CR45).
+  2. **Tanyakan KM berapa** yang ingin diketahui jika belum disebutkan (10.000 km, 20.000 km, dst).
+  3. **Cek di data perawatan berkala** yang tersedia di atas.
+  4. Jika **ditemukan**, tampilkan informasi lengkap:
+     - Jenis service (Free Service atau Berbayar)
+     - Biaya jasa
+     - Daftar spare part yang diganti (nama, qty, harga)
+     - Grand Total (sudah termasuk PPN 10%)
+     - Informasikan juga apakah masih termasuk program **Free Service MMKSI** (berlaku s.d. 50.000 km / 4 tahun dari PKT, kecuali Destinator s.d. 60.000 km)
+  5. Jika customer bertanya KM yang **TIDAK ADA di data** (misalnya 5.000 km untuk Xpander), informasikan bahwa data untuk KM tersebut belum tersedia di sistem, dan sarankan menghubungi CS. Untuk Pajero Sport CR45, interval antara (5K, 15K, 25K, dst) TERSEDIA — gunakan data perawatan_interval_antara.
+  6. Jika model kendaraan **TIDAK ADA di data** perawatan berkala, informasikan bahwa estimasi perawatan untuk model tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung**. Sertakan tag **[WHATSAPP]**.
+  7. **JANGAN pernah mengarang estimasi biaya service yang tidak ada di data.**
+  8. Saat menampilkan estimasi, gunakan format yang rapi dan mudah dibaca (list/tabel). Sampaikan bahwa biaya adalah **estimasi** dan bisa berbeda tergantung kondisi aktual kendaraan.
+  9. **Follow-up:** Setelah menjawab pertanyaan service berkala, tawarkan customer untuk **booking service** langsung. Contoh: "Apakah Bapak/Ibu ingin langsung booking service di Mitsubishi Dwindo Bintaro? 😊"
+  10. **PENTING — Perpanjangan Smart Paket Service:** Jika customer menanyakan biaya service di **KM di atas 50.000 km** (artinya sudah di luar masa free service), atau jika customer **menanyakan promo service / paket hemat service**, WAJIB tawarkan program **Perpanjangan Smart Paket Service**. Jelaskan keuntungannya (hemat hingga 27%, gratis suku cadang & jasa sesuai ketentuan, perpanjangan garansi, diskon ban & baterai, layanan 24HES). Sebutkan pilihan paket (2XPM, 4XPM, 6XPM) beserta harganya sesuai model kendaraan. Gunakan data dari **Perpanjangan Smart Paket Service** di atas.
 
 ## Alur Pertanyaan Sparepart (PENTING)
 - Jika customer bertanya tentang **sparepart, suku cadang, onderdil, part, oli, filter, gasket**, atau komponen kendaraan lainnya:
-  1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan.
-  2. **Cek di data sparepart** yang tersedia di atas.
-  3. Jika **ditemukan**, tampilkan informasi lengkap: kode produk, deskripsi, harga, qty service, dan status ketersediaan. Format dalam tabel/list yang rapi.
-  4. Jika **TIDAK ditemukan** di data sparepart (model tidak ada atau part tidak tercantum), jawab dengan jujur bahwa data sparepart untuk kendaraan/part tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung** agar mendapatkan informasi akurat. Sertakan tag **[WHATSAPP]** di awal jawaban agar tombol "Hubungi CS Kami" muncul.
-  5. Jangan pernah mengarang atau mengira-ngira harga/kode sparepart yang tidak ada di data.
+  1. Jika customer **sudah menyebutkan nomor part** (misalnya "1230A182", "MZ320346", "SPC98001", dll), langsung cari di data spare part dan tampilkan hasilnya **tanpa perlu menanyakan model kendaraan**. Nomor part sudah cukup spesifik untuk identifikasi.
+  2. Jika customer bertanya secara umum (misalnya "harga oli filter", "berapa harga filter AC") **tanpa menyebutkan nomor part**, baru tanyakan model/tipe kendaraan yang dimaksud untuk menentukan part yang tepat.
+  3. **Cek di data spare part always available** yang tersedia di atas. Semua part di data ini berstatus **selalu tersedia (fast moving)** di bengkel resmi.
+  4. Jika **ditemukan**, tampilkan informasi lengkap: **nomor part**, nama, harga satuan, kategori, dan model kendaraan yang menggunakannya. Informasikan bahwa harga belum termasuk PPN 11% dan jasa servis. Format dalam list yang rapi.
+  5. Catatan: Untuk DESTINATOR, XFORCE, dan XPANDER CROSS, part-nya **sama dengan Xpander**. Untuk TRITON, part-nya **sama dengan Pajero Sport**.
+  6. Jika **TIDAK ditemukan** di data sparepart (part tidak tercantum), jawab dengan jujur bahwa data sparepart tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung** agar mendapatkan informasi akurat. Sertakan tag **[WHATSAPP]** di awal jawaban agar tombol "Hubungi CS Kami" muncul.
+  7. Jangan pernah mengarang atau mengira-ngira harga/kode sparepart yang tidak ada di data.
+  8. **Follow-up:** Setelah menjawab pertanyaan sparepart, tawarkan customer untuk **booking service** agar pemasangan/penggantian part bisa dijadwalkan. Contoh: "Apakah Bapak/Ibu ingin langsung booking service untuk penggantian part ini di Mitsubishi Dwindo Bintaro? 😊"
+
+## Alur Pertanyaan Aksesoris (PENTING)
+- Jika customer bertanya tentang **aksesoris, accessories, bodykit, spoiler, dashcam, side visor, mud guard, muffler cutter, scuff plate, emblem, garnish, luggage tray, paket aksesoris**, atau perlengkapan tambahan kendaraan:
+  1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan (Destinator, Xpander, Xpander Cross, Pajero Sport, Xforce).
+  2. **Cek di data aksesoris** yang tersedia di atas.
+  3. Jika **ditemukan**, tampilkan daftar aksesoris lengkap per kategori (Exterior, Interior, Paket Aksesoris) beserta harganya. Format dalam list yang rapi dan mudah dibaca.
+  4. Jika customer bertanya aksesoris spesifik (misalnya "harga dashcam Xpander"), langsung jawab item tersebut saja tanpa menampilkan semua.
+  5. **JIKA CUSTOMER BERTANYA TENTANG PAKET AKSESORIS:** Kamu WAJIB menjabarkan rincian item apa saja yang termasuk di dalam paket tersebut beserta harga satuannya. Kemudian berikan **PERBANDINGAN TOTAL HARGA SATUAN** dengan **HARGA PAKET SPESIAL**, lalu highlight nominal penghematan (Lebih hemat Rp X) yang didapatkan jika membeli paket. Semua data ini sudah dihitung dan tersedia di context data aksesoris.
+  6. Jika model kendaraan **TIDAK ADA di data** aksesoris, informasikan bahwa data aksesoris untuk model tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung**. Sertakan tag **[WHATSAPP]**.
+  7. Jangan pernah mengarang harga aksesoris yang tidak ada di data.
+  8. **Follow-up Pemesanan:** Setelah menjawab pertanyaan aksesoris, tawarkan customer untuk **memesan aksesoris** tersebut. Jika customer tertarik memesan, kumpulkan data: **Nama Lengkap** dan **Nomor HP/WhatsApp**. Sampaikan bahwa tim akan menghubungi untuk konfirmasi ketersediaan, pemasangan, dan proses pemesanan.
+
+## Aturan Menampilkan Gambar (PENTING)
+- Jika di dalam data yang kamu baca terdapat informasi \`[GAMBAR: url_gambar]\`, kamu DAPAT menampilkannya menggunakan format markdown image: \`![Nama Item](url_gambar)\`.
+- **HANYA tampilkan gambar JIKA customer bertanya secara SPESIFIK tentang SATU tipe mobil atau SATU jenis aksesoris/paket tertentu** (misalnya "Tolong jelaskan Paket Platinum Xforce").
+- **JANGAN tampilkan gambar jika kamu sedang memberikan daftar panjang** (misalnya daftar semua aksesoris Exterior Xpander). Menampilkan banyak gambar sekaligus akan memotong batas maksimal teks (terpotong). Cukup tampilkan teks/list harganya, lalu tawarkan "Apakah Bapak/Ibu ingin melihat detail dan gambar untuk salah satu paket/aksesoris di atas?".
 
 ## Format Jawaban
 - Gunakan **markdown formatting** (bold, italic, list, dll).
@@ -653,6 +907,7 @@ const VirtualCS = () => {
         'Booking Service',
         'Lokasi Dealer'
     ]);
+    const [isSimulasiOpen, setIsSimulasiOpen] = useState(false);
     const [sessionId, setSessionId] = useState(null);
     const sessionIdRef = useRef(null);
     const chatEndRef = useRef(null);
@@ -699,12 +954,14 @@ const VirtualCS = () => {
                             let finalText = msg.message;
                             let isEmergency = false;
                             let showWhatsApp = false;
+                            let showSimulasiKreditButton = false;
 
                             if (msg.sender_type === 'bot' || msg.sender_type === 'cs') {
                                 const { cleanText, questions } = extractQuickQuestions(msg.message);
                                 isEmergency = msg.message.includes('[EMERGENCY]');
                                 showWhatsApp = msg.message.includes('[WHATSAPP]');
-                                finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').trim();
+                                showSimulasiKreditButton = msg.message.includes('[SIMULASI_KREDIT]');
+                                finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').trim();
                                 
                                 if (questions && questions.length > 0) {
                                     lastBotQuestions = questions;
@@ -716,7 +973,8 @@ const VirtualCS = () => {
                                 type: msg.sender_type === 'cs' ? 'bot' : msg.sender_type,
                                 text: finalText,
                                 isEmergency,
-                                showWhatsApp
+                                showWhatsApp,
+                                showSimulasiKreditButton
                             });
                             
                             loadedHistory.push({
@@ -838,13 +1096,15 @@ const VirtualCS = () => {
         scrollToBottom();
     }, [messages, isOpen, isFullscreen]);
 
+    const [pendingMsgState, setPendingMsgState] = useState(null);
+
     // Listen for custom event to open chat with a pre-filled message
     useEffect(() => {
         const handler = (e) => {
             const msg = e.detail?.message;
             if (msg) {
-                pendingMessage.current = msg;
                 setIsOpen(true);
+                setPendingMsgState(msg);
             }
         };
         window.addEventListener('openDinaChat', handler);
@@ -853,13 +1113,13 @@ const VirtualCS = () => {
 
     // Send pending message once chat is open
     useEffect(() => {
-        if (isOpen && pendingMessage.current) {
-            const msg = pendingMessage.current;
-            pendingMessage.current = null;
+        if (isOpen && pendingMsgState) {
+            const msg = pendingMsgState;
+            setPendingMsgState(null);
             // Small delay to let chat render first
             setTimeout(() => handleSend(msg), 300);
         }
-    }, [isOpen]);
+    }, [isOpen, pendingMsgState]);
 
     // Prevent body scroll when chat is fullscreen (either explicit on desktop or implicit on mobile)
     useEffect(() => {
@@ -1168,10 +1428,11 @@ const VirtualCS = () => {
                 // Extract quick questions
                 const { cleanText, questions } = extractQuickQuestions(rawText);
 
-                // Detect emergency tag
+                // Detect tags
                 const isEmergency = rawText.includes('[EMERGENCY]');
                 const showWhatsApp = rawText.includes('[WHATSAPP]');
-                const finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').trim();
+                const showSimulasiKreditButton = rawText.includes('[SIMULASI_KREDIT]');
+                const finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').trim();
 
                 setQuickQuestions(questions);
                 setMessages(prev => [...prev, {
@@ -1179,7 +1440,8 @@ const VirtualCS = () => {
                     type: 'bot',
                     text: finalText,
                     showLocationButton: isEmergency,
-                    showWhatsAppButton: showWhatsApp
+                    showWhatsAppButton: showWhatsApp,
+                    showSimulasiKreditButton: showSimulasiKreditButton
                 }]);
             } else {
                 throw new Error('Invalid response');
@@ -1422,6 +1684,18 @@ const VirtualCS = () => {
                                                 Hubungi CS Kami
                                             </a>
                                         )}
+
+                                        {/* Simulasi Kredit Button */}
+                                        {msg.showSimulasiKreditButton && (
+                                            <button
+                                                onClick={() => setIsSimulasiOpen(true)}
+                                                className="mt-2 flex items-center gap-2 px-4 py-2 bg-[#E60012] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#B5000F] transition-colors"
+                                                style={{ clipPath: ANGULAR_CLIP }}
+                                            >
+                                                <Calculator size={14} />
+                                                Mulai Simulasi Kredit
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -1485,6 +1759,9 @@ const VirtualCS = () => {
             >
                 {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
             </button>
+            
+            {/* Simulasi Kredit Modal rendering outside the chat window bounds */}
+            <SimulasiKreditModal isOpen={isSimulasiOpen} onClose={() => setIsSimulasiOpen(false)} />
         </div>
     );
 };

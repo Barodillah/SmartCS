@@ -1,0 +1,502 @@
+{
+    "mitsubishi_accessories": {
+        "Destinator": {
+            "exterior": [
+                {
+                    "item": "Engine Hood Emblem",
+                    "price": 990000,
+                    "img": "/media/aksesoris/Destinator/Engine-Hood-Emblem.png"
+                },
+                {
+                    "item": "Front Corner Extension Set",
+                    "price": 3550000,
+                    "img": "/media/aksesoris/Destinator/Front-Corner-Extension-Set.png"
+                },
+                {
+                    "item": "Rear Corner Extension Set",
+                    "price": 4170000,
+                    "img": "/media/aksesoris/Destinator/Rear-Corner-Extension-Set.png"
+                },
+                {
+                    "item": "Tailgate Spoiler Set",
+                    "price": 2520000,
+                    "img": "/media/aksesoris/Destinator/Tailgate-Spoiler-Set.png"
+                },
+                {
+                    "item": "Scuff Plate with Illumination Light",
+                    "price": 2030000,
+                    "img": "/media/aksesoris/Destinator/Scuff-Plate-with-Illumination-Light.jpg"
+                },
+                {
+                    "item": "Side Visor",
+                    "price": 705000,
+                    "img": "/media/aksesoris/Destinator/Side-Visor.webp"
+                }
+            ],
+            "interior": [
+                {
+                    "item": "Luggage Tray",
+                    "price": 1480000,
+                    "img": "/media/aksesoris/Destinator/Luggage-Tray.jpg"
+                },
+                {
+                    "item": "Dashcam",
+                    "price": 4520000,
+                    "img": "/media/aksesoris/Destinator/Dashcam.jpg"
+                },
+                {
+                    "item": "Luggage Scuff Plate",
+                    "price": 3790000,
+                    "img": "/media/aksesoris/Destinator/Luggage-Scuff-Plate.webp"
+                },
+                {
+                    "item": "Console Box Multitray Storage",
+                    "price": 141000,
+                    "img": "/media/aksesoris/Destinator/Console-Box-Multitray-Storage.webp"
+                }
+            ],
+            "paket_aksesoris": [
+                {
+                    "item": "Aero Package",
+                    "price": 9710000,
+                    "img": "/media/aksesoris/Destinator/Aero-Package.png",
+                    "include": [
+                        "Tailgate Spoiler",
+                        "Front Corner Extension Set",
+                        "Rear Corner Extension Set"
+                    ]
+                },
+                {
+                    "item": "Aero Plus Package",
+                    "price": 13270000,
+                    "img": "/media/aksesoris/Destinator/Aero-Plus-Package.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Tailgate Spoiler",
+                        "Front Corner Extension Set",
+                        "Rear Corner Extension Set",
+                        "Scuff Plate with Illumination Light",
+                        "Luggage Tray"
+                    ]
+                },
+                {
+                    "item": "Basic Plus Package",
+                    "price": 5420000,
+                    "img": "/media/aksesoris/Destinator/Basic-Plus-Package.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Luggage Tray",
+                        "Scuff Plate with Illumination Light"
+                    ]
+                },
+                {
+                    "item": "Platinum Plus Package",
+                    "price": 18430000,
+                    "img": "/media/aksesoris/Destinator/Platinum-Plus-Package.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Tailgate Spoiler",
+                        "Front Corner Extension Set",
+                        "Rear Corner Extension Set",
+                        "Scuff Plate with Illumination Light",
+                        "Luggage Tray",
+                        "Dashcam"
+                    ]
+                },
+                {
+                    "item": "Basic Package",
+                    "price": 4280000,
+                    "img": "/media/aksesoris/Destinator/Basic-Package.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Luggage Tray",
+                        "Scuff Plate with Illumination Light"
+                    ]
+                },
+                {
+                    "item": "Platinum Package Set",
+                    "price": 17330000,
+                    "img": "/media/aksesoris/Destinator/Platinum-Package-Set.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Tailgate Spoiler",
+                        "Front Corner Extension Set",
+                        "Rear Corner Extension Set",
+                        "Scuff Plate with Illumination Light",
+                        "Luggage Tray"
+                    ]
+                }
+            ]
+        },
+        "Xpander": {
+            "exterior": [
+                {
+                    "item": "Side Visor",
+                    "price": 630000,
+                    "img": "/media/aksesoris/Xpander/Side-Visor.jpg"
+                },
+                {
+                    "item": "Muffler Cutter Stainless",
+                    "price": 180000,
+                    "img": "/media/aksesoris/Xpander/Muffler-Cutter-Stainless.png"
+                },
+                {
+                    "item": "Side Body Moulding",
+                    "price": 600000,
+                    "img": "/media/aksesoris/Xpander/Side-Body-Moulding.jpg"
+                },
+                {
+                    "item": "Fuel Lid Garnish",
+                    "price": 230000,
+                    "img": "/media/aksesoris/Xpander/Fuel-Lid-Garnish.png"
+                },
+                {
+                    "item": "Engine Hood Emblem",
+                    "price": 300000,
+                    "img": "/media/aksesoris/Xpander/Engine-Hood-Emblem.jpg"
+                },
+                {
+                    "item": "Tailgate Spoiler",
+                    "price": 1310000,
+                    "img": "/media/aksesoris/Xpander/Tailgate-Spoiler.jpg"
+                },
+                {
+                    "item": "Wheel Lock Nut",
+                    "price": 530000,
+                    "img": "/media/aksesoris/Xpander/Wheel-Lock-Nut.jpg"
+                }
+            ],
+            "interior": [
+                {
+                    "item": "Luggage Mat",
+                    "price": 300000,
+                    "img": "/media/aksesoris/Xpander/Luggage-Mat.jpg"
+                },
+                {
+                    "item": "Rubber Mat",
+                    "price": 460000,
+                    "img": "/media/aksesoris/Xpander/Rubber-Mat.jpg"
+                },
+                {
+                    "item": "Scuff Plate",
+                    "price": 360000,
+                    "img": "/media/aksesoris/Xpander/Scuff-Plate.png"
+                },
+                {
+                    "item": "Dashcam Blackvue 1 Channel (Parking Mode)",
+                    "price": 4520000,
+                    "img": "/media/aksesoris/Xpander/Dashcam-Blackvue-1-Channel-(Parking Mode).jpg"
+                }
+            ],
+            "paket_aksesoris": [
+                {
+                    "item": "Safety Package",
+                    "price": 4560000,
+                    "img": "/media/aksesoris/Xpander/Safety-Package.webp",
+                    "include": [
+                        "Wheel Lock Nut",
+                        "Dashcam Blackvue 1 Channel (Parking Mode)"
+                    ]
+                },
+                {
+                    "item": "Basic Package",
+                    "price": 1060000,
+                    "img": "/media/aksesoris/Xpander/Basic-Package.jpg",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Fuel Lid Garnish",
+                        "Side Visor",
+                        "Muffler Cutter Stainless"
+                    ]
+                },
+                {
+                    "item": "Interior Package",
+                    "price": 990000,
+                    "img": "/media/aksesoris/Xpander/Interior-Package.jpg",
+                    "include": [
+                        "Rubber Mat",
+                        "Scuff Plate",
+                        "Luggage Mat"
+                    ]
+                }
+            ]
+        },
+        "Xpander_Cross": {
+            "exterior": [
+                {
+                    "item": "Engine Hood Emblem",
+                    "price": 471000,
+                    "img": "/media/aksesoris/Xpander-Cross/Engine-Hood-Emblem.jpg"
+                },
+                {
+                    "item": "Mud Guard",
+                    "price": 840000,
+                    "img": "/media/aksesoris/Xpander-Cross/Mud-Guard.jpg"
+                },
+                {
+                    "item": "Side Visor",
+                    "price": 630000,
+                    "img": "/media/aksesoris/Xpander-Cross/Side-Visor.jpg"
+                },
+                {
+                    "item": "Fuel Lid Garnish",
+                    "price": 240000,
+                    "img": "/media/aksesoris/Xpander-Cross/Fuel-Lid-Garnish.jpg"
+                },
+                {
+                    "item": "Muffler Cutter Stainless",
+                    "price": 180000,
+                    "img": "/media/aksesoris/Xpander-Cross/Muffler-Cutter-Stainless.jpg"
+                },
+                {
+                    "item": "Tailgate Spoiler",
+                    "price": 1310000,
+                    "img": "/media/aksesoris/Xpander-Cross/Tailgate-Spoiler.jpg"
+                },
+                {
+                    "item": "Wheel Lock Nut",
+                    "price": 530000,
+                    "img": "/media/aksesoris/Xpander-Cross/Wheel-Lock-Nut.jpg"
+                }
+            ],
+            "interior": [
+                {
+                    "item": "Scuff Plate",
+                    "price": 360000,
+                    "img": "/media/aksesoris/Xpander-Cross/Scuff-Plate.jpg"
+                },
+                {
+                    "item": "Dashcam Blackvue 1 Channel (Parking Mode)",
+                    "price": 4520000,
+                    "img": "/media/aksesoris/Xpander-Cross/Dashcam-Blackvue-1-Channel-(Parking Mode).jpg"
+                }
+            ],
+            "paket_aksesoris": [
+                {
+                    "item": "Safety Package",
+                    "price": 4560000,
+                    "img": "/media/aksesoris/Xpander-Cross/Safety-Package.webp",
+                    "include": [
+                        "Wheel Lock Nut",
+                        "Dashcam Blackvue 1 Channel (Parking Mode)"
+                    ]
+                },
+                {
+                    "item": "Urban Package",
+                    "price": 1544000,
+                    "img": "/media/aksesoris/Xpander-Cross/Urban-Package.jpg",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Fuel Lid Garnish",
+                        "Side Visor",
+                        "Scuff Plate"
+                    ]
+                }
+            ]
+        },
+        "Pajero_Sport": {
+            "exterior": [
+                {
+                    "item": "Hood Emblem",
+                    "price": 630000,
+                    "img": "/media/aksesoris/Pajero-Sport/Hood-Emblem.png"
+                },
+                {
+                    "item": "Side Window Deflector",
+                    "price": 1630000,
+                    "img": "/media/aksesoris/Pajero-Sport/Side-Window-Deflector.png"
+                },
+                {
+                    "item": "Side Step Garnish",
+                    "price": 7250000,
+                    "img": "/media/aksesoris/Pajero-Sport/Side-Step-Garnish.png"
+                },
+                {
+                    "item": "Exhaust Finisher",
+                    "price": 570000,
+                    "img": "/media/aksesoris/Pajero-Sport/Exhaust-Finisher.png"
+                },
+                {
+                    "item": "Wheel Lock Nut",
+                    "price": 530000,
+                    "img": "/media/aksesoris/Pajero-Sport/Wheel-Lock-Nut.jpg"
+                },
+                {
+                    "item": "Front Airdam",
+                    "price": 8820000,
+                    "img": "/media/aksesoris/Pajero-Sport/Front-Airdam.png"
+                },
+                {
+                    "item": "Rear Airdam",
+                    "price": 8720000,
+                    "img": "/media/aksesoris/Pajero-Sport/Rear-Airdam.png"
+                }
+            ],
+            "interior": [
+                {
+                    "item": "Dashboard Camera",
+                    "price": 4520000,
+                    "img": "/media/aksesoris/Pajero-Sport/Dashboard-Camera.jpg"
+                }
+            ],
+            "paket_aksesoris": [
+                {
+                    "item": "Aero Plus Package",
+                    "price": 23520000,
+                    "img": "/media/aksesoris/Pajero-Sport/Aero-Plus-Package.png",
+                    "include": [
+                        "Side Window Deflector",
+                        "Exhaust Finisher",
+                        "Hood Emblem",
+                        "Front Airdam",
+                        "Side Step Garnish",
+                        "Rear Airdam"
+                    ]
+                },
+                {
+                    "item": "Basic Package",
+                    "price": 2480000,
+                    "img": "/media/aksesoris/Pajero-Sport/Basic-Package.png",
+                    "include": [
+                        "Side Window Deflector",
+                        "Exhaust Finisher",
+                        "Hood Emblem"
+                    ]
+                },
+                {
+                    "item": "Aero Package",
+                    "price": 21900000,
+                    "img": "/media/aksesoris/Pajero-Sport/Aero-Package.png",
+                    "include": [
+                        "Front Airdam",
+                        "Side Step Garnish",
+                        "Rear Airdam"
+                    ]
+                }
+            ]
+        },
+        "Xforce": {
+            "exterior": [
+                {
+                    "item": "Engine Hood Emblem",
+                    "price": 560000,
+                    "img": "/media/aksesoris/Xforce/Engine-Hood-Emblem.jpg"
+                },
+                {
+                    "item": "Front Under Garnish",
+                    "price": 2910000,
+                    "img": "/media/aksesoris/Xforce/Front-Under-Garnish.jpg"
+                },
+                {
+                    "item": "Rear Under Garnish",
+                    "price": 2800000,
+                    "img": "/media/aksesoris/Xforce/Rear-Under-Garnish.jpg"
+                },
+                {
+                    "item": "Side Door Garnish",
+                    "price": 3160000,
+                    "img": "/media/aksesoris/Xforce/Side-Door-Garnish.jpg"
+                },
+                {
+                    "item": "Tailgate Spoiler",
+                    "price": 1580000,
+                    "img": "/media/aksesoris/Xforce/Tailgate-Spoiler.jpg"
+                },
+                {
+                    "item": "Wheel Lock Nut",
+                    "price": 530000,
+                    "img": "/media/aksesoris/Xforce/Wheel-Lock-Nut.jpg"
+                },
+                {
+                    "item": "Side Visor",
+                    "price": 900000,
+                    "img": "/media/aksesoris/Xforce/Side-Visor.jpg"
+                },
+                {
+                    "item": "Mud Guard Set",
+                    "price": 780000,
+                    "img": "/media/aksesoris/Xforce/Mud-Guard-Set.jpg"
+                }
+            ],
+            "interior": [
+                {
+                    "item": "Luggage Tray",
+                    "price": 670000,
+                    "img": "/media/aksesoris/Xforce/Luggage-Tray.jpg"
+                },
+                {
+                    "item": "Dashcam Blackvue 1 Channel (Parking Mode)",
+                    "price": 4520000,
+                    "img": "/media/aksesoris/Xforce/Dashcam-Blackvue-1-Channel-(Parking Mode).jpg"
+                },
+                {
+                    "item": "Console Box Multitray Storage",
+                    "price": 141000,
+                    "img": "/media/aksesoris/Xforce/Console-Box-Multitray-Storage.webp"
+                }
+            ],
+            "paket_aksesoris": [
+                {
+                    "item": "PAKET PLATINUM",
+                    "price": 14290000,
+                    "img": "/media/aksesoris/Xforce/PAKET-PLATINUM.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Front Under Garnish",
+                        "Rear Under Garnish",
+                        "Side Door Garnish",
+                        "Tailgate Spoiler",
+                        "Luggage Tray",
+                        "Dashcam Blackvue 1 Channel (Parking Mode)"
+                    ]
+                },
+                {
+                    "item": "PAKET STYLISH",
+                    "price": 9570000,
+                    "img": "/media/aksesoris/Xforce/PAKET-STYLISH.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Front Under Garnish",
+                        "Rear Under Garnish",
+                        "Side Door Garnish",
+                        "Tailgate Spoiler"
+                    ]
+                },
+                {
+                    "item": "PAKET SAFETY",
+                    "price": 6020000,
+                    "img": "/media/aksesoris/Xforce/PAKET-SAFETY.png",
+                    "include": [
+                        "Dashcam Blackvue 1 Channel (Parking Mode)",
+                        "Luggage Tray",
+                        "Wheel Lock Nut",
+                        "Mud Guard Set"
+                    ]
+                },
+                {
+                    "item": "PAKET ACTIVE",
+                    "price": 3180000,
+                    "img": "/media/aksesoris/Xforce/PAKET-ACTIVE.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Tailgate Spoiler",
+                        "Luggage Tray",
+                        "Mud Guard Set"
+                    ]
+                },
+                {
+                    "item": "PAKET ULTIMATE DS",
+                    "price": 8750000,
+                    "img": "/media/aksesoris/Xforce/PAKET-ULTIMATE-DS.png",
+                    "include": [
+                        "Engine Hood Emblem",
+                        "Front Under Garnish",
+                        "Rear Under Garnish",
+                        "Side Door Garnish",
+                        "Luggage Tray"
+                    ]
+                }
+            ]
+        }
+    }
+}

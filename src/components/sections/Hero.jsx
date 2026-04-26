@@ -8,7 +8,7 @@ const Hero = () => {
             {/* Background Overlay */}
             <div className="absolute inset-0 z-0">
                 <img
-                    src="https://storage.googleapis.com/gcmkscsp001/public/media-assets/89ed57aa-c04e-4322-b970-c1192ffa4d07/conversions/hero-lifes-adventure7ea9d0bf-optimized.webp?GoogleAccessId=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com&Expires=1777438231&Signature=kxitqA35SF1CzDdo0myC%2BWde%2FsJMTDZOy9DVPIf9XNWb3ghKiH0%2BJuHptRhAdBMT6nf%2BNSYfeDQ4%2Bzs32PnQ3sm9tuh%2B84dNe%2FBvTzq75ut9FmVKEy7V7rY1ZoN3Io4WWliWfs%2FhpFlSMIn2uAnPHp25frSkIrzqTBV0FmAXSsU%2FJywpcPbgHnIUXAoRxj0BtC5oTiHg11vwr2y46os30vHyUCi3DY%2B8fLGJu%2BzeeS5JB%2Bu17DnUc0LwEf0vxtnVrTH0zNMJEcxe9lj9aXioIvtlctTYh3xMh%2FgkNO1LlIhICNVqJKLxsAmiAA0QvCnJ2zJGfnWx5PbMEwQvlO0CKw%3D%3D"
+                    src="/media/hero.webp"
                     alt="Mitsubishi Hero"
                     className="w-full h-full object-cover opacity-40"
                 />

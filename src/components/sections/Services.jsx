@@ -10,7 +10,7 @@ const servicesData = [
         id: "01",
         title: "Booking Service",
         desc: "Atur jadwal perawatan rutin kendaraan Anda tanpa antre.",
-        img: "https://www.mitsubishi-motors.co.id/modules/aftersales/perawatan-kendaraan.webp",
+        img: "/media/services/booking-service.webp",
         icon: Calendar,
         cta: "Booking Sekarang"
     },
@@ -18,7 +18,7 @@ const servicesData = [
         id: "02",
         title: "Sparepart",
         desc: "Cek ketersediaan suku cadang asli Mitsubishi Motors.",
-        img: "https://www.mitsubishi-motors.co.id/modules/aftersales/suku-cadang.webp",
+        img: "/media/services/sparepart.webp",
         icon: Settings,
         cta: "Cek Suku Cadang"
     },
@@ -26,7 +26,7 @@ const servicesData = [
         id: "03",
         title: "Promo",
         desc: "Informasi program penjualan dan cicilan paling update.",
-        img: "https://storage.googleapis.com/gcmkscsp001/public/media-assets/142e1dda-587a-46bb-8229-dab465db0030/new-xpander-banner-desktop.jpg?GoogleAccessId=bsidevops%40gp-prod-mmksi-web-01.iam.gserviceaccount.com&Expires=1777439768&Signature=E3JWl6cH76aXsnqqQD5H7LkgsLTOIZC5QEPopvt2binfCduj8F3McT6zoQrxI0iIqFffIXTXQY2yDevzmVTix6pYLO4gXNE6LLgGgZNikvv1mnxAnFcf769Xj9bEniHGOpmWkWWrNmht7B7SO1Km6kkoBuMETdsneX5%2BL2wdE6Y2jTt3vpcOd%2BPYws77xzhHg6BiGx8CVRrZeS038JpYPyJaHqrW5YngYmcwdoxtOi1SS9IXg6o%2FEDfRyFI5gMeQBNydYx%2FN0CllZ9x80jhxvQ1o%2BZtntpwOWBEPTPMZtFosExhzePmVcsXp7eLOrf09in%2F3Kq3OYaUJyW5X1SYlJw%3D%3D",
+        img: "/media/services/promo.jpg",
         icon: Tag,
         cta: "Lihat Promo"
     },
@@ -34,7 +34,7 @@ const servicesData = [
         id: "04",
         title: "Emergensi",
         desc: "Layanan bantuan datang kelokasi Anda untuk kendala di perjalanan.",
-        img: "https://www.mitsubishi-motors.co.id/images/banner3.webp",
+        img: "/media/services/emergency.webp",
         icon: Phone,
         cta: "Hubungi Bantuan"
     },
@@ -42,7 +42,7 @@ const servicesData = [
         id: "05",
         title: "Aksesoris",
         desc: "Temukan berbagai aksesoris untuk menunjang kenyamanan berkendara.",
-        img: "https://www.mitsubishi-motors.co.id/images/company/layanan-kami-aksesoris.webp",
+        img: "/media/services/aksesoris.webp",
         icon: Settings,
         cta: "Temukan Aksesoris"
     },
@@ -50,7 +50,7 @@ const servicesData = [
         id: "06",
         title: "Test Drive",
         desc: "Rasakan pengalaman berkendara dengan kendaraan Mitsubishi pilihan.",
-        img: "https://i.pinimg.com/1200x/6b/99/8d/6b998d00f36a0bef771ba1d39f024c96.jpg",
+        img: "/media/services/test-drive.jpg",
         icon: Car,
         cta: "Coba Sekarang"
     },
@@ -58,7 +58,7 @@ const servicesData = [
         id: "07",
         title: "Simulasi Kredit",
         desc: "Hitung estimasi cicilan dan DP kendaraan Mitsubishi impian Anda.",
-        img: "https://www.mitsubishi-motors.co.id/images/cars/pajero/promo-grid2.png",
+        img: "/media/services/simulasi-kredit.png",
         icon: Calculator,
         cta: "Hitung Simulasi"
     },
@@ -101,16 +101,29 @@ const Services = () => {
                                                 {service.desc}
                                             </p>
                                         </div>
-                                        <div className="flex-shrink-0">
-                                            <AngularButton variant="primary" className="!px-10 !py-4 !text-[14px]" onClick={() => {
-                                                if (service.title === 'Simulasi Kredit') {
-                                                    setIsSimulasiOpen(true);
-                                                } else {
-                                                    window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Saya tertarik dengan layanan ${service.title}` } }));
-                                                }
-                                            }}>
-                                                {service.cta}
-                                            </AngularButton>
+                                        <div className="flex-shrink-0 flex flex-col md:flex-row gap-4">
+                                            {service.id === "05" ? (
+                                                <>
+                                                    <AngularButton variant="primary" className="!px-10 !py-4 !text-[14px]" onClick={() => window.location.href = '/aksesoris'}>
+                                                        Temukan Aksesoris
+                                                    </AngularButton>
+                                                    <AngularButton variant="secondary" className="!px-10 !py-4 !text-[14px] !bg-white/10 !text-white hover:!bg-white/20" onClick={() => {
+                                                        window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Tanya seputar Aksesoris` } }));
+                                                    }}>
+                                                        Tanya Aksesoris
+                                                    </AngularButton>
+                                                </>
+                                            ) : (
+                                                <AngularButton variant="primary" className="!px-10 !py-4 !text-[14px]" onClick={() => {
+                                                    if (service.title === 'Simulasi Kredit') {
+                                                        setIsSimulasiOpen(true);
+                                                    } else {
+                                                        window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Saya tertarik dengan layanan ${service.title}` } }));
+                                                    }
+                                                }}>
+                                                    {service.cta}
+                                                </AngularButton>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

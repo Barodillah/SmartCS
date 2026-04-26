@@ -1,203 +1,538 @@
-[
+{
+  "metadata": {
+    "judul": "Master Data Spare Part Fast Moving Mitsubishi",
+    "keterangan": "Data spare part yang digunakan dalam perawatan berkala. Semua part berstatus fast moving / selalu tersedia (always available) di bengkel resmi Mitsubishi MMKSI.",
+    "model_referensi": [
+      "Xpander",
+      "All New Pajero Sport (ANPS)",
+      "Pajero Sport CR45"
+    ],
+    "catatan_penting": [
+      "Untuk kendaraan DESTINATOR, XFORCE, dan XPANDER CROSS itu part sama dengan Xpander",
+      "Untuk TRITON sama dengan Pjaero Sport",
+      "Harga belum termasuk pajak PPN (11%)",
+      "Harga belum termasuk jasa servis",
+      "Harga dapat berubah sewaktu-waktu tanpa pemberitahuan"
+    ],
+    "total_unique_part": 43,
+    "mata_uang": "IDR (Rupiah)",
+    "status_ketersediaan_default": "always_available"
+  },
+  "spare_parts": [
     {
-        "kendaraan": "DESTINATOR",
-        "items": [
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ321200",
-                "deskripsi": "0W 20 SP (1L)",
-                "qty_service": 5,
-                "harga": 129000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "MD050317",
-                "deskripsi": "GASKET, ENG OIL PAN DRAIN PLUG",
-                "qty_service": 1,
-                "harga": 20000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "MD360935",
-                "deskripsi": "OIL FILTER",
-                "qty_service": 1,
-                "harga": 55000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "7850A002",
-                "deskripsi": "AIR REFRESHER ASSY",
-                "qty_service": 1,
-                "harga": 168000,
-                "status": "Available"
-            }
-        ]
+      "nomor_part": "1145A019",
+      "nama": "Belt Timing (Belt T/Belt A)",
+      "harga_satuan": 509000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
     },
     {
-        "kendaraan": "NEW PAJERO SPORT",
-        "items": [
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ321022",
-                "deskripsi": "10W - 30 CF4 GP SEMI SYNTHETIC (1L)",
-                "qty_service": 8,
-                "harga": 105000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "MF660035",
-                "deskripsi": "GASKET, ENG OIL LINE",
-                "qty_service": 1,
-                "harga": 9000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "1230A182",
-                "deskripsi": "OIL FILTER (4N15)",
-                "qty_service": 1,
-                "harga": 210000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "7803A112",
-                "deskripsi": "AIR REFRESHER ASSY",
-                "qty_service": 1,
-                "harga": 330000,
-                "status": "Available"
-            }
-        ]
+      "nomor_part": "1145A020",
+      "nama": "Arm Timing Belt",
+      "harga_satuan": 915000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
     },
     {
-        "kendaraan": "NEW XPANDER",
-        "items": [
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ321200",
-                "deskripsi": "0W 20 SP (1L)",
-                "qty_service": 4,
-                "harga": 129000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "MD050317",
-                "deskripsi": "GASKET, ENG OIL PAN DRAIN PLUG",
-                "qty_service": 1,
-                "harga": 17000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "1230A237",
-                "deskripsi": "OIL FILTER",
-                "qty_service": 1,
-                "harga": 46750,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "27274W010P",
-                "deskripsi": "AIR REFRESHER ASSY",
-                "qty_service": 1,
-                "harga": 477700,
-                "status": "Available"
-            }
-        ]
+      "nomor_part": "1145A031",
+      "nama": "Adjuster Timing Belt",
+      "harga_satuan": 990000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
     },
     {
-        "kendaraan": "XFORCE",
-        "items": [
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ321200",
-                "deskripsi": "0W 20 SP (1L)",
-                "qty_service": 4,
-                "harga": 129000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ100723",
-                "deskripsi": "ENGINE FLUSH",
-                "qty_service": 1,
-                "harga": 140000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "MF660035",
-                "deskripsi": "GASKET, ENG OIL LINE",
-                "qty_service": 1,
-                "harga": 9000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "1230A237",
-                "deskripsi": "OIL FILTER",
-                "qty_service": 1,
-                "harga": 55000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "7850A002",
-                "deskripsi": "AIR REFRESHER ASSY",
-                "qty_service": 1,
-                "harga": 168000,
-                "status": "Available"
-            }
-        ]
+      "nomor_part": "1145A078",
+      "nama": "Pulley Timing",
+      "harga_satuan": 407000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
     },
     {
-        "kendaraan": "NEW XPANDER CROSS",
-        "items": [
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ321200",
-                "deskripsi": "0W 20 SP (1L)",
-                "qty_service": 4,
-                "harga": 129000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Oil",
-                "kode_produk": "MZ100723",
-                "deskripsi": "ENGINE FLUSH",
-                "qty_service": 1,
-                "harga": 140000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "MD050317",
-                "deskripsi": "GASKET, ENG OIL PAN DRAIN PLUG",
-                "qty_service": 1,
-                "harga": 17000,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "1230A237",
-                "deskripsi": "OIL FILTER",
-                "qty_service": 1,
-                "harga": 46750,
-                "status": "Available"
-            },
-            {
-                "tipe_produk": "Part",
-                "kode_produk": "27274W010P",
-                "deskripsi": "AIR REFRESHER ASSY",
-                "qty_service": 1,
-                "harga": 477700,
-                "status": "Available"
-            }
-        ]
+      "nomor_part": "1230A045",
+      "nama": "Oil Filter",
+      "harga_satuan": 275000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "1230A182",
+      "nama": "Oil Filter",
+      "harga_satuan": 210000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "1340A044",
+      "nama": "Belt Power Steering (Belt P/S)",
+      "harga_satuan": 909000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "1340A181",
+      "nama": "Fan Belt",
+      "harga_satuan": 137000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "1340A193",
+      "nama": "Fan Belt",
+      "harga_satuan": 184000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "1500A098",
+      "nama": "Element Air (Filter Udara)",
+      "harga_satuan": 385000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "1500A608",
+      "nama": "Filter Udara",
+      "harga_satuan": 341000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "1500A687",
+      "nama": "Filter Udara",
+      "harga_satuan": 150000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "1770A233",
+      "nama": "Fuel Filter (Filter Bahan Bakar)",
+      "harga_satuan": 388000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "1822A086",
+      "nama": "Busi (Spark Plug)",
+      "harga_satuan": 335000,
+      "kategori": "Pengapian",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "4451A140",
+      "nama": "Fan Belt",
+      "harga_satuan": 407000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "4605A284",
+      "nama": "Pad Set Rem Depan (FR Brake)",
+      "harga_satuan": 867000,
+      "kategori": "Rem & Brake",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "4605A783",
+      "nama": "Pad Set Rem Belakang (RR Brake)",
+      "harga_satuan": 1540000,
+      "kategori": "Rem & Brake",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "4605B949",
+      "nama": "Kanvas Rem Depan",
+      "harga_satuan": 600000,
+      "kategori": "Rem & Brake",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "7803A112",
+      "nama": "Filter AC (Cabin Air Filter)",
+      "harga_satuan": 330000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "7850A002",
+      "nama": "Filter AC (Cabin Air Filter)",
+      "harga_satuan": 168000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "ADITIF",
+      "nama": "Aditif Mesin",
+      "harga_satuan": 55000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "AIR ACCU",
+      "nama": "Air Aki (Air Accu)",
+      "harga_satuan": 15000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "COOLANT RADIATOR",
+      "nama": "Coolant Radiator",
+      "harga_satuan": 55000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MB298267",
+      "nama": "Belt AC (Alternator/AC Belt)",
+      "harga_satuan": 52000,
+      "kategori": "Timing & Belt",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MD041021",
+      "nama": "O Ring",
+      "harga_satuan": 38000,
+      "kategori": "Seal & Gasket",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MD050317",
+      "nama": "Ring Drain Plug (Gasket Baut Oli)",
+      "harga_satuan": 20000,
+      "kategori": "Seal & Gasket",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MD168058",
+      "nama": "Oil Seal B",
+      "harga_satuan": 127000,
+      "kategori": "Seal & Gasket",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MD174462",
+      "nama": "Oil Seal C",
+      "harga_satuan": 271000,
+      "kategori": "Seal & Gasket",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MD360935",
+      "nama": "Oil Filter",
+      "harga_satuan": 55000,
+      "kategori": "Filter",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "MD372536",
+      "nama": "Oil Seal A",
+      "harga_satuan": 190000,
+      "kategori": "Seal & Gasket",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "ML151003",
+      "nama": "Brake Fluid (Minyak Rem)",
+      "harga_satuan": 114000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MZ100723",
+      "nama": "Engine Flush (E/G Flush)",
+      "harga_satuan": 140000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "MZ100723EX",
+      "nama": "Engine Flush (E/G Flush)",
+      "harga_satuan": 140000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "MZ320235",
+      "nama": "Oli Mesin",
+      "harga_satuan": 105000,
+      "kategori": "Oli & Pelumas",
+      "status": "always_available",
+      "digunakan_pada": [
+        "All New Pajero Sport",
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MZ320344",
+      "nama": "Oil A/T SPIII (Oli Transmisi Otomatis)",
+      "harga_satuan": 135000,
+      "kategori": "Oli & Pelumas",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "MZ320346",
+      "nama": "Oli Mesin",
+      "harga_satuan": 129000,
+      "kategori": "Oli & Pelumas",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "MZ320389",
+      "nama": "Coolant Radiator",
+      "harga_satuan": 80000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander",
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "OIL DIFF",
+      "nama": "Oli Gardan (Oil Differential)",
+      "harga_satuan": 100000,
+      "kategori": "Oli & Pelumas",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "PENETRAN",
+      "nama": "Penetran (Penetrating Oil)",
+      "harga_satuan": 55000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Pajero Sport CR45"
+      ]
+    },
+    {
+      "nomor_part": "RORED",
+      "nama": "Oli Transmisi Manual",
+      "harga_satuan": 50000,
+      "kategori": "Oli & Pelumas",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander"
+      ]
+    },
+    {
+      "nomor_part": "SPC02001",
+      "nama": "Oli Transmisi Otomatis (Automatic)",
+      "harga_satuan": 215000,
+      "kategori": "Oli & Pelumas",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander",
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "SPC98001",
+      "nama": "Brake Cleaner (Pembersih Rem)",
+      "harga_satuan": 67500,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander",
+        "All New Pajero Sport"
+      ]
+    },
+    {
+      "nomor_part": "SPC98011",
+      "nama": "Minyak Rem (Brake Fluid)",
+      "harga_satuan": 50000,
+      "kategori": "Cairan & Chemical",
+      "status": "always_available",
+      "digunakan_pada": [
+        "Xpander",
+        "All New Pajero Sport"
+      ]
     }
-]
+  ],
+  "ringkasan_per_kategori": {
+    "Filter": {
+      "jumlah_part": 8,
+      "nomor_part": [
+        "1230A045",
+        "1230A182",
+        "1500A098",
+        "1500A608",
+        "1500A687",
+        "1770A233",
+        "7803A112",
+        "7850A002"
+      ]
+    },
+    "Oli & Pelumas": {
+      "jumlah_part": 7,
+      "nomor_part": [
+        "MZ320235",
+        "MZ320344",
+        "MZ320346",
+        "OIL DIFF",
+        "RORED",
+        "SPC02001",
+        "MZ100723EX"
+      ]
+    },
+    "Cairan & Chemical": {
+      "jumlah_part": 10,
+      "nomor_part": [
+        "ADITIF",
+        "AIR ACCU",
+        "COOLANT RADIATOR",
+        "ML151003",
+        "MZ100723",
+        "MZ320389",
+        "PENETRAN",
+        "SPC98001",
+        "SPC98011",
+        "MZ100723EX"
+      ]
+    },
+    "Timing & Belt": {
+      "jumlah_part": 9,
+      "nomor_part": [
+        "1145A019",
+        "1145A020",
+        "1145A031",
+        "1145A078",
+        "1340A044",
+        "1340A181",
+        "1340A193",
+        "4451A140",
+        "MB298267"
+      ]
+    },
+    "Rem & Brake": {
+      "jumlah_part": 3,
+      "nomor_part": [
+        "4605A284",
+        "4605A783",
+        "4605B949"
+      ]
+    },
+    "Seal & Gasket": {
+      "jumlah_part": 5,
+      "nomor_part": [
+        "MD041021",
+        "MD050317",
+        "MD168058",
+        "MD174462",
+        "MD372536"
+      ]
+    },
+    "Pengapian": {
+      "jumlah_part": 1,
+      "nomor_part": [
+        "1822A086"
+      ]
+    }
+  }
+}

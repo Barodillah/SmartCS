@@ -1,22 +1,52 @@
 {
-    "region": "Jabodetabek (Wilayah 2)",
-    "interest_rates_flat_muf_2025": {
-        "1_year": 0.0266,
-        "2_years": 0.0280,
-        "3_years": 0.0288,
-        "4_years": 0.0350,
-        "5_years": 0.0450
+    "metadata": {
+        "region": "Jabodetabek & Banten (Wilayah 2)",
+        "last_updated": "April 2026",
+        "currency": "IDR"
     },
-    "insurance_rates_ojk_region2_all_risk": {
-        "cat_3_200jt_400jt": 0.0208,
-        "cat_4_400jt_800jt": 0.0120
-    },
-    "fees": {
-        "admin_fee": {
-            "MUF": 4000000,
-            "BCA_Finance": 1800000
+    "leasing_providers": {
+        "Dipo_Star_Finance": {
+            "is_captive": true,
+            "programs": [
+                {
+                    "name": "Paket Hemat 1 Tahun (H1T)",
+                    "interest_rate": 0.0,
+                    "min_dp": 0.65
+                },
+                {
+                    "name": "Bunga Rendah 2026",
+                    "interest_rates_flat": {
+                        "1_year": 0.0199,
+                        "2_years": 0.0255,
+                        "3_years": 0.0255,
+                        "4_years": 0.0355,
+                        "5_years": 0.0455
+                    },
+                    "min_dp": 0.20
+                }
+            ],
+            "admin_fee": 3000000
         },
+        "Mandiri_Utama_Finance": {
+            "interest_rates_flat_2025": {
+                "1_year": 0.0266,
+                "2_years": 0.0280,
+                "3_years": 0.0288,
+                "4_years": 0.0350,
+                "5_years": 0.0450
+            },
+            "admin_fee": 4000000
+        },
+        "BCA_Finance": {
+            "admin_fee": 1800000
+        }
+    },
+    "global_fees_and_insurance": {
         "provision_rate": 0.01,
+        "insurance_all_risk_region2": {
+            "cat_3_200jt_400jt": 0.0208,
+            "cat_4_400jt_800jt": 0.0120
+        },
         "fidusia_ranges": [
             {
                 "max_loan": 50000000,
@@ -35,13 +65,5 @@
                 "fee": 1500000
             }
         ]
-    },
-    "special_programs": {
-        "Smart_Cash": {
-            "interest": 0.0,
-            "min_dp": 0.55,
-            "tenor_months": 11,
-            "provider": "Dipo Star Finance"
-        }
     }
 }

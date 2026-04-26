@@ -1,0 +1,96 @@
+{
+    "extended_smart_package": {
+        "benefits": {
+            "cost_saving": "Hingga 27% dibandingkan tanpa paket",
+            "free_services": [
+                "Gratis penggantian suku cadang (sesuai ketentuan)",
+                "Gratis biaya jasa (sesuai ketentuan)"
+            ],
+            "additional_benefits": [
+                "Perpanjangan garansi (item terbatas) selama 1 tahun atau 30.000 km",
+                "Diskon hingga 30% untuk pembelian ban",
+                "Diskon Rp50.000 untuk pembelian baterai",
+                "Layanan 24 Hours Emergency Support (24HES) selama 1 tahun"
+            ]
+        },
+        "xpander_series": {
+            "include_car_variant": [
+                "Xpander",
+                "Xpander Cross",
+                "Xforce"
+            ],
+            "effective_date": "2025-11-01",
+            "prices_excluding_vat": [
+                {
+                    "type": "2XPM",
+                    "before": 1800000,
+                    "after": 1800000,
+                    "increase": 0
+                },
+                {
+                    "type": "4XPM",
+                    "before": 3330000,
+                    "after": 3350000,
+                    "increase": 20000
+                },
+                {
+                    "type": "6XPM",
+                    "before": 4800000,
+                    "after": 4856500,
+                    "increase": 56500
+                }
+            ],
+            "prices_including_vat": [
+                {
+                    "type": "2XPM",
+                    "before": 1998000,
+                    "after": 1998000,
+                    "increase": 0
+                },
+                {
+                    "type": "4XPM",
+                    "before": 3696300,
+                    "after": 3718500,
+                    "increase": 22200
+                },
+                {
+                    "type": "6XPM",
+                    "before": 5328000,
+                    "after": 5390715,
+                    "increase": 62715
+                }
+            ]
+        },
+        "pajero_sport": {
+            "effective_date": "2024-01-01",
+            "prices_excluding_vat": [
+                {
+                    "type": "2XPM",
+                    "price": 3530000
+                },
+                {
+                    "type": "4XPM",
+                    "price": 6670000
+                },
+                {
+                    "type": "6XPM",
+                    "price": 9690000
+                }
+            ],
+            "prices_including_vat": [
+                {
+                    "type": "2XPM",
+                    "price": 3918300
+                },
+                {
+                    "type": "4XPM",
+                    "price": 7403700
+                },
+                {
+                    "type": "6XPM",
+                    "price": 10755900
+                }
+            ]
+        }
+    }
+}

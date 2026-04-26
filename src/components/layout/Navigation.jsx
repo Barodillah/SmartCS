@@ -11,6 +11,7 @@ const Navigation = () => {
     const navLinks = [
         { name: 'Home', path: '/' },
         { name: 'Price List', path: '/price-list' },
+        { name: 'Aksesoris', path: '/aksesoris' },
         { name: 'Chat History', path: '/chat-history' }
     ];
 

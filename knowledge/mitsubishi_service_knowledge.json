@@ -1,0 +1,1767 @@
+{
+    "brand": "Mitsubishi",
+    "policy_context": {
+        "free_service_interval": "10.000 KM - 50.000 KM",
+        "coverage": "Jasa dan Suku Cadang (sesuai paket Smart Mitsubishi)",
+        "terms": "Berlaku hingga 4 tahun sejak PKT (Periodical Maintenance/Service Start Date) mana yang tercapai lebih dulu.",
+        "note": "Biaya yang tercantum dalam data untuk 10rb-50rb KM adalah estimasi nilai yang ditanggung oleh Mitsubishi."
+    },
+    "models": {
+        "Xpander": [
+            {
+                "interval_label": "PERAWATAN 10.000 KM",
+                "labor_cost": 500000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 1379000
+            },
+            {
+                "interval_label": "PERAWATAN 60.000 KM",
+                "labor_cost": 1000000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    },
+                    {
+                        "part_no": "1340A181",
+                        "part_name": "FAN BELT",
+                        "qty": "1",
+                        "unit_price": "137000",
+                        "subtotal": "137000"
+                    },
+                    {
+                        "part_no": "4605B949",
+                        "part_name": "KANVAS REM DEPAN",
+                        "qty": "1",
+                        "unit_price": "600000",
+                        "subtotal": "600000"
+                    }
+                ],
+                "total_estimated_cost": 2683500
+            },
+            {
+                "interval_label": "PERAWATAN 20.000 KM",
+                "labor_cost": 1000000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    }
+                ],
+                "total_estimated_cost": 1946500
+            },
+            {
+                "interval_label": "PERAWATAN 70.000 KM",
+                "labor_cost": 500000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 1379000
+            },
+            {
+                "interval_label": "PERAWATAN 30.000 KM",
+                "labor_cost": 500000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 1379000
+            },
+            {
+                "interval_label": "PERAWATAN 80.000 KM",
+                "labor_cost": 1250000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "1500A687",
+                        "part_name": "FILTER UDARA",
+                        "qty": "1",
+                        "unit_price": "150000",
+                        "subtotal": "150000"
+                    },
+                    {
+                        "part_no": "RORED",
+                        "part_name": "OIL TRANSMISI MANUAL",
+                        "qty": "2",
+                        "unit_price": "50000",
+                        "subtotal": "100000"
+                    },
+                    {
+                        "part_no": "SPC98011",
+                        "part_name": "MINYAK REM",
+                        "qty": "4",
+                        "unit_price": "50000",
+                        "subtotal": "200000"
+                    },
+                    {
+                        "part_no": "MZ320389",
+                        "part_name": "COOLANT RADIATOR",
+                        "qty": "1",
+                        "unit_price": "80000",
+                        "subtotal": "80000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    },
+                    {
+                        "part_no": "SPC02001",
+                        "part_name": "OIL TRANSMISI AUTOMATIC",
+                        "qty": "5",
+                        "unit_price": "215000",
+                        "subtotal": "1075000"
+                    }
+                ],
+                "total_estimated_cost": 3801500
+            },
+            {
+                "interval_label": "PERAWATAN 40.000 KM",
+                "labor_cost": 1250000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "1500A687",
+                        "part_name": "FILTER UDARA",
+                        "qty": "1",
+                        "unit_price": "150000",
+                        "subtotal": "150000"
+                    },
+                    {
+                        "part_no": "RORED",
+                        "part_name": "OIL TRANSMISI MANUAL",
+                        "qty": "2",
+                        "unit_price": "50000",
+                        "subtotal": "100000"
+                    },
+                    {
+                        "part_no": "SPC98011",
+                        "part_name": "MINYAK REM",
+                        "qty": "4",
+                        "unit_price": "50000",
+                        "subtotal": "200000"
+                    },
+                    {
+                        "part_no": "MZ320389",
+                        "part_name": "COOLANT RADIATOR",
+                        "qty": "1",
+                        "unit_price": "80000",
+                        "subtotal": "80000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    }
+                ],
+                "total_estimated_cost": 2726500
+            },
+            {
+                "interval_label": "PERAWATAN 90.000 KM",
+                "labor_cost": 500000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 1379000
+            },
+            {
+                "interval_label": "PERAWATAN 50.000 KM",
+                "labor_cost": 500000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 1379000
+            },
+            {
+                "interval_label": "PERAWATAN 100.000 KM",
+                "labor_cost": 1000000,
+                "parts": [
+                    {
+                        "part_no": "MZ320346",
+                        "part_name": "OIL MESIN",
+                        "qty": "4",
+                        "unit_price": "129000",
+                        "subtotal": "516000"
+                    },
+                    {
+                        "part_no": "MD360935",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "7850A002",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "168000",
+                        "subtotal": "168000"
+                    },
+                    {
+                        "part_no": "MZ100723",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    },
+                    {
+                        "part_no": "1822A086",
+                        "part_name": "BUSI",
+                        "qty": "4",
+                        "unit_price": "335000",
+                        "subtotal": "1340000"
+                    }
+                ],
+                "total_estimated_cost": 3286500
+            }
+        ],
+        "All New Pajero Sport": [
+            {
+                "interval_label": "PERAWATAN 10.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 2175000
+            },
+            {
+                "interval_label": "PERAWATAN 60.000 KM",
+                "labor_cost": 1400000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    },
+                    {
+                        "part_no": "4451A140",
+                        "part_name": "FAN BELT",
+                        "qty": "1",
+                        "unit_price": "407000",
+                        "subtotal": "407000"
+                    },
+                    {
+                        "part_no": "1340A193",
+                        "part_name": "FAN BELT",
+                        "qty": "1",
+                        "unit_price": "184000",
+                        "subtotal": "184000"
+                    }
+                ],
+                "total_estimated_cost": 3633500
+            },
+            {
+                "interval_label": "PERAWATAN 20.000 KM",
+                "labor_cost": 1400000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "58000",
+                        "subtotal": "58000"
+                    }
+                ],
+                "total_estimated_cost": 2978000
+            },
+            {
+                "interval_label": "PERAWATAN 70.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    }
+                ],
+                "total_estimated_cost": 1335000
+            },
+            {
+                "interval_label": "PERAWATAN 30.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 2120000
+            },
+            {
+                "interval_label": "PERAWATAN 80.000 KM",
+                "labor_cost": 1800000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "1500A608",
+                        "part_name": "FILTER UDARA",
+                        "qty": "1",
+                        "unit_price": "341000",
+                        "subtotal": "341000"
+                    },
+                    {
+                        "part_no": "SPC02001",
+                        "part_name": "OIL TRANSMISI MANUAL",
+                        "qty": "3",
+                        "unit_price": "215000",
+                        "subtotal": "645000"
+                    },
+                    {
+                        "part_no": "SPC98011",
+                        "part_name": "MINYAK REM",
+                        "qty": "1",
+                        "unit_price": "50000",
+                        "subtotal": "50000"
+                    },
+                    {
+                        "part_no": "MZ320389",
+                        "part_name": "COOLANT RADIATOR",
+                        "qty": "1",
+                        "unit_price": "80000",
+                        "subtotal": "80000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    },
+                    {
+                        "part_no": "SPC02001",
+                        "part_name": "OIL TRANSMISI AUTOMATIC",
+                        "qty": "6",
+                        "unit_price": "215000",
+                        "subtotal": "1290000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    }
+                ],
+                "total_estimated_cost": 5518500
+            },
+            {
+                "interval_label": "PERAWATAN 40.000 KM",
+                "labor_cost": 1800000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "1500A608",
+                        "part_name": "FILTER UDARA",
+                        "qty": "1",
+                        "unit_price": "341000",
+                        "subtotal": "341000"
+                    },
+                    {
+                        "part_no": "SPC02001",
+                        "part_name": "OIL TRANSMISI MANUAL",
+                        "qty": "3",
+                        "unit_price": "215000",
+                        "subtotal": "645000"
+                    },
+                    {
+                        "part_no": "SPC98011",
+                        "part_name": "MINYAK REM",
+                        "qty": "1",
+                        "unit_price": "50000",
+                        "subtotal": "50000"
+                    },
+                    {
+                        "part_no": "MZ320389",
+                        "part_name": "COOLANT RADIATOR",
+                        "qty": "1",
+                        "unit_price": "80000",
+                        "subtotal": "80000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    }
+                ],
+                "total_estimated_cost": 4503500
+            },
+            {
+                "interval_label": "PERAWATAN 90.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    }
+                ],
+                "total_estimated_cost": 1575000
+            },
+            {
+                "interval_label": "PERAWATAN 50.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "ADITIF",
+                        "part_name": "ADITIF",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    }
+                ],
+                "total_estimated_cost": 2120000
+            },
+            {
+                "interval_label": "PERAWATAN 100.000 KM",
+                "labor_cost": 1400000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "8",
+                        "unit_price": "105000",
+                        "subtotal": "840000"
+                    },
+                    {
+                        "part_no": "1230A182",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "210000",
+                        "subtotal": "210000"
+                    },
+                    {
+                        "part_no": "7803A112",
+                        "part_name": "FILTER AC",
+                        "qty": "1",
+                        "unit_price": "330000",
+                        "subtotal": "330000"
+                    },
+                    {
+                        "part_no": "MZ100723EX",
+                        "part_name": "E/G FLUSH",
+                        "qty": "1",
+                        "unit_price": "140000",
+                        "subtotal": "140000"
+                    },
+                    {
+                        "part_no": "SPC98001",
+                        "part_name": "BRAKE CLEANER",
+                        "qty": "1",
+                        "unit_price": "67500",
+                        "subtotal": "67500"
+                    }
+                ],
+                "total_estimated_cost": 1587500
+            }
+        ],
+        "Pajero Sport CR45": [
+            {
+                "interval_label": "PERAWATAN 10.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    }
+                ],
+                "total_estimated_cost": 2013000
+            },
+            {
+                "interval_label": "PERAWATAN 60.000 KM",
+                "labor_cost": 1400000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "1500A098",
+                        "part_name": "ELEMENT AIR",
+                        "qty": "1",
+                        "unit_price": "385000",
+                        "subtotal": "385000"
+                    },
+                    {
+                        "part_no": "OIL DIFF",
+                        "part_name": "OIL DIFF",
+                        "qty": "3",
+                        "unit_price": "100000",
+                        "subtotal": "300000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    },
+                    {
+                        "part_no": "ML151003",
+                        "part_name": "BRAKE FLUID",
+                        "qty": "1",
+                        "unit_price": "114000",
+                        "subtotal": "114000"
+                    }
+                ],
+                "total_estimated_cost": 3632000
+            },
+            {
+                "interval_label": "PERAWATAN 20.000 KM",
+                "labor_cost": 1400000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "1500A098",
+                        "part_name": "ELEMENT AIR",
+                        "qty": "1",
+                        "unit_price": "385000",
+                        "subtotal": "385000"
+                    },
+                    {
+                        "part_no": "OIL DIFF",
+                        "part_name": "OIL DIFF",
+                        "qty": "3",
+                        "unit_price": "100000",
+                        "subtotal": "300000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    },
+                    {
+                        "part_no": "ML151003",
+                        "part_name": "BRAKE FLUID",
+                        "qty": "1",
+                        "unit_price": "114000",
+                        "subtotal": "114000"
+                    }
+                ],
+                "total_estimated_cost": 3632000
+            },
+            {
+                "interval_label": "PERAWATAN 70.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    }
+                ],
+                "total_estimated_cost": 2033000
+            },
+            {
+                "interval_label": "PERAWATAN 30.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    }
+                ],
+                "total_estimated_cost": 1625000
+            },
+            {
+                "interval_label": "PERAWATAN 80.000 KM",
+                "labor_cost": 1800000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "MZ320344",
+                        "part_name": "OIL A/T SPIII",
+                        "qty": "8",
+                        "unit_price": "135000",
+                        "subtotal": "1080000"
+                    },
+                    {
+                        "part_no": "4605A284",
+                        "part_name": "PAD SET FR BRAKE",
+                        "qty": "1",
+                        "unit_price": "867000",
+                        "subtotal": "867000"
+                    },
+                    {
+                        "part_no": "1500A098",
+                        "part_name": "ELEMENT AIR",
+                        "qty": "1",
+                        "unit_price": "385000",
+                        "subtotal": "385000"
+                    },
+                    {
+                        "part_no": "4605A783",
+                        "part_name": "PAD SET RR BRAKE",
+                        "qty": "1",
+                        "unit_price": "1540000",
+                        "subtotal": "1540000"
+                    },
+                    {
+                        "part_no": "ML151003",
+                        "part_name": "BRAKE FLUID",
+                        "qty": "1",
+                        "unit_price": "114000",
+                        "subtotal": "114000"
+                    },
+                    {
+                        "part_no": "OIL DIFF",
+                        "part_name": "OIL DIFF",
+                        "qty": "3",
+                        "unit_price": "100000",
+                        "subtotal": "300000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    },
+                    {
+                        "part_no": "COOLANT RADIATOR",
+                        "part_name": "COOLANT",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    }
+                ],
+                "total_estimated_cost": 7574000
+            },
+            {
+                "interval_label": "PERAWATAN 40.000 KM",
+                "labor_cost": 1800000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "MZ320344",
+                        "part_name": "OIL A/T SPIII",
+                        "qty": "8",
+                        "unit_price": "135000",
+                        "subtotal": "1080000"
+                    },
+                    {
+                        "part_no": "4605A284",
+                        "part_name": "PAD SET FR BRAKE",
+                        "qty": "1",
+                        "unit_price": "867000",
+                        "subtotal": "867000"
+                    },
+                    {
+                        "part_no": "1500A098",
+                        "part_name": "ELEMENT AIR",
+                        "qty": "1",
+                        "unit_price": "385000",
+                        "subtotal": "385000"
+                    },
+                    {
+                        "part_no": "4605A783",
+                        "part_name": "PAD SET RR BRAKE",
+                        "qty": "1",
+                        "unit_price": "1540000",
+                        "subtotal": "1540000"
+                    },
+                    {
+                        "part_no": "ML151003",
+                        "part_name": "BRAKE FLUID",
+                        "qty": "1",
+                        "unit_price": "114000",
+                        "subtotal": "114000"
+                    },
+                    {
+                        "part_no": "OIL DIFF",
+                        "part_name": "OIL DIFF",
+                        "qty": "3",
+                        "unit_price": "100000",
+                        "subtotal": "300000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    },
+                    {
+                        "part_no": "COOLANT RADIATOR",
+                        "part_name": "COOLANT",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    }
+                ],
+                "total_estimated_cost": 7460000
+            },
+            {
+                "interval_label": "PERAWATAN 90.000 KM",
+                "labor_cost": 600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    }
+                ],
+                "total_estimated_cost": 1723000
+            },
+            {
+                "interval_label": "PERAWATAN 50.000 KM",
+                "labor_cost": 1600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    },
+                    {
+                        "part_no": "MZ320344",
+                        "part_name": "ATF SPIII",
+                        "qty": "1",
+                        "unit_price": "135000",
+                        "subtotal": "135000"
+                    },
+                    {
+                        "part_no": "1145A031",
+                        "part_name": "ADJ TIMING BELT",
+                        "qty": "1",
+                        "unit_price": "990000",
+                        "subtotal": "990000"
+                    },
+                    {
+                        "part_no": "1145A020",
+                        "part_name": "ARM TIMING BELT",
+                        "qty": "1",
+                        "unit_price": "915000",
+                        "subtotal": "915000"
+                    },
+                    {
+                        "part_no": "1145A078",
+                        "part_name": "PULLEY TIMING",
+                        "qty": "1",
+                        "unit_price": "407000",
+                        "subtotal": "407000"
+                    },
+                    {
+                        "part_no": "1145A019",
+                        "part_name": "BELT T/BELT A",
+                        "qty": "1",
+                        "unit_price": "509000",
+                        "subtotal": "509000"
+                    },
+                    {
+                        "part_no": "MD372536",
+                        "part_name": "OIL SEAL A",
+                        "qty": "1",
+                        "unit_price": "190000",
+                        "subtotal": "190000"
+                    },
+                    {
+                        "part_no": "MD168058",
+                        "part_name": "OIL SEAL B",
+                        "qty": "1",
+                        "unit_price": "127000",
+                        "subtotal": "127000"
+                    },
+                    {
+                        "part_no": "MD174462",
+                        "part_name": "OIL SEAL C",
+                        "qty": "1",
+                        "unit_price": "271000",
+                        "subtotal": "271000"
+                    },
+                    {
+                        "part_no": "MD041021",
+                        "part_name": "O RING",
+                        "qty": "1",
+                        "unit_price": "38000",
+                        "subtotal": "38000"
+                    },
+                    {
+                        "part_no": "MB298267",
+                        "part_name": "BELT AC",
+                        "qty": "1",
+                        "unit_price": "52000",
+                        "subtotal": "52000"
+                    },
+                    {
+                        "part_no": "1340A044",
+                        "part_name": "BELT P/S",
+                        "qty": "1",
+                        "unit_price": "909000",
+                        "subtotal": "909000"
+                    },
+                    {
+                        "part_no": "PENETRAN",
+                        "part_name": "PENETRAN",
+                        "qty": "1",
+                        "unit_price": "",
+                        "subtotal": "0"
+                    }
+                ],
+                "total_estimated_cost": 7576000
+            },
+            {
+                "interval_label": "PERAWATAN 100.000 KM",
+                "labor_cost": 1600000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "1230A045",
+                        "part_name": "OIL FILTER",
+                        "qty": "1",
+                        "unit_price": "275000",
+                        "subtotal": "275000"
+                    },
+                    {
+                        "part_no": "1770A233",
+                        "part_name": "FUEL FILTER",
+                        "qty": "1",
+                        "unit_price": "388000",
+                        "subtotal": "388000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    },
+                    {
+                        "part_no": "MZ320344",
+                        "part_name": "ATF SPIII",
+                        "qty": "1",
+                        "unit_price": "135000",
+                        "subtotal": "135000"
+                    },
+                    {
+                        "part_no": "1145A031",
+                        "part_name": "ADJ TIMING BELT",
+                        "qty": "1",
+                        "unit_price": "990000",
+                        "subtotal": "990000"
+                    },
+                    {
+                        "part_no": "1145A020",
+                        "part_name": "ARM TIMING BELT",
+                        "qty": "1",
+                        "unit_price": "915000",
+                        "subtotal": "915000"
+                    },
+                    {
+                        "part_no": "1145A078",
+                        "part_name": "PULLEY TIMING",
+                        "qty": "1",
+                        "unit_price": "407000",
+                        "subtotal": "407000"
+                    },
+                    {
+                        "part_no": "1145A019",
+                        "part_name": "BELT T/BELT A",
+                        "qty": "1",
+                        "unit_price": "509000",
+                        "subtotal": "509000"
+                    },
+                    {
+                        "part_no": "MD372536",
+                        "part_name": "OIL SEAL A",
+                        "qty": "1",
+                        "unit_price": "190000",
+                        "subtotal": "190000"
+                    },
+                    {
+                        "part_no": "MD168058",
+                        "part_name": "OIL SEAL B",
+                        "qty": "1",
+                        "unit_price": "127000",
+                        "subtotal": "127000"
+                    },
+                    {
+                        "part_no": "MD174462",
+                        "part_name": "OIL SEAL C",
+                        "qty": "1",
+                        "unit_price": "271000",
+                        "subtotal": "271000"
+                    },
+                    {
+                        "part_no": "MD041021",
+                        "part_name": "O RING",
+                        "qty": "1",
+                        "unit_price": "38000",
+                        "subtotal": "38000"
+                    },
+                    {
+                        "part_no": "MB298267",
+                        "part_name": "BELT AC",
+                        "qty": "1",
+                        "unit_price": "52000",
+                        "subtotal": "52000"
+                    },
+                    {
+                        "part_no": "1340A044",
+                        "part_name": "BELT P/S",
+                        "qty": "1",
+                        "unit_price": "909000",
+                        "subtotal": "909000"
+                    },
+                    {
+                        "part_no": "PENETRAN",
+                        "part_name": "PENETRAN",
+                        "qty": "1",
+                        "unit_price": "55000",
+                        "subtotal": "55000"
+                    }
+                ],
+                "total_estimated_cost": 7631000
+            },
+            {
+                "interval_label": "PERAWATAN BERKALA 5KM+ 15KM+25KM+35KM+45 KM+55KM+65KM+75KM+85KM+95KM",
+                "labor_cost": 400000,
+                "parts": [
+                    {
+                        "part_no": "MZ320235",
+                        "part_name": "OIL MESIN",
+                        "qty": "7",
+                        "unit_price": "105000",
+                        "subtotal": "735000"
+                    },
+                    {
+                        "part_no": "MD050317",
+                        "part_name": "RING DRAIN PLUG",
+                        "qty": "1",
+                        "unit_price": "20000",
+                        "subtotal": "20000"
+                    },
+                    {
+                        "part_no": "AIR ACCU",
+                        "part_name": "AIR ACCU",
+                        "qty": "1",
+                        "unit_price": "15000",
+                        "subtotal": "15000"
+                    }
+                ],
+                "total_estimated_cost": 1170000
+            }
+        ]
+    }
+}

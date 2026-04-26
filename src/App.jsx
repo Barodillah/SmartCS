@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import PriceList from './pages/PriceList';
 import DealerLocation from './pages/DealerLocation';
 import ChatHistory from './pages/ChatHistory';
+import Aksesoris from './pages/Aksesoris';
 
 // Panel Views
 import PanelLayout from './components/layout/PanelLayout';
@@ -25,6 +26,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/price-list" element={<PriceList />} />
                     <Route path="/lokasi-dealer" element={<DealerLocation />} />
+                    <Route path="/aksesoris" element={<Aksesoris />} />
                     <Route path="/chat-history" element={<ChatHistory />} />
                 </Route>
 
