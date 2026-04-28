@@ -1,6 +1,5 @@
 import React from 'react';
 import Hero from '../components/sections/Hero';
-import ParallaxSection from '../components/sections/ParallaxSection';
 import Services from '../components/sections/Services';
 import FeaturedModels from '../components/sections/FeaturedModels';
 import VirtualCSHub from '../components/sections/VirtualCSHub';
@@ -11,7 +10,6 @@ const Home = () => {
     return (
         <main>
             <Hero />
-            <ParallaxSection />
             <Services />
             <FeaturedModels />
             <VirtualCSHub />

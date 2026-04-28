@@ -1,31 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-    LayoutDashboard, 
-    MessageSquare, 
-    CalendarCheck, 
-    CarFront, 
-    Users, 
-    AlertTriangle, 
-    Wrench, 
+import {
+    LayoutDashboard,
+    MessageSquare,
+    CalendarCheck,
+    CarFront,
+    Users,
+    AlertTriangle,
+    Wrench,
     UserCog,
     BookOpen,
     ChevronDown,
-    X
+    ShieldAlert,
+    X,
+    Package,
+    FileText
 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
 const PanelSidebar = ({ isOpen, setIsOpen }) => {
     const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+    const [badgeCounts, setBadgeCounts] = useState({});
+
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                const res = await fetch('https://csdwindo.com/api/chat/lead.php?action=count_new');
+                const data = await res.json();
+                if (data.status) setBadgeCounts(data.data);
+            } catch (err) {
+                console.error('Failed to fetch badge counts:', err);
+            }
+        };
+        fetchCounts();
+        const interval = setInterval(fetchCounts, 60000); // refresh every minute
+        return () => clearInterval(interval);
+    }, []);
 
     const navigations = [
         { name: 'Dashboard', path: '/panel', icon: <LayoutDashboard size={18} />, exact: true },
         { name: 'Chat History', path: '/panel/chat', icon: <MessageSquare size={18} /> },
-        { name: 'Booking Service', path: '/panel/booking', icon: <CalendarCheck size={18} /> },
-        { name: 'Test Drive', path: '/panel/test-drive', icon: <CarFront size={18} /> },
-        { name: 'Prospect', path: '/panel/prospect', icon: <Users size={18} /> },
-        { name: 'Emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} /> },
-        { name: 'Sparepart', path: '/panel/sparepart', icon: <Wrench size={18} /> },
+        { name: 'Booking Service', label: 'booking', path: '/panel/booking', icon: <CalendarCheck size={18} /> },
+        { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} /> },
+        { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} /> },
+        { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} /> },
+        { name: 'Sparepart', label: 'sparepart', path: '/panel/sparepart', icon: <Wrench size={18} /> },
+        { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} /> },
+        { name: 'Complaint', label: 'complaint', path: '/panel/complaint', icon: <ShieldAlert size={18} /> },
+        { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} /> },
         { name: 'Users', path: '/panel/users', icon: <UserCog size={18} /> },
     ];
 
@@ -37,10 +59,9 @@ const PanelSidebar = ({ isOpen, setIsOpen }) => {
     ];
 
     return (
-        <aside 
-            className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#111111] text-gray-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-                isOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+        <aside
+            className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#111111] text-gray-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
         >
             {/* Sidebar Header */}
             <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
@@ -64,15 +85,21 @@ const PanelSidebar = ({ isOpen, setIsOpen }) => {
                         end={item.exact}
                         onClick={() => setIsOpen(false)}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-4 py-3 rounded text-sm font-medium transition-colors ${
-                                isActive 
-                                    ? 'bg-[#E60012] text-white' 
-                                    : 'hover:bg-white/5 hover:text-white relative group'
+                            `flex items-center gap-3 px-4 py-3 rounded text-sm font-medium transition-colors ${isActive
+                                ? 'bg-[#E60012] text-white'
+                                : 'hover:bg-white/5 hover:text-white relative group'
                             }`
                         }
                     >
-                        {item.icon}
-                        <span>{item.name}</span>
+                        <div className="flex items-center gap-3">
+                            {item.icon}
+                            <span>{item.name}</span>
+                        </div>
+                        {item.label && badgeCounts[item.label] > 0 && (
+                            <span className="ml-auto bg-[#E60012] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {badgeCounts[item.label]}
+                            </span>
+                        )}
                     </NavLink>
                 ))}
 
@@ -96,10 +123,9 @@ const PanelSidebar = ({ isOpen, setIsOpen }) => {
                                     to={sub.path}
                                     onClick={() => setIsOpen(false)}
                                     className={({ isActive }) =>
-                                        `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${
-                                            isActive 
-                                                ? 'text-[#E60012] bg-[#E60012]/10' 
-                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                            ? 'text-[#E60012] bg-[#E60012]/10'
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
                                         }`
                                     }
                                 >

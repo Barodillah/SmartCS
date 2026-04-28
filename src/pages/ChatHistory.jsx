@@ -3,25 +3,9 @@ import { Link } from 'react-router-dom';
 import { MessageSquare, Clock, ArrowLeft, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../utils/constants';
+import { parseChatMarkdown } from '../utils/markdownParser';
 
 const CHAT_API_BASE = 'https://csdwindo.com/api/chat';
-
-// Markdown parser (simplified for history view)
-const parseMarkdown = (text) => {
-    if (!text) return '';
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 rounded text-[11px]">$1</code>');
-    html = html.replace(/^[\-\*\+] (.+)$/gm, '<li class="ml-4 list-disc text-[12px]">$1</li>');
-    html = html.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-[12px]">$1</li>');
-    html = html.replace(/\n/g, '<br />');
-    return html;
-};
 
 const ChatHistory = () => {
     const [sessions, setSessions] = useState([]);
@@ -263,7 +247,7 @@ const ChatHistory = () => {
                                                     ) : (
                                                         <div
                                                             className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:rounded [&_code]:text-[12px] [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:text-[13px] [&_li]:mb-1"
-                                                            dangerouslySetInnerHTML={{ __html: parseMarkdown(cleanMessage(msg.message)) }}
+                                                            dangerouslySetInnerHTML={{ __html: parseChatMarkdown(cleanMessage(msg.message)) }}
                                                         />
                                                     )}
                                                 </div>

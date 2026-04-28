@@ -1,43 +1,34 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Calendar, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import SectionTag from '../ui/SectionTag';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const ARTICLES = [
-    {
-        id: 1,
-        category: 'Berita',
-        title: 'Peluncuran Model Terbaru Mitsubishi: Inovasi Tanpa Batas',
-        date: '23 April 2026',
-        readTime: '3 min read',
-        image: '/images/updates/news.png',
-        excerpt: 'Temukan fitur-fitur mutakhir dan desain revolusioner dari lini kendaraan terbaru kami yang dirancang khusus untuk kenyamanan dan keamanan keluarga Anda.',
-    },
-    {
-        id: 2,
-        category: 'Kegiatan',
-        title: 'Gathering Komunitas Mitsubishi Bintaro 2026',
-        date: '15 April 2026',
-        readTime: '5 min read',
-        image: '/images/updates/activity.png',
-        excerpt: 'Kemeriahan acara kumpul bareng ratusan pemilik kendaraan Mitsubishi di Bintaro. Berbagi pengalaman, tips perawatan, hingga sesi test drive eksklusif.',
-    },
-    {
-        id: 3,
-        category: 'Insight',
-        title: 'Pentingnya Perawatan Berkala di Bengkel Resmi',
-        date: '10 April 2026',
-        readTime: '4 min read',
-        image: '/images/updates/insight.png',
-        excerpt: 'Ketahui mengapa servis rutin dengan suku cadang asli di dealer resmi dapat memperpanjang umur kendaraan Anda dan menjaga performa selalu optimal.',
-    }
-];
-
 const Updates = () => {
     const sectionRef = useRef(null);
+    const navigate = useNavigate();
+    const [articles, setArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchArticles = async () => {
+            try {
+                const res = await fetch('https://csdwindo.com/api/artikel/list.php?status=published');
+                const json = await res.json();
+                if (json.status && json.data) {
+                    setArticles(json.data.slice(0, 3)); // Only show latest 3
+                }
+            } catch (err) {
+                console.error("Failed to fetch updates:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchArticles();
+    }, []);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -80,15 +71,19 @@ const Updates = () => {
                             Dapatkan informasi terkini seputar berita, kegiatan komunitas, dan tips bermanfaat dari Dwindo Bintaro.
                         </p>
                     </div>
-                    <button className="mt-6 md:mt-0 flex items-center gap-2 font-display font-bold text-[#E60012] uppercase tracking-wide group hover:text-[#111111] transition-colors">
+                    <button onClick={() => navigate('/artikel')} className="mt-6 md:mt-0 flex items-center gap-2 font-display font-bold text-[#E60012] uppercase tracking-wide group hover:text-[#111111] transition-colors">
                         Lihat Semua 
                         <ArrowRight size={20} className="transform group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
 
                 <div className="articles-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {ARTICLES.map((article) => (
-                        <div key={article.id} className="article-card group drop-shadow-sm hover:drop-shadow-xl transition-all duration-500 cursor-pointer flex flex-col">
+                    {articles.map((article) => (
+                        <div 
+                            key={article.id} 
+                            onClick={() => navigate(`/artikel/${article.slug || article.id}`)}
+                            className="article-card group drop-shadow-sm hover:drop-shadow-xl transition-all duration-500 cursor-pointer flex flex-col"
+                        >
                             <div className="bg-white flex flex-col flex-1 relative overflow-hidden" style={{ clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}>
                                 <div className="relative h-64 overflow-hidden">
                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
@@ -111,11 +106,11 @@ const Updates = () => {
                                     <div className="flex items-center gap-4 text-sm text-gray-500 mb-4 font-medium">
                                         <div className="flex items-center gap-1.5">
                                             <Calendar size={14} />
-                                            {article.date}
+                                            {new Date(article.published_at || article.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             <Clock size={14} />
-                                            {article.readTime}
+                                            {article.read_time || '3 min read'}
                                         </div>
                                     </div>
                                     
@@ -124,7 +119,7 @@ const Updates = () => {
                                     </h3>
                                     
                                     <p className="text-gray-600 line-clamp-3 mb-6 flex-1">
-                                        {article.excerpt}
+                                        {article.subtitle}
                                     </p>
                                     
                                     <div className="mt-auto flex items-center font-display font-bold text-sm uppercase tracking-wide text-[#111111] group-hover:text-[#E60012] transition-colors">

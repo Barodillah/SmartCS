@@ -12,6 +12,7 @@ const Navigation = () => {
         { name: 'Home', path: '/' },
         { name: 'Price List', path: '/price-list' },
         { name: 'Aksesoris', path: '/aksesoris' },
+        { name: 'Berita', path: '/artikel' },
         { name: 'Chat History', path: '/chat-history' }
     ];
 
@@ -38,7 +39,7 @@ const Navigation = () => {
                 {/* Desktop Links */}
                 <div className="hidden lg:flex items-center gap-10">
                     {navLinks.map((link) => {
-                        const isActive = location.pathname === link.path;
+                        const isActive = link.path === '/' ? location.pathname === '/' : location.pathname.startsWith(link.path);
                         return (
                             <Link 
                                 key={link.name}
@@ -80,7 +81,7 @@ const Navigation = () => {
             <div className={`lg:hidden absolute top-full left-0 w-full bg-[#111111]/95 backdrop-blur-md border-b border-white/10 transition-all duration-300 overflow-hidden ${mobileMenuOpen ? 'max-h-[400px] opacity-100 py-4' : 'max-h-0 opacity-0 py-0'}`}>
                 <div className="flex flex-col px-6 gap-6">
                     {navLinks.map((link) => {
-                        const isActive = location.pathname === link.path;
+                        const isActive = link.path === '/' ? location.pathname === '/' : location.pathname.startsWith(link.path);
                         return (
                             <Link 
                                 key={link.name}

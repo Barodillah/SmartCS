@@ -1,0 +1,185 @@
+{
+    "brand": "PT. Dwindo Berlian Samjaya",
+    "category": "AC Kendaraan",
+    "knowledge": {
+        "importance_of_ac_service": [
+            "Menjaga performa AC tetap dingin, segar, dan sehat",
+            "Mencegah bau tidak sedap saat AC dinyalakan",
+            "Memastikan kondisi komponen AC tetap optimal",
+            "Mengurangi risiko bakteri di udara kabin",
+            "Mencegah overheating pada sistem AC",
+            "Memperpanjang umur komponen AC",
+            "Mencegah korosi dan penumpukan kotoran",
+            "Menghindari kerusakan fatal pada sistem AC"
+        ],
+        "ac_without_service_effect": {
+            "blower": [
+                "Kotoran bersirkulasi ke kabin melalui filter dan evaporator",
+                "Kotoran menumpuk pada sistem AC"
+            ],
+            "cabin_filter": [
+                "Filter kotor menyebabkan udara tidak tersaring dengan baik",
+                "Kualitas udara kabin menurun"
+            ],
+            "evaporator": [
+                "Penumpukan kotoran menyebabkan lumut",
+                "Menghambat sirkulasi udara dingin"
+            ]
+        },
+        "compressor_oil_importance": [
+            "Mencegah keausan kompresor",
+            "Mencegah overheat pada kompresor",
+            "Menjaga tekanan refrigerant sesuai standar",
+            "Memperpanjang umur kompresor",
+            "Mengurangi gesekan antar komponen"
+        ],
+        "fan_motor_importance": [
+            "Membantu kinerja AC",
+            "Menjaga pendinginan mesin"
+        ],
+        "fan_motor_failure_risk": [
+            "Mesin overheating",
+            "AC tidak berfungsi normal",
+            "Kerusakan piston dan cylinder liner",
+            "Cylinder head melengkung",
+            "Biaya perbaikan besar"
+        ],
+        "extra_fan_function": [
+            "Membantu radiator dan kondensor membuang panas",
+            "Menambah suplai angin saat macet",
+            "Meningkatkan pendinginan sistem AC"
+        ],
+        "ac_system_flow": [
+            "Kompresor memompa freon bertekanan tinggi",
+            "Freon masuk ke kondensor dan berubah menjadi cair",
+            "Freon disaring di filter dryer",
+            "Freon masuk ke expansion valve",
+            "Freon masuk ke evaporator",
+            "Blower meniup udara dingin ke kabin"
+        ]
+    },
+    "soft_selling": {
+        "routine_service": {
+            "interval": "6 bulan / 10.000 km",
+            "message": "Disarankan melakukan service AC secara berkala untuk menjaga performa dan mencegah kerusakan besar"
+        },
+        "compressor_oil": {
+            "interval": "1 tahun / 20.000 km",
+            "message": "Penggantian oli kompresor secara rutin dapat mencegah kerusakan mahal pada kompresor"
+        },
+        "fan_motor": {
+            "interval": "4 tahun / 80.000 km",
+            "message": "Motor fan yang tidak diganti berisiko menyebabkan overheating dan kerusakan mesin"
+        },
+        "extra_fan": {
+            "message": "Pemasangan ekstra fan sangat direkomendasikan untuk kondisi macet dan panas agar AC tetap dingin optimal"
+        },
+        "dirty_ac": {
+            "message": "Jika AC mulai tidak dingin atau berbau, kemungkinan besar sistem sudah kotor dan perlu dibersihkan"
+        },
+        "pre_post_check": {
+            "message": "Lakukan pengecekan sebelum dan sesudah service untuk memastikan performa AC meningkat"
+        }
+    },
+    "pricing": {
+        "paket_berkala": [
+            {
+                "name": "AC Clean",
+                "A": 338000,
+                "B": 338000
+            },
+            {
+                "name": "Cooling Grid Cleaner",
+                "A": 273000,
+                "B": 273000
+            },
+            {
+                "name": "AC Care",
+                "A": 195000,
+                "B": 195000
+            },
+            {
+                "name": "AC Fresh Berat Single Blower",
+                "A": 1040000,
+                "B": 1300000
+            },
+            {
+                "name": "AC Fresh Berat Double Blower",
+                "A": 1300000,
+                "B": 1690000
+            }
+        ],
+        "service": [
+            {
+                "name": "Oli Kompresor Single",
+                "A": 325000,
+                "B": 429000
+            },
+            {
+                "name": "Oli Kompresor Double",
+                "A": 429000,
+                "B": 455000
+            },
+            {
+                "name": "Flate Rate Service",
+                "A": 234000,
+                "B": 286000
+            }
+        ]
+    },
+    "services": {
+        "inspection": [
+            "Suhu blower",
+            "High pressure",
+            "Low pressure",
+            "Wind speed",
+            "Noise compressor",
+            "Noise blower"
+        ],
+        "cleaning": [
+            "Cabin air filter",
+            "Blower",
+            "Condensor",
+            "Radiator",
+            "Evaporator"
+        ],
+        "replacement": [
+            "Oli kompresor",
+            "Freon",
+            "Dryer"
+        ]
+    },
+    "general_check": [
+        "Refrigerant",
+        "Filter cabin",
+        "Blower AC",
+        "Temperature AC",
+        "Kecepatan blower",
+        "Compressor",
+        "Magnetic clutch",
+        "Condensor",
+        "Drain hose",
+        "Pipe & hose",
+        "Extra fan",
+        "Belt",
+        "AC control switch"
+    ],
+    "pre_post_check": {
+        "pre": {
+            "tujuan": "Mengetahui kondisi awal AC",
+            "indikasi": [
+                "AC tidak dingin optimal",
+                "Filter kotor",
+                "Blower kotor"
+            ]
+        },
+        "post": {
+            "tujuan": "Mengetahui peningkatan performa setelah service",
+            "hasil": [
+                "Suhu lebih dingin",
+                "Hembusan lebih kuat",
+                "Sirkulasi udara lebih bersih"
+            ]
+        }
+    }
+}

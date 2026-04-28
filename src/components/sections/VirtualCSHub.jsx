@@ -7,7 +7,7 @@ import { ANGULAR_CLIP } from '../../utils/constants';
 
 const VirtualCSHub = () => {
     return (
-        <section className="py-24 bg-[#0A0A0A] relative overflow-hidden">
+        <section id="virtual-cs-hub" className="py-24 bg-[#0A0A0A] relative overflow-hidden">
             {/* High-tech Background Elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#E60012] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
             <div className="absolute top-0 right-0 w-1/3 h-full opacity-5 pointer-events-none" style={{ background: 'repeating-linear-gradient(45deg, #E60012 0px, #E60012 1px, transparent 1px, transparent 10px)' }}></div>

@@ -1,28 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation } from 'lucide-react';
+import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation, ExternalLink } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../../utils/constants';
+import { parseChatMarkdown } from '../../utils/markdownParser';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const CHAT_API_BASE = 'https://csdwindo.com/api/chat';
 
-// Markdown parser
-const parseMarkdown = (text) => {
-    if (!text) return '';
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 rounded text-[11px]">$1</code>');
-    html = html.replace(/^[\-\*\+] (.+)$/gm, '<li class="ml-4 list-disc text-[12px]">$1</li>');
-    html = html.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-[12px]">$1</li>');
-    html = html.replace(/\n/g, '<br />');
-    return html;
-};
 
 const DeviceIcon = ({ type }) => {
     if (type === 'mobile') return <Smartphone size={14} className="text-gray-400" />;
@@ -101,6 +87,7 @@ const PanelChat = () => {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const location = useLocation();
     
     // Detail view state
     const [selectedSession, setSelectedSession] = useState(null);
@@ -128,6 +115,30 @@ const PanelChat = () => {
         const interval = setInterval(fetchSessions, 30000);
         return () => clearInterval(interval);
     }, []);
+
+    // Handle deep-linking from LeadManager
+    useEffect(() => {
+        if (location.state?.openSessionId && sessions.length > 0) {
+            const sessionToOpen = sessions.find(s => s.id === location.state.openSessionId);
+            if (sessionToOpen && (!selectedSession || selectedSession.id !== sessionToOpen.id)) {
+                openSession(sessionToOpen);
+                // Clear the state so it doesn't reopen on refresh
+                window.history.replaceState({}, document.title);
+            } else if (!sessionToOpen && !loading) {
+                // If session is old and not in list, fetch it directly
+                fetch(`${CHAT_API_BASE}/message.php?action=history&session_id=${location.state.openSessionId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status) {
+                            setSelectedSession({ id: location.state.openSessionId, status: 'unknown', ip_address: 'From Lead', created_at: new Date().toISOString() });
+                            setMessages(data.data?.messages || []);
+                        }
+                    })
+                    .catch(console.error);
+                window.history.replaceState({}, document.title);
+            }
+        }
+    }, [location.state, sessions, loading]);
 
     const openSession = async (session) => {
         setSelectedSession(session);
@@ -182,6 +193,7 @@ const PanelChat = () => {
             .join('\n')
             .replace(/\[EMERGENCY\]/g, '')
             .replace(/\[WHATSAPP\]/g, '')
+            .replace(/\[SAVE_LEAD:(\w+)\]([\s\S]*?)\[\/SAVE_LEAD\]/g, '')
             .trim() || '';
     };
 
@@ -330,6 +342,10 @@ const PanelChat = () => {
                                     </div>
                                     {messages.filter(msg => msg.sender_type !== 'system').map((msg) => {
                                         const coords = msg.sender_type === 'user' ? extractCoordinates(msg.message) : null;
+                                        const leadRegex = /\[SAVE_LEAD:(\w+)\]([\s\S]*?)\[\/SAVE_LEAD\]/g;
+                                        let leadMatch = leadRegex.exec(msg.message);
+                                        let leadLabel = leadMatch ? leadMatch[1] : null;
+
                                         return (
                                         <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : 'items-start'}`}>
                                             <div
@@ -350,13 +366,24 @@ const PanelChat = () => {
                                                 ) : (
                                                     <div
                                                         className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_code]:text-[11px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:text-[12px]"
-                                                        dangerouslySetInnerHTML={{ __html: parseMarkdown(cleanMessage(msg.message)) }}
+                                                        dangerouslySetInnerHTML={{ __html: parseChatMarkdown(cleanMessage(msg.message)) }}
                                                     />
                                                 )}
                                             </div>
                                             {coords && (
                                                 <div className="max-w-[85%] mt-1">
                                                     <LocationMap lat={coords.lat} lng={coords.lng} />
+                                                </div>
+                                            )}
+                                            {leadLabel && (
+                                                <div className="max-w-[85%] mt-1">
+                                                    <Link 
+                                                        to={`/panel/${leadLabel.replace('_', '-')}`} 
+                                                        className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded text-green-700 text-[11px] font-bold uppercase tracking-wider hover:bg-green-100 transition-colors"
+                                                    >
+                                                        <span>Lead Terbuat: {leadLabel.replace('_', ' ')}</span>
+                                                        <ExternalLink size={12} />
+                                                    </Link>
                                                 </div>
                                             )}
                                             <div className="text-[10px] font-medium text-gray-400 mt-1 px-1">

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator } from 'lucide-react';
+import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
+import { parseChatMarkdown } from '../utils/markdownParser';
 let priceListData = defaultPriceListData;
+let aiArticleData = [];
 import defaultPriceListData from '../../knowledge/price_list.json';
 import dealerData from '../../knowledge/lokasi_dealer.json';
 import promoData from '../../knowledge/promo/promo_dsf_april_2026.json';
@@ -13,6 +15,7 @@ import sparepartData from '../../knowledge/sparepart.json';
 import perawatanBerkalaData from '../../knowledge/mitsubishi_perawatan_berkala.json';
 import aksesorisData from '../../knowledge/aksesoris.json';
 import extendedSmartPackageData from '../../knowledge/extended_smart_package.json';
+import softSellingData from '../../knowledge/soft_selling_additional_services.json';
 import SimulasiKreditModal from './SimulasiKreditModal';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -51,6 +54,16 @@ const chatAPI = {
             });
             return await res.json();
         } catch (e) { console.error('Message send error:', e); return null; }
+    },
+    saveLead: async (leadData) => {
+        try {
+            const res = await fetch(`${CHAT_API_BASE}/lead.php?action=create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(leadData)
+            });
+            return await res.json();
+        } catch (e) { console.error('Lead save error:', e); return null; }
     }
 };
 
@@ -84,10 +97,10 @@ const getCurrentJakartaTime = () => {
     const now = new Date();
     const jakartaOptions = { timeZone: 'Asia/Jakarta' };
     const jakartaDate = new Date(now.toLocaleString('en-US', jakartaOptions));
-    
+
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    
+
     return {
         date: jakartaDate,
         dayName: days[jakartaDate.getDay()],
@@ -108,7 +121,7 @@ const getBookingDates = () => {
     const dates = [];
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    
+
     // Determine start: if before 23:59, tomorrow is available (H-1 rule)
     // We offer 3 days starting from tomorrow
     for (let i = 1; i <= 3; i++) {
@@ -139,68 +152,6 @@ const fetchSlotJam = async (tanggal) => {
     }
 };
 
-// --- Markdown Parser ---
-const parseMarkdown = (text) => {
-    if (!text) return '';
-
-    let html = text
-        // Escape HTML
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-    // Headings (must come before other line-level processing)
-    html = html.replace(/^###### (.+)$/gm, '<h6 class="font-bold text-[11px] mt-2 mb-1 uppercase tracking-wide">$1</h6>');
-    html = html.replace(/^##### (.+)$/gm, '<h5 class="font-bold text-[12px] mt-2 mb-1">$1</h5>');
-    html = html.replace(/^#### (.+)$/gm, '<h4 class="font-bold text-[13px] mt-3 mb-1">$1</h4>');
-    html = html.replace(/^### (.+)$/gm, '<h3 class="font-bold text-[14px] mt-3 mb-1">$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2 class="font-bold text-[15px] mt-3 mb-1">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 class="font-bold text-[16px] mt-3 mb-1">$1</h1>');
-
-    // Horizontal rules
-    html = html.replace(/^(---|\*\*\*|___)$/gm, '<hr class="my-2 border-t border-gray-300" />');
-
-    // Nested quotes
-    html = html.replace(/^&gt;&gt; (.+)$/gm, '<blockquote class="border-l-2 border-gray-400 pl-2 ml-3 my-1 italic text-gray-500">$1</blockquote>');
-    html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-2 border-[#E60012] pl-2 my-1 italic text-gray-600">$1</blockquote>');
-
-    // Code blocks
-    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 rounded p-2 my-1 text-[11px] overflow-x-auto"><code>$1</code></pre>');
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 text-[#E60012] px-1 rounded text-[11px]">$1</code>');
-
-    // Bold + Italic
-    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    // Bold
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    // Italic
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-    // Strikethrough
-    html = html.replace(/~~(.+?)~~/g, '<del class="text-gray-400">$1</del>');
-
-    // Images
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full max-h-[300px] object-contain rounded-lg my-2 shadow-sm border border-gray-200 bg-white/5" />');
-
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#E60012] underline hover:text-[#B5000F]">$1</a>');
-
-    // Numbered lists
-    html = html.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-[12px] leading-relaxed">$1</li>');
-
-    // Bullet lists
-    html = html.replace(/^[\-\*\+] (.+)$/gm, '<li class="ml-4 list-disc text-[12px] leading-relaxed">$1</li>');
-
-    // Wrap consecutive <li> in <ul> or <ol>
-    html = html.replace(/((?:<li class="ml-4 list-disc[^"]*">[^<]*<\/li>\n?)+)/g, '<ul class="my-1 space-y-0.5">$1</ul>');
-    html = html.replace(/((?:<li class="ml-4 list-decimal[^"]*">[^<]*<\/li>\n?)+)/g, '<ol class="my-1 space-y-0.5">$1</ol>');
-
-    // Line breaks (for remaining text)
-    html = html.replace(/\n/g, '<br />');
-
-    return html;
-};
 
 // --- Fetch Nopol Data ---
 const fetchNopolData = async (nopol) => {
@@ -224,15 +175,15 @@ const fetchNopolData = async (nopol) => {
 const buildFiturContext = () => {
     const allFitur = [destinatorData];
     let text = '';
-    
+
     // Generic deep traversal to extract all text from any JSON structure
     const extractText = (obj, prefix = '', depth = 0) => {
         let result = '';
         if (depth > 6) return result; // prevent infinite recursion
-        
+
         for (const [key, value] of Object.entries(obj)) {
             const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-            
+
             if (typeof value === 'string') {
                 result += `- ${label}: ${value}\n`;
             } else if (typeof value === 'number') {
@@ -265,19 +216,19 @@ const buildFiturContext = () => {
         }
         return result;
     };
-    
+
     for (const fiturFile of allFitur) {
         const k = fiturFile.kendaraan;
         if (!k) continue;
-        
+
         // Header — try multiple possible name fields
         const modelName = k.model_identity?.full_name || k.nama_model || 'Unknown';
         const segment = k.model_identity?.market_segment || k.tipe || '';
         const accolades = k.model_identity?.accolades || k.penghargaan || '';
-        
+
         text += `\n### ${modelName.toUpperCase()} — ${segment}\n`;
         if (accolades) text += `🏆 ${accolades}\n`;
-        
+
         // Extract everything under kendaraan
         text += extractText(k, '', 0);
         text += '\n';
@@ -344,7 +295,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
             text += `**PROMO ${model.name.toUpperCase()}**\n`;
             if (model.programs.cashback) text += `- Cashback tersedia\n`;
             if (model.programs.trade_in) text += `- Program Trade-in: ${model.programs.trade_in}\n`;
-            
+
             const finance = model.programs.finance;
             if (finance) {
                 if (finance.dp_ringan) text += `- DP Ringan: mulai ${finance.dp_ringan.dp_min} (tenor hingga ${finance.dp_ringan.tenor_max || '7 tahun'})\n`;
@@ -355,7 +306,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
                 }
                 if (finance.smart_cash) text += `- Smart Cash: Bunga ${finance.smart_cash.interest}, DP mulai ${finance.smart_cash.dp_min || '65%'}\n`;
             }
-            
+
             if (model.benefits && model.benefits.length > 0) {
                 text += `- Keuntungan tambahan: ${model.benefits.join(', ')}\n`;
             }
@@ -378,7 +329,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
 
     const buildSimulasiKreditContext = () => {
         let text = `**Region:** ${simulasiKreditData.metadata.region} (${simulasiKreditData.metadata.last_updated})\n\n`;
-        
+
         text += `**Data OTR Tangerang (Referensi):**\n`;
         if (simulasiKreditData.mitsubishi_models_otr_tangerang) {
             for (const [model, variants] of Object.entries(simulasiKreditData.mitsubishi_models_otr_tangerang)) {
@@ -392,12 +343,12 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         } else {
             text += `(Lihat harga OTR dari referensi Daftar Harga Passenger Car)\n`;
         }
-        
+
         text += `\n**Pilihan Leasing & Suku Bunga:**\n`;
         for (const [provider, data] of Object.entries(simulasiKreditData.leasing_providers)) {
             const pName = provider.replace(/_/g, ' ');
             text += `- **${pName}**${data.is_captive ? ' (Captive Finance)' : ''}:\n`;
-            
+
             if (data.programs) {
                 data.programs.forEach(prog => {
                     text += `  • Program: ${prog.name}\n`;
@@ -411,19 +362,19 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
                     text += `    - Syarat: ${prog.structure || `Min DP ${(prog.min_dp * 100)}%`}\n`;
                 });
             }
-            
+
             if (data.interest_rates_flat_2025) {
                 text += `  • Suku Bunga Flat (2025):\n`;
                 for (const [tenor, rate] of Object.entries(data.interest_rates_flat_2025)) {
                     text += `    - ${tenor.replace('_', ' ')}: ${(rate * 100).toFixed(2)}%\n`;
                 }
             }
-            
+
             if (data.admin_fee) {
                 text += `  • Admin Fee: Rp ${data.admin_fee.toLocaleString('id-ID')}\n`;
             }
         }
-        
+
         const gf = simulasiKreditData.global_fees_and_insurance;
         text += `\n**Global Fees & Asuransi:**\n`;
         text += `- Provisi: ${(gf.provision_rate * 100)}% dari Plafon Kredit\n`;
@@ -435,7 +386,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         gf.fidusia_ranges.forEach(r => {
             text += `  • Plafon s/d Rp ${r.max_loan.toLocaleString('id-ID')}: Rp ${r.fee.toLocaleString('id-ID')}\n`;
         });
-        
+
         return text;
     };
 
@@ -461,12 +412,12 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         let text = '';
         const accessories = aksesorisData.mitsubishi_accessories;
         const modelList = [];
-        
+
         for (const [modelKey, categories] of Object.entries(accessories)) {
             const modelName = modelKey.replace(/_/g, ' ');
             modelList.push(modelName);
             text += `\n**${modelName.toUpperCase()}**\n`;
-            
+
             // Build a lookup map for individual prices in this model
             const individualPrices = {};
             if (categories.exterior) {
@@ -475,14 +426,14 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
             if (categories.interior) {
                 categories.interior.forEach(i => individualPrices[i.item] = i.price);
             }
-            
+
             for (const [category, items] of Object.entries(categories)) {
                 const catLabel = category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                 text += `*${catLabel}:*\n`;
                 items.forEach(item => {
                     let itemText = `- ${item.item}: Rp ${item.price.toLocaleString('id-ID')}`;
                     if (item.img) itemText += ` | [GAMBAR: ${item.img}]`;
-                    
+
                     if (item.include && item.include.length > 0) {
                         let totalSatuan = 0;
                         const includeDetails = item.include.map(inc => {
@@ -490,7 +441,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
                             totalSatuan += price;
                             return `${inc} (Rp ${price.toLocaleString('id-ID')})`;
                         });
-                        
+
                         itemText += `\n  - Item Termasuk: ${includeDetails.join(', ')}`;
                         if (totalSatuan > 0) {
                             const hemat = totalSatuan - item.price;
@@ -501,7 +452,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
                 });
             }
         }
-        
+
         text += `\nModel yang tersedia data aksesorisnya: ${modelList.join(', ')}\n`;
         return text;
     };
@@ -543,9 +494,43 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         return text;
     };
 
+    const buildSoftSellingACContext = () => {
+        let text = '';
+        const ss = softSellingData;
+
+        text += `**Kategori:** ${ss.category}\n`;
+        text += `**Interval Service AC Berkala:** ${ss.soft_selling.routine_service.interval}\n\n`;
+
+        text += `**Pentingnya Service AC:**\n`;
+        ss.knowledge.importance_of_ac_service.forEach(s => { text += `- ${s}\n`; });
+
+        text += `\n**Dampak AC Tanpa Service:**\n`;
+        for (const [part, effects] of Object.entries(ss.knowledge.ac_without_service_effect)) {
+            text += `- *${part}:* ${effects.join('; ')}\n`;
+        }
+
+        text += `\n**Soft Selling Messages:**\n`;
+        for (const [key, val] of Object.entries(ss.soft_selling)) {
+            text += `- ${key}: ${val.message}${val.interval ? ` (Interval: ${val.interval})` : ''}\n`;
+        }
+
+        text += `\n**Harga Paket Service AC Berkala:**\n`;
+        ss.pricing.paket_berkala.forEach(p => {
+            text += `- ${p.name}: Tipe A Rp ${p.A.toLocaleString('id-ID')} / Tipe B Rp ${p.B.toLocaleString('id-ID')}\n`;
+        });
+
+        text += `\n**Harga Service AC Lainnya:**\n`;
+        ss.pricing.service.forEach(p => {
+            text += `- ${p.name}: Tipe A Rp ${p.A.toLocaleString('id-ID')} / Tipe B Rp ${p.B.toLocaleString('id-ID')}\n`;
+        });
+
+        text += `\n**General Check AC meliputi:** ${ss.general_check.join(', ')}\n`;
+        return text;
+    };
+
     const buildPerawatanBerkalaContext = () => {
         let text = '';
-        
+
         // Kebijakan free service
         const kebijakan = perawatanBerkalaData.kebijakan_free_service;
         text += `**Program Free Service MMKSI:**\n`;
@@ -557,19 +542,19 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
             text += `- ${c}\n`;
         });
         text += `\n`;
-        
+
         // Per kendaraan
         const kendaraanMap = perawatanBerkalaData.kendaraan;
         for (const [key, vehicle] of Object.entries(kendaraanMap)) {
             text += `\n### ${vehicle.nama_lengkap}\n`;
-            
+
             // Interval antara (khusus CR45)
             if (vehicle.perawatan_interval_antara) {
                 const ia = vehicle.perawatan_interval_antara;
                 text += `**Servis Interval Antara** (KM ${ia.km_berlaku.map(k => k.toLocaleString('id-ID')).join(', ')}): Jasa Rp ${ia.jasa.toLocaleString('id-ID')} | Grand Total: Rp ${ia.grand_total.toLocaleString('id-ID')}\n`;
                 text += `  Spare part: ${ia.spare_part.map(sp => sp.nama + ' x' + sp.qty).join(', ')}\n`;
             }
-            
+
             // Per KM service
             for (const [kmKey, service] of Object.entries(vehicle.perawatan)) {
                 const kmFormatted = Number(kmKey).toLocaleString('id-ID');
@@ -585,7 +570,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
                 text += `- **Grand Total: Rp ${service.grand_total.toLocaleString('id-ID')}**\n`;
             }
         }
-        
+
         // Ringkasan biaya
         text += `\n### Ringkasan Estimasi Biaya Per Model\n`;
         for (const [modelKey, intervals] of Object.entries(perawatanBerkalaData.ringkasan_biaya)) {
@@ -599,7 +584,16 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
                 }
             }
         }
-        
+
+        return text;
+    };
+
+    const buildAiArticleContext = () => {
+        if (!aiArticleData || aiArticleData.length === 0) return '';
+        let text = `\n### Berita & Artikel Terbaru (Gunakan Jika Perlu Referensi Artikel)\n`;
+        aiArticleData.forEach(item => {
+            text += `- [ARTICLE:${item.slug}] ${item.title}: ${item.subtitle || ''}\n`;
+        });
         return text;
     };
 
@@ -668,7 +662,19 @@ Setelah data terkonfirmasi → Tanyakan:
 - **Kelipatan GENAP** (20.000 km, 40.000 km, 60.000 km, 80.000 km, dst) = **Service Besar** → Estimasi waktu pengerjaan: **lebih dari 2 jam** (lebih lama dari service kecil)
 - Jika customer menyampaikan ada **keluhan/kendala** → Sampaikan bahwa **estimasi waktu belum bisa ditentukan**, harus dilakukan **pengecekan di tempat** oleh teknisi.
 
-Setelah customer menjawab service rutin & keluhan, **informasikan jenis service** (kecil/besar) dan estimasi waktunya sebelum lanjut ke langkah 4.
+Setelah customer menjawab service rutin & keluhan, **informasikan jenis service** (kecil/besar) dan estimasi waktunya.
+
+**SOFT SELLING TAMBAHAN SERVICE (PENTING — LAKUKAN DENGAN HALUS):**
+Setelah customer menyampaikan jenis service (kecil/besar) dan keluhan, SEBELUM lanjut ke langkah 4 (jadwal), tanyakan dengan HALUS dan NATURAL apakah customer ingin menambahkan layanan perawatan AC. Gunakan pendekatan soft-selling, JANGAN memaksa.
+
+Contoh pendekatan halus:
+- "Oh ya, ngomong-ngomong apakah AC kendaraannya masih terasa dingin optimal? 😊 Kami juga menyediakan layanan **perawatan AC** yang bisa sekalian dilakukan saat service nanti."
+- "Btw, sudah berapa lama AC kendaraannya tidak diservice? Kami punya **paket AC Clean** mulai dari Rp 338.000 yang bisa sekalian dikerjakan biar kendaraannya makin nyaman. 😊"
+
+Jika customer **tertarik** → jelaskan pilihan paket AC dari data referensi dan catat sebagai catatan tambahan service.
+Jika customer **tidak tertarik** atau mengabaikan → lanjut langsung ke LANGKAH 4 tanpa memaksa.
+
+Setelah selesai, lanjut ke langkah 4.
 
 ### LANGKAH 4: Tanyakan Jadwal (Tanggal & Jam)
 Setelah mengetahui jenis service → Tanyakan jadwal booking:
@@ -765,6 +771,45 @@ ${buildSimulasiKreditContext()}
   4. Setelah customer memberikan lokasi koordinat, minta juga **detail alamat** (nama jalan, patokan, dll) untuk memudahkan tim menemukan lokasi.
   5. Kumpulkan: Nama, No HP, Nopol, Jenis Kendaraan, Keluhan.
   6. Sampaikan bahwa tim akan segera menghubungi.
+
+## Alur Complaint / Kritik & Saran (PENTING)
+Jika customer ingin menyampaikan **keluhan, complaint, kritik, saran, masukan, kekecewaan, ketidakpuasan**, atau feedback negatif/positif:
+
+### LANGKAH 1: Tanyakan Konteks
+Tanyakan dulu: **"Keluhan/masukan Bapak/Ibu terkait apa ya?"** dan berikan pilihan:
+- **Pembelian** — terkait proses pembelian kendaraan (sales, harga, promo, janji, dll)
+- **Service** — terkait pengalaman service di bengkel (hasil kerja, waktu tunggu, dll)
+- **Lainnya** — hal lain di luar pembelian dan service
+
+### LANGKAH 2: Kumpulkan Data Sesuai Konteks
+
+**Jika terkait PEMBELIAN:**
+1. Tanyakan **model/tipe kendaraan** yang dibeli atau diminati.
+2. Tanyakan **nama Sales** yang menangani (jika customer ingat).
+3. Minta customer ceritakan detail keluhan/kritik/sarannya.
+
+**Jika terkait SERVICE:**
+1. Tanyakan **Nomor Polisi (Nopol)** kendaraan yang di-service.
+2. Minta customer ceritakan detail keluhan/kritik/sarannya.
+
+**Jika terkait LAINNYA:**
+1. Persilakan customer menceritakan keluhan/kritik/sarannya secara bebas.
+2. Terima dan catat apa adanya.
+
+### LANGKAH 3: Kumpulkan Data Wajib
+Setelah detail keluhan/masukan diterima, WAJIB tanyakan:
+- **Nama Lengkap**
+- **Nomor HP/WhatsApp**
+
+### LANGKAH 4: Konfirmasi & Selesai
+Ringkaskan data yang diterima:
+- Jenis: Pembelian / Service / Lainnya
+- Detail keluhan/masukan
+- Data tambahan (model kendaraan / nama sales / nopol, sesuai konteks)
+- Nama & No HP customer
+
+Sampaikan bahwa keluhan/masukan sudah dicatat dan akan diteruskan ke **tim terkait** untuk ditindaklanjuti. Customer akan dihubungi kembali.
+
 ${nopolContext ? `\n## Data Kendaraan Customer (dari sistem)\n${nopolContext}\n` : ''}
 ## Data Referensi
 
@@ -792,13 +837,26 @@ ${buildSparepartContext()}
 ### Data Aksesoris Kendaraan Mitsubishi
 ${buildAksesorisContext()}
 
+### Data Layanan Service AC Kendaraan (Soft Selling)
+${buildSoftSellingACContext()}
+
 ### Data Perawatan Berkala (Estimasi Biaya & Pekerjaan per KM)
 ${buildPerawatanBerkalaContext()}
 
 ### Perpanjangan Smart Paket Service (Extended Smart Package)
 ${buildExtendedSmartPackageContext()}
+${buildAiArticleContext()}
 
-## Alur Pertanyaan Service Berkala / Perawatan Berkala (PENTING)
+## REKOMENDASI ARTIKEL OTOMATIS (SANGAT PENTING & WAJIB)
+- Kamu SEKARANG SANGAT SENSITIF terhadap peluang untuk membagikan artikel.
+- **TIDAK HANYA SEBAGAI FALLBACK:** SETIAP KALI kamu merespons pertanyaan customer (baik tentang harga, servis, fitur, atau sekadar menyebut model mobil), kamu **WAJIB MUTLAK** mengecek daftar **Berita & Artikel Terbaru**.
+- Jika ada artikel yang berkaitan dengan percakapan (misal: customer tanya Xpander, lalu ada artikel soal Xpander atau promo), WAJIB sisipkan rekomendasi artikel tersebut di akhir jawabanmu!
+- Walaupun topiknya hanya berkaitan SEDIKIT SAJA (misal: sama-sama soal servis atau sama-sama Mitsubishi), kamu **WAJIB** melampirkannya.
+- Lampirkan **1 hingga 3 artikel** sekaligus.
+- **SELALU** gunakan tag **[ARTICLE:slug]** untuk setiap artikel yang direkomendasikan.
+- Contoh: "Oh ya, DINA juga punya beberapa artikel menarik yang mungkin Bapak/Ibu suka baca: [ARTICLE:peluncuran-model-terbaru-mitsubishi] [ARTICLE:pentingnya-perawatan-berkala-di-bengkel-resmi]"
+
+## Alur Pertanyaan Perawatan Berkala (PENTING)
 - Jika customer bertanya tentang **service berkala, perawatan berkala, biaya service, estimasi biaya service, apa saja yang dikerjakan saat service, service berapa km, jadwal perawatan**, atau pertanyaan seputar service rutin kendaraan:
   1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan (Xpander, All New Pajero Sport, atau Pajero Sport CR45).
   2. **Tanyakan KM berapa** yang ingin diketahui jika belum disebutkan (10.000 km, 20.000 km, dst).
@@ -815,6 +873,26 @@ ${buildExtendedSmartPackageContext()}
   8. Saat menampilkan estimasi, gunakan format yang rapi dan mudah dibaca (list/tabel). Sampaikan bahwa biaya adalah **estimasi** dan bisa berbeda tergantung kondisi aktual kendaraan.
   9. **Follow-up:** Setelah menjawab pertanyaan service berkala, tawarkan customer untuk **booking service** langsung. Contoh: "Apakah Bapak/Ibu ingin langsung booking service di Mitsubishi Dwindo Bintaro? 😊"
   10. **PENTING — Perpanjangan Smart Paket Service:** Jika customer menanyakan biaya service di **KM di atas 50.000 km** (artinya sudah di luar masa free service), atau jika customer **menanyakan promo service / paket hemat service**, WAJIB tawarkan program **Perpanjangan Smart Paket Service**. Jelaskan keuntungannya (hemat hingga 27%, gratis suku cadang & jasa sesuai ketentuan, perpanjangan garansi, diskon ban & baterai, layanan 24HES). Sebutkan pilihan paket (2XPM, 4XPM, 6XPM) beserta harganya sesuai model kendaraan. Gunakan data dari **Perpanjangan Smart Paket Service** di atas.
+  11. **SOFT SELLING AC (HALUS):** Setelah memberikan estimasi service berkala, sisipkan tawaran perawatan AC dengan sangat halus. Contoh: "Oh ya, sambil service berkala nanti, apakah AC kendaraannya juga masih nyaman? Kalau mau sekalian perawatan AC, kami punya paket **AC Clean** mulai dari Rp 338.000 😊". Cukup 1 kalimat saja, jangan memaksa. Jika customer tidak merespons tentang AC, lanjutkan tanpa mengulangi.
+
+## Alur Keluhan AC / Kondisi AC (PENTING — SOFT SELLING)
+Jika customer menyampaikan keluhan terkait **AC tidak dingin, AC bau, AC berbunyi, AC bocor, hembusan AC lemah, AC panas, blower tidak kencang, AC mati**, atau masalah seputar sistem AC kendaraan:
+
+1. **Tunjukkan empati** dan jelaskan bahwa kondisi tersebut wajar terjadi jika AC belum diservice secara berkala.
+2. **Edukasi dengan halus** menggunakan data dari "Data Layanan Service AC". Jelaskan dampak AC yang tidak diservice (filter kotor, evaporator berlumut, kualitas udara menurun) tanpa menakut-nakuti.
+3. **Rekomendasikan paket** yang sesuai dengan keluhan:
+   - AC tidak dingin / hembusan lemah → **AC Fresh Berat** (pembersihan menyeluruh evaporator, blower, kondensor)
+   - AC bau / tidak segar → **AC Clean** atau **AC Care** (pembersihan ringan & anti-bakteri)
+   - AC kompresor berisik → sarankan cek **Oli Kompresor** dan **General Check AC**
+4. **Sebutkan estimasi harga** dari data pricing yang tersedia.
+5. **Tawarkan untuk booking service** agar bisa langsung ditangani oleh teknisi.
+6. **JANGAN pernah mendiagnosis secara pasti** — selalu sampaikan bahwa kondisi aktual perlu dicek langsung oleh teknisi.
+
+**ATURAN SOFT SELLING:**
+- Utamakan EDUKASI, bukan jualan. Berikan informasi bermanfaat terlebih dahulu.
+- Gunakan bahasa yang caring, bukan menakut-nakuti.
+- Contoh kalimat yang BAIK: "Nah, biasanya kalau AC sudah mulai kurang dingin, itu tanda kalau sistem AC-nya perlu dibersihkan. Di bengkel kami ada paket AC Clean mulai dari Rp 338.000 yang bisa membantu mengembalikan performa AC-nya 😊"
+- Contoh kalimat yang BURUK: "AC Bapak/Ibu rusak karena tidak pernah diservice!"
 
 ## Alur Pertanyaan Sparepart (PENTING)
 - Jika customer bertanya tentang **sparepart, suku cadang, onderdil, part, oli, filter, gasket**, atau komponen kendaraan lainnya:
@@ -826,6 +904,7 @@ ${buildExtendedSmartPackageContext()}
   6. Jika **TIDAK ditemukan** di data sparepart (part tidak tercantum), jawab dengan jujur bahwa data sparepart tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung** agar mendapatkan informasi akurat. Sertakan tag **[WHATSAPP]** di awal jawaban agar tombol "Hubungi CS Kami" muncul.
   7. Jangan pernah mengarang atau mengira-ngira harga/kode sparepart yang tidak ada di data.
   8. **Follow-up:** Setelah menjawab pertanyaan sparepart, tawarkan customer untuk **booking service** agar pemasangan/penggantian part bisa dijadwalkan. Contoh: "Apakah Bapak/Ibu ingin langsung booking service untuk penggantian part ini di Mitsubishi Dwindo Bintaro? 😊"
+  9. **SOFT SELLING AC (HALUS):** Jika part yang ditanyakan customer terkait dengan **filter cabin, filter AC, blower, evaporator, freon, kompresor AC**, atau komponen AC lainnya, sisipkan tawaran perawatan AC secara halus. Contoh: "Btw, kalau sudah waktunya ganti filter AC, mungkin sekalian bisa dipertimbangkan paket **AC Clean** kami (Rp 338.000) untuk pembersihan menyeluruh agar AC-nya kembali optimal 😊". Cukup 1 kalimat, jangan memaksa.
 
 ## Alur Pertanyaan Aksesoris (PENTING)
 - Jika customer bertanya tentang **aksesoris, accessories, bodykit, spoiler, dashcam, side visor, mud guard, muffler cutter, scuff plate, emblem, garnish, luggage tray, paket aksesoris**, atau perlengkapan tambahan kendaraan:
@@ -870,21 +949,42 @@ Contoh format:
 - **Kendaraan terbaru Mitsubishi adalah DESTINATOR** — Premium Family SUV 7-Seater, Car of The Year 2025.
 - Jika customer bertanya soal kendaraan terbaru, mobil baru Mitsubishi, atau rekomendasi SUV keluarga, SELALU rekomendasikan **Destinator** dan gunakan data fitur yang tersedia di atas.
 
-## ⛔ PERINGATAN KERAS — ANTI HALUSINASI
+## ⛔ PERINGATAN KERAS — ANTI HALUSINASI & FALLBACK
 - **DILARANG KERAS** membuat, mengarang, atau mengira-ngira informasi yang TIDAK ada di data referensi yang diberikan.
-- **JANGAN PERNAH** mengarang spesifikasi, fitur, harga, promo, atau detail kendaraan yang tidak tercantum dalam data di atas.
-- **JANGAN PERNAH** menyebutkan angka harga, diskon, atau cicilan yang tidak ada dalam data referensi.
-- **JANGAN PERNAH** menambahkan fitur kendaraan yang tidak disebutkan dalam data.
-- Jika customer bertanya sesuatu yang **TIDAK ADA di data referensi**, jawab dengan jujur: "Mohon maaf, untuk informasi lebih detail mengenai hal tersebut, DINA sarankan untuk menghubungi tim kami langsung ya." dan sertakan tag **[WHATSAPP]**.
-- **Lebih baik jujur tidak tahu daripada memberikan informasi yang salah.**
-- Setiap jawaban HARUS berdasarkan data yang tersedia. Jika ragu, arahkan ke dealer langsung.
+- **JANGAN PERNAH** mengarang spesifikasi, fitur, harga, promo, atau detail kendaraan.
+- Jika customer bertanya sesuatu yang **TIDAK ADA di data referensi (termasuk pertanyaan di luar otomotif)**, ikuti 2 langkah ini:
+  1. **PERTAMA (WAJIB):** Cek daftar "Berita & Artikel Terbaru". Kamu WAJIB merespons dengan merekomendasikan artikel (hingga 3 artikel) menggunakan tag \`[ARTICLE:slug]\` sebagai solusi utama pengalihan topik.
+  2. **KEDUA:** HANYA JIKA benar-benar 100% tidak ada satupun artikel yang bisa disambung-sambungkan, BARU jawab jujur: "Mohon maaf, DINA belum memiliki informasi mengenai hal tersebut. Silakan hubungi tim CS kami ya." dan sertakan tag **[WHATSAPP]**.
+- **Lebih baik merekomendasikan artikel dari daftar referensi daripada memberikan informasi yang salah atau langsung menyerah.**
 
 ## Aturan Penting Lainnya
 - JANGAN membuat informasi palsu. Jika tidak tahu, arahkan ke dealer langsung.
 - Harga OTR Jabodetabek, bisa berubah sewaktu-waktu.
 - Promo bersifat periodik, arahkan ke dealer langsung.
 - PASTIKAN jawaban LENGKAP dan TIDAK TERPOTONG. Lebih baik singkat tapi utuh daripada panjang tapi terpotong.
-- Jika kamu **tidak bisa menjawab** pertanyaan, atau customer meminta **nomor WhatsApp / kontak CS / bicara dengan manusia**, sertakan tag **[WHATSAPP]** di awal jawaban agar sistem menampilkan tombol "Hubungi CS Kami" yang mengarah ke WhatsApp.`;
+- Jika kamu **tidak bisa menjawab** pertanyaan, atau customer meminta **nomor WhatsApp / kontak CS / bicara dengan manusia**, sertakan tag **[WHATSAPP]** di awal jawaban agar sistem menampilkan tombol "Hubungi CS Kami" yang mengarah ke WhatsApp.
+
+## Menyimpan Data Lead ke Sistem (SANGAT PENTING)
+Setiap kali kamu sudah berhasil mengumpulkan data LENGKAP customer, WAJIB sertakan tag berikut di AKHIR jawaban (SEBELUM quick reply 💬). Tag ini TIDAK ditampilkan ke customer.
+
+**Format:**
+[SAVE_LEAD:label]{"customer_name":"...","customer_phone":"...","customer_nopol":"...","vehicle_model":"...","data":{...konteks spesifik...}}[/SAVE_LEAD]
+
+**Kapan emit tag (HANYA saat data LENGKAP):**
+- **[SAVE_LEAD:booking]** → Setelah LANGKAH 5 booking selesai (jadwal terkonfirmasi). data: {service_km, service_type, keluhan, booking_date, booking_time, location, estimasi_waktu}
+- **[SAVE_LEAD:test_drive]** → Setelah customer berikan nama, HP, model, jadwal. data: {preferred_date, preferred_time, dealer_location}
+- **[SAVE_LEAD:prospect]** → Setelah customer berikan nama dan HP terkait pembelian/info harga. data: {interest_type, financing_type}
+- **[SAVE_LEAD:emergency]** → Setelah semua data darurat terkumpul (nama, HP, nopol, kendaraan, keluhan, lokasi). data: {latitude, longitude, address_detail, keluhan, google_maps_url}
+- **[SAVE_LEAD:sparepart]** → Setelah customer konfirmasi pesan sparepart + nama HP. data: {items: [{part_number, part_name, harga_satuan}], is_ordering: true}
+- **[SAVE_LEAD:aksesoris]** → Setelah customer konfirmasi pesan aksesoris + nama HP. data: {items: [{item_name, harga}], is_ordering: true}
+- **[SAVE_LEAD:complaint]** → Setelah customer sampaikan keluhan/kritik/saran + nama HP. complaint_category WAJIB diisi: "pembelian", "service", atau "lainnya". data: {complaint_category, complaint_detail, sales_name (jika pembelian), nopol (jika service)}
+
+**ATURAN SAVE_LEAD:**
+- Emit tag SATU KALI saja per konteks per percakapan. Jangan duplikat.
+- Jika data belum lengkap (terutama nama dan no HP), JANGAN emit tag.
+- Tag harus di AKHIR jawaban, SEBELUM quick reply 💬.
+- JSON harus valid dan lengkap.
+- Field yang tidak tersedia boleh dikosongkan (null), tapi customer_name dan customer_phone WAJIB ada.`;
 };
 
 const getInitialMessages = () => {
@@ -908,6 +1008,7 @@ const VirtualCS = () => {
         'Lokasi Dealer'
     ]);
     const [isSimulasiOpen, setIsSimulasiOpen] = useState(false);
+    const [leadSavedAlert, setLeadSavedAlert] = useState({ show: false, label: '' });
     const [sessionId, setSessionId] = useState(null);
     const sessionIdRef = useRef(null);
     const chatEndRef = useRef(null);
@@ -927,6 +1028,15 @@ const VirtualCS = () => {
                 }
             })
             .catch(e => console.error('Failed to fetch dynamic price list', e));
+
+        fetch('https://csdwindo.com/api/artikel/ai_list.php')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status && data.data) {
+                    aiArticleData = data.data;
+                }
+            })
+            .catch(e => console.error('Failed to fetch ai article list', e));
     }, []);
 
     // --- Session Management ---
@@ -943,47 +1053,56 @@ const VirtualCS = () => {
                 if (data.status && data.data?.messages?.length > 0) {
                     const loadedMessages = [];
                     const loadedHistory = [];
-                    
+
                     let lastBotQuestions = null;
-                    
+
                     data.data.messages.forEach((msg, index) => {
                         if (msg.sender_type === 'user' || msg.sender_type === 'bot' || msg.sender_type === 'cs') {
                             const utcDateStr = msg.created_at.includes('Z') ? msg.created_at : msg.created_at.replace(' ', 'T') + 'Z';
                             const msgId = new Date(utcDateStr).getTime() + index; // + index to ensure unique IDs if messages have same timestamp
-                            
+
                             let finalText = msg.message;
                             let isEmergency = false;
                             let showWhatsApp = false;
                             let showSimulasiKreditButton = false;
+                            let articleMatches = [];
 
                             if (msg.sender_type === 'bot' || msg.sender_type === 'cs') {
                                 const { cleanText, questions } = extractQuickQuestions(msg.message);
                                 isEmergency = msg.message.includes('[EMERGENCY]');
                                 showWhatsApp = msg.message.includes('[WHATSAPP]');
                                 showSimulasiKreditButton = msg.message.includes('[SIMULASI_KREDIT]');
-                                finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').trim();
-                                
+
+                                const articleRegex = /\[ARTICLE:([^\]]+)\]/g;
+                                let match;
+                                while ((match = articleRegex.exec(msg.message)) !== null) {
+                                    articleMatches.push(match[1]);
+                                }
+
+                                finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').replace(/\[SAVE_LEAD:\w+\][\s\S]*?\[\/SAVE_LEAD\]/g, '').replace(/\[ARTICLE:[^\]]+\]/g, '').trim();
+
                                 if (questions && questions.length > 0) {
                                     lastBotQuestions = questions;
                                 }
                             }
-                            
+
                             loadedMessages.push({
                                 id: msgId,
                                 type: msg.sender_type === 'cs' ? 'bot' : msg.sender_type,
                                 text: finalText,
-                                isEmergency,
-                                showWhatsApp,
-                                showSimulasiKreditButton
+                                showLocationButton: isEmergency,
+                                showWhatsAppButton: showWhatsApp,
+                                showSimulasiKreditButton,
+                                articles: articleMatches
                             });
-                            
+
                             loadedHistory.push({
                                 role: msg.sender_type === 'user' ? 'user' : 'assistant',
                                 content: msg.message
                             });
                         }
                     });
-                    
+
                     if (loadedMessages.length > 0) {
                         setMessages(loadedMessages);
                         conversationHistory.current = loadedHistory;
@@ -1032,14 +1151,14 @@ const VirtualCS = () => {
     const saveMessageToBackend = (senderType, message, metadata = null) => {
         const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
         if (!sid) return;
-        chatAPI.sendMessage(sid, senderType, message, metadata).catch(() => {});
+        chatAPI.sendMessage(sid, senderType, message, metadata).catch(() => { });
     };
 
     // Clear chat & reset (no new session created until user sends message)
     const handleClearChat = async () => {
         if (isLoading) return;
         const currentSession = sessionId || localStorage.getItem('dina_active_session');
-        
+
         // Close current session
         if (currentSession) {
             chatAPI.closeSession(currentSession);
@@ -1217,11 +1336,11 @@ const VirtualCS = () => {
     const extractDateFromText = (text) => {
         const clean = text.toLowerCase();
         const bookingDates = getBookingDates();
-        
+
         // Check for ISO date pattern (2026-04-25)
         const isoMatch = text.match(/(\d{4}-\d{2}-\d{2})/);
         if (isoMatch) return isoMatch[1];
-        
+
         // Check for DD/MM/YYYY or DD-MM-YYYY
         const dmyMatch = text.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
         if (dmyMatch) {
@@ -1283,10 +1402,10 @@ const VirtualCS = () => {
         const maxPerHour = isSunday
             ? { '08:00': 3, '09:00': 3, '10:00': 3, '11:00': 3 }
             : { '08:00': 6, '09:00': 6, '10:00': 6, '11:00': 6, '13:00': 3 };
-        
+
         let ctx = `**Ketersediaan Slot untuk ${slotData.hari}, ${slotData.tanggal}:**\n`;
         ctx += `Total booking hari ini: ${slotData.total_booking}\n\n`;
-        
+
         const jamEntries = slotData.jam || {};
         const availableSlots = [];
         const fullSlots = [];
@@ -1294,10 +1413,10 @@ const VirtualCS = () => {
         for (const [jam, count] of Object.entries(jamEntries)) {
             // Skip jam 12:00 and 14:00 (not offered)
             if (jam === '12:00' || jam === '14:00') continue;
-            
+
             const max = maxPerHour[jam] || 6;
             const remaining = max - count;
-            
+
             if (remaining > 0) {
                 availableSlots.push({ jam, remaining, count, max });
                 ctx += `- Jam **${jam}**: ${remaining} slot tersisa (${count}/${max} terisi)\n`;
@@ -1428,11 +1547,47 @@ const VirtualCS = () => {
                 // Extract quick questions
                 const { cleanText, questions } = extractQuickQuestions(rawText);
 
-                // Detect tags
                 const isEmergency = rawText.includes('[EMERGENCY]');
                 const showWhatsApp = rawText.includes('[WHATSAPP]');
                 const showSimulasiKreditButton = rawText.includes('[SIMULASI_KREDIT]');
-                const finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').trim();
+
+                // Extract Article Tags
+                const articleRegex = /\[ARTICLE:([^\]]+)\]/g;
+                let articleMatches = [];
+                let match;
+                while ((match = articleRegex.exec(rawText)) !== null) {
+                    articleMatches.push(match[1]);
+                }
+                const finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').replace(/\[SAVE_LEAD:\w+\][\s\S]*?\[\/SAVE_LEAD\]/g, '').replace(/\[ARTICLE:[^\]]+\]/g, '').trim();
+
+                // --- Detect and save lead data (fire-and-forget) ---
+                const leadRegex = /\[SAVE_LEAD:(\w+)\]([\s\S]*?)\[\/SAVE_LEAD\]/g;
+                let leadMatch;
+                while ((leadMatch = leadRegex.exec(rawText)) !== null) {
+                    const leadLabel = leadMatch[1];
+                    try {
+                        const leadJson = JSON.parse(leadMatch[2].trim());
+                        const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
+                        if (sid) {
+                            chatAPI.saveLead({
+                                session_id: sid,
+                                label: leadLabel,
+                                customer_name: leadJson.customer_name || null,
+                                customer_phone: leadJson.customer_phone || null,
+                                customer_nopol: leadJson.customer_nopol || null,
+                                vehicle_model: leadJson.vehicle_model || null,
+                                data: leadJson.data || {}
+                            }).then(result => {
+                                if (result?.status) {
+                                    setLeadSavedAlert({ show: true, label: leadLabel });
+                                    setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Lead parse/save error:', e);
+                    }
+                }
 
                 setQuickQuestions(questions);
                 setMessages(prev => [...prev, {
@@ -1441,7 +1596,8 @@ const VirtualCS = () => {
                     text: finalText,
                     showLocationButton: isEmergency,
                     showWhatsAppButton: showWhatsApp,
-                    showSimulasiKreditButton: showSimulasiKreditButton
+                    showSimulasiKreditButton: showSimulasiKreditButton,
+                    articles: articleMatches
                 }]);
             } else {
                 throw new Error('Invalid response');
@@ -1575,6 +1731,19 @@ const VirtualCS = () => {
         );
     };
 
+    // Detect when VirtualCSHub section is in viewport
+    const [isHubVisible, setIsHubVisible] = useState(false);
+    useEffect(() => {
+        const hubSection = document.getElementById('virtual-cs-hub');
+        if (!hubSection) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setIsHubVisible(entry.isIntersecting),
+            { threshold: 0.3 }
+        );
+        observer.observe(hubSection);
+        return () => observer.disconnect();
+    }, []);
+
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             <AnimatePresence>
@@ -1638,7 +1807,7 @@ const VirtualCS = () => {
                                             {msg.type === 'bot' ? (
                                                 <div
                                                     className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_code]:text-[11px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:text-[12px]"
-                                                    dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.text) }}
+                                                    dangerouslySetInnerHTML={{ __html: parseChatMarkdown(msg.text) }}
                                                 />
                                             ) : (
                                                 msg.text
@@ -1696,6 +1865,27 @@ const VirtualCS = () => {
                                                 Mulai Simulasi Kredit
                                             </button>
                                         )}
+
+                                        {/* Article Cards */}
+                                        {msg.articles && msg.articles.length > 0 && msg.articles.map(slug => {
+                                            const article = aiArticleData.find(a => a.slug === slug);
+                                            if (!article) return null;
+                                            return (
+                                                <a key={slug} href={`/artikel/${slug}`} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-3 p-2 bg-white border border-[#E5E5E5] rounded-xl hover:border-[#E60012] hover:shadow-md transition-all group w-[260px] md:w-[300px]">
+                                                    {article.image ? (
+                                                        <img src={article.image} alt={article.title} className="w-16 h-16 object-cover rounded-lg shrink-0" />
+                                                    ) : (
+                                                        <div className="w-16 h-16 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center">
+                                                            <MessageSquare size={20} className="text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1 overflow-hidden">
+                                                        <h4 className="text-[12px] font-bold text-gray-900 leading-tight group-hover:text-[#E60012] transition-colors line-clamp-2">{article.title}</h4>
+                                                        <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">{article.subtitle}</p>
+                                                    </div>
+                                                </a>
+                                            );
+                                        })}
                                     </div>
                                 );
                             })}
@@ -1709,6 +1899,23 @@ const VirtualCS = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Lead Saved Success Alert */}
+                            <AnimatePresence>
+                                {leadSavedAlert.show && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        className="flex justify-center my-2"
+                                    >
+                                        <div className="bg-green-500 text-white px-4 py-2 text-[11px] font-display font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg" style={{ clipPath: ANGULAR_CLIP }}>
+                                            <Check size={14} />
+                                            <span>Data {leadSavedAlert.label.replace(/_/g, ' ')} berhasil disimpan!</span>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             <div ref={chatEndRef} />
                         </div>
@@ -1751,15 +1958,58 @@ const VirtualCS = () => {
                 )}
             </AnimatePresence>
 
-            <button
-                id="chat-trigger"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`w-14 h-14 bg-[#E60012] shadow-xl flex items-center justify-center text-white transition-transform hover:scale-110 active:scale-95 ${isOpen && (isFullscreen || window.innerWidth < 768) ? 'hidden md:flex md:hidden' : ''}`}
-                style={{ clipPath: ANGULAR_CLIP }}
-            >
-                {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
-            </button>
-            
+            {/* DINA Mascot + Floating Button Container */}
+            <div className="relative flex flex-col items-center">
+                {/* DINA Mascot Image - shows when hub section is visible */}
+                <AnimatePresence>
+                    {isHubVisible && !isOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.5 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.5 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                            className="mb-1 relative cursor-pointer right-4"
+                            onClick={() => setIsOpen(true)}
+                        >
+                            {/* Speech bubble */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.3, duration: 0.3 }}
+                                className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-[#111] text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-10"
+                            >
+                                Ada yang bisa dibantu? 👋
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45"></div>
+                            </motion.div>
+                            <motion.img
+                                src="/dina_no_text.png"
+                                alt="DINA Assistant"
+                                className="w-20 h-20 object-contain drop-shadow-[0_4px_12px_rgba(230,0,18,0.4)]"
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Floating Chat Button */}
+                <motion.button
+                    id="chat-trigger"
+                    onClick={() => setIsOpen(!isOpen)}
+                    animate={{
+                        scale: isHubVisible && !isOpen ? 1.2 : 1,
+                        boxShadow: isHubVisible && !isOpen
+                            ? '0 0 24px 6px rgba(230, 0, 18, 0.5)'
+                            : '0 10px 15px -3px rgba(0,0,0,0.1)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    className={`w-14 h-14 bg-[#E60012] shadow-xl flex items-center justify-center text-white hover:scale-110 active:scale-95 ${isOpen && (isFullscreen || window.innerWidth < 768) ? 'hidden md:flex md:hidden' : ''}`}
+                    style={{ clipPath: ANGULAR_CLIP }}
+                >
+                    {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+                </motion.button>
+            </div>
+
             {/* Simulasi Kredit Modal rendering outside the chat window bounds */}
             <SimulasiKreditModal isOpen={isSimulasiOpen} onClose={() => setIsSimulasiOpen(false)} />
         </div>
