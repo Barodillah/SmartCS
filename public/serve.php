@@ -25,9 +25,9 @@ $DEFAULT_OG = [
 
 // ── Database Configuration ──────────────────────────────────
 define('DB_HOST', '153.92.15.23');
-define('DB_NAME', 'u444914729_smartcs');
+define('DB_NAME', '');
 define('DB_USER', 'u444914729_smartcs');
-define('DB_PASS', 'Bintaro.100066');
+define('DB_PASS', '');
 
 function getDB()
 {
