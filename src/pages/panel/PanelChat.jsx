@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation, ExternalLink } from 'lucide-react';
+import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation, ExternalLink, Trash2 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../../utils/constants';
@@ -95,6 +95,10 @@ const PanelChat = () => {
     const [loadingMessages, setLoadingMessages] = useState(false);
     const messagesEndRef = useRef(null);
 
+    // Delete state
+    const [sessionToDelete, setSessionToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     // Fetch all sessions (admin list)
     useEffect(() => {
         const fetchSessions = async () => {
@@ -155,6 +159,33 @@ const PanelChat = () => {
             console.error('Failed to fetch messages:', err);
         } finally {
             setLoadingMessages(false);
+        }
+    };
+
+    const handleDeleteSession = async () => {
+        if (!sessionToDelete) return;
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`${CHAT_API_BASE}/session.php?action=delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionToDelete.id })
+            });
+            const data = await res.json();
+            if (data.status) {
+                setSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
+                if (selectedSession?.id === sessionToDelete.id) {
+                    setSelectedSession(null);
+                }
+            } else {
+                alert('Gagal menghapus: ' + data.message);
+            }
+        } catch (err) {
+            console.error('Failed to delete session:', err);
+            alert('Terjadi kesalahan saat menghapus sesi.');
+        } finally {
+            setIsDeleting(false);
+            setSessionToDelete(null);
         }
     };
 
@@ -319,12 +350,22 @@ const PanelChat = () => {
                                     <span>{selectedSession.ip_address}</span>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setSelectedSession(null)}
-                                className="text-gray-400 hover:text-white transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <button 
+                                    onClick={() => setSessionToDelete(selectedSession)}
+                                    className="text-gray-400 hover:text-[#E60012] transition-colors"
+                                    title="Hapus Sesi"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                                <button 
+                                    onClick={() => setSelectedSession(null)}
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                    title="Tutup"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Messages Area */}
@@ -424,6 +465,54 @@ const PanelChat = () => {
                         className="fixed inset-0 bg-black/20 z-[100] backdrop-blur-sm"
                         onClick={() => setSelectedSession(null)}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {sessionToDelete && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/40 z-[120] backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => !isDeleting && setSessionToDelete(null)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden p-6 text-center"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Trash2 size={32} className="text-[#E60012]" />
+                            </div>
+                            <h3 className="font-display font-bold text-xl text-[#111111] mb-2">Hapus Sesi Chat?</h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Apakah Anda yakin ingin menghapus sesi chat ini? Semua pesan dalam sesi ini juga akan ikut terhapus permanen. Tindakan ini tidak dapat dibatalkan.
+                            </p>
+                            <div className="flex justify-center gap-3">
+                                <button 
+                                    onClick={() => setSessionToDelete(null)}
+                                    disabled={isDeleting}
+                                    className="px-4 py-2 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={handleDeleteSession}
+                                    disabled={isDeleting}
+                                    className="px-4 py-2 rounded font-bold text-sm bg-[#E60012] text-white hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                            Menghapus...
+                                        </>
+                                    ) : (
+                                        'Ya, Hapus Sesi'
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

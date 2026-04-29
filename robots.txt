@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /panel/
+
+# AI Crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-*.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+
+# Sitemap
+Sitemap: https://csdwindo.com/sitemap.xml
+
+# LLM Metadata Index
+Link: <https://csdwindo.com/llms.txt>; rel="llms-metadata"

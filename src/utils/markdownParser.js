@@ -132,12 +132,12 @@ export const parseChatMarkdown = (text) => {
     html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-2 border-[#E60012] pl-2 my-1 italic text-gray-600">$1</blockquote>');
 
     // Lists BEFORE inline formatting so the wrapping regex can match raw text inside <li>
-    html = html.replace(/^\d+\. (.+)$/gm, '<li class="md-li-ol ml-4 list-decimal text-[12px] leading-relaxed">$1</li>');
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li class="md-li-ol ml-4 list-decimal text-[12px] leading-relaxed" value="$1">$2</li>');
     html = html.replace(/^[\-\*\+] (.+)$/gm, '<li class="md-li-ul ml-4 list-disc text-[12px] leading-relaxed">$1</li>');
 
     // Wrap consecutive <li> in <ul> or <ol>
-    html = html.replace(/((?:<li class="md-li-ul[^"]*">.*<\/li>\n?)+)/g, '<ul class="my-1 space-y-0.5">$1</ul>');
-    html = html.replace(/((?:<li class="md-li-ol[^"]*">.*<\/li>\n?)+)/g, '<ol class="my-1 space-y-0.5">$1</ol>');
+    html = html.replace(/((?:<li class="md-li-ul[^>]*>.*<\/li>\n?)+)/g, '<ul class="my-1 space-y-0.5">$1</ul>');
+    html = html.replace(/((?:<li class="md-li-ol[^>]*>.*<\/li>\n?)+)/g, '<ol class="my-1 space-y-0.5">$1</ol>');
 
     // Inline formatting (after list wrapping so bold/italic renders inside <li>)
     html = applyInlineFormatting(html);
@@ -179,12 +179,12 @@ export const parseArticleMarkdown = (text) => {
     html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-4 border-[#E60012] pl-4 my-6 italic text-xl text-gray-600 bg-gray-50 py-3 pr-3 rounded-r-lg">$1</blockquote>');
 
     // Lists BEFORE inline formatting so the wrapping regex can match raw text inside <li>
-    html = html.replace(/^\d+\. (.+)$/gm, '<li class="md-li-ol ml-6 list-decimal text-lg text-gray-700 leading-relaxed mb-2">$1</li>');
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li class="md-li-ol ml-6 list-decimal text-lg text-gray-700 leading-relaxed mb-2" value="$1">$2</li>');
     html = html.replace(/^[\-\*\+] (.+)$/gm, '<li class="md-li-ul ml-6 list-disc text-lg text-gray-700 leading-relaxed mb-2">$1</li>');
 
     // Wrap consecutive <li>
-    html = html.replace(/((?:<li class="md-li-ul[^"]*">.*<\/li>\n?)+)/g, '<ul class="my-4 space-y-2">$1</ul>');
-    html = html.replace(/((?:<li class="md-li-ol[^"]*">.*<\/li>\n?)+)/g, '<ol class="my-4 space-y-2">$1</ol>');
+    html = html.replace(/((?:<li class="md-li-ul[^>]*>.*<\/li>\n?)+)/g, '<ul class="my-4 space-y-2">$1</ul>');
+    html = html.replace(/((?:<li class="md-li-ol[^>]*>.*<\/li>\n?)+)/g, '<ol class="my-4 space-y-2">$1</ol>');
 
     // Inline formatting (after list wrapping so bold/italic renders inside <li>)
     html = applyInlineFormatting(html);

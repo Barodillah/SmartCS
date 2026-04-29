@@ -13,6 +13,7 @@ const ChatHistory = () => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
+    const [aiArticleData, setAiArticleData] = useState([]);
     const messagesEndRef = useRef(null);
 
     // Load closed sessions
@@ -44,12 +45,33 @@ const ChatHistory = () => {
         setSelectedSession(session);
         setLoadingMessages(true);
         setMessages([]);
+        setAiArticleData([]);
 
         try {
             const res = await fetch(`${CHAT_API_BASE}/message.php?action=history&session_id=${session.id}`);
             const data = await res.json();
             if (data.status && data.data?.messages) {
-                setMessages(data.data.messages);
+                const historyMessages = data.data.messages;
+                setMessages(historyMessages);
+
+                // Collect all article slugs from history
+                const articleSlugs = new Set();
+                const articleRegex = /\[ARTICLE:([^\]]+)\]/g;
+                historyMessages.forEach(msg => {
+                    let match;
+                    while ((match = articleRegex.exec(msg.message)) !== null) {
+                        articleSlugs.add(match[1]);
+                    }
+                });
+
+                if (articleSlugs.size > 0) {
+                    const slugsParam = Array.from(articleSlugs).join(',');
+                    const artRes = await fetch(`https://csdwindo.com/api/artikel/ai_list.php?slugs=${slugsParam}`);
+                    const artData = await artRes.json();
+                    if (artData.status && artData.data) {
+                        setAiArticleData(artData.data);
+                    }
+                }
             }
         } catch (err) {
             console.error('Failed to fetch messages:', err);
@@ -103,6 +125,9 @@ const ChatHistory = () => {
             .join('\n')
             .replace(/\[EMERGENCY\]/g, '')
             .replace(/\[WHATSAPP\]/g, '')
+            .replace(/\[SIMULASI_KREDIT\]/g, '')
+            .replace(/\[SAVE_LEAD:\w+\][\s\S]*?\[\/SAVE_LEAD\]/g, '')
+            .replace(/\[ARTICLE:[^\]]+\]/g, '')
             .trim() || '';
     };
 
@@ -245,10 +270,53 @@ const ChatHistory = () => {
                                                     {msg.sender_type === 'user' ? (
                                                         msg.message
                                                     ) : (
-                                                        <div
-                                                            className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:rounded [&_code]:text-[12px] [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:text-[13px] [&_li]:mb-1"
-                                                            dangerouslySetInnerHTML={{ __html: parseChatMarkdown(cleanMessage(msg.message)) }}
-                                                        />
+                                                        <>
+                                                            <div
+                                                                className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:rounded [&_code]:text-[12px] [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:text-[13px] [&_li]:mb-1"
+                                                                dangerouslySetInnerHTML={{ __html: parseChatMarkdown(cleanMessage(msg.message)) }}
+                                                            />
+                                                            {/* Article Cards in History */}
+                                                            {(() => {
+                                                                const slugs = [];
+                                                                const articleRegex = /\[ARTICLE:([^\]]+)\]/g;
+                                                                let match;
+                                                                while ((match = articleRegex.exec(msg.message)) !== null) {
+                                                                    slugs.push(match[1]);
+                                                                }
+                                                                
+                                                                if (slugs.length === 0) return null;
+                                                                
+                                                                return (
+                                                                    <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+                                                                        {slugs.map(slug => {
+                                                                            const article = aiArticleData.find(a => a.slug === slug);
+                                                                            if (!article) return null;
+                                                                            return (
+                                                                                <a 
+                                                                                    key={slug} 
+                                                                                    href={`/artikel/${slug}`} 
+                                                                                    target="_blank" 
+                                                                                    rel="noopener noreferrer" 
+                                                                                    className="flex items-center gap-3 p-2 bg-[#F9F9F9] border border-[#EEEEEE] rounded-xl hover:border-[#E60012] hover:shadow-md transition-all group"
+                                                                                >
+                                                                                    {article.image ? (
+                                                                                        <img src={article.image} alt={article.title} className="w-12 h-12 object-cover rounded-lg shrink-0" />
+                                                                                    ) : (
+                                                                                        <div className="w-12 h-12 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center">
+                                                                                            <MessageSquare size={16} className="text-gray-400" />
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <div className="flex-1 overflow-hidden text-left">
+                                                                                        <h4 className="text-[11px] font-bold text-gray-900 leading-tight group-hover:text-[#E60012] transition-colors line-clamp-1">{article.title}</h4>
+                                                                                        <p className="text-[9px] text-gray-500 mt-0.5 line-clamp-1">{article.subtitle}</p>
+                                                                                    </div>
+                                                                                </a>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </>
                                                     )}
                                                 </div>
                                                 <div className="text-[11px] font-medium text-gray-400 mt-1.5 px-2">

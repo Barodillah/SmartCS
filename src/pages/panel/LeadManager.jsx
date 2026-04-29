@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, CarFront, Users, AlertTriangle, Wrench, ShieldAlert, Search, RefreshCw, X, MessageSquare, Phone, Copy, Check, ExternalLink, Package } from 'lucide-react';
+import { CalendarCheck, CarFront, Users, AlertTriangle, Wrench, ShieldAlert, Search, RefreshCw, X, MessageSquare, Phone, Copy, Check, ExternalLink, Package, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,6 +47,10 @@ const LeadManager = ({ label, title, desc, icon }) => {
     const [statusUpdate, setStatusUpdate] = useState('');
     const [notesUpdate, setNotesUpdate] = useState('');
     const [updateLoading, setUpdateLoading] = useState(false);
+
+    // Delete State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeletingLead, setIsDeletingLead] = useState(false);
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -148,6 +152,32 @@ const LeadManager = ({ label, title, desc, icon }) => {
             showToast('Gagal memperbarui lead.', 'error');
         } finally {
             setUpdateLoading(false);
+        }
+    };
+
+    const handleDeleteLead = async () => {
+        if (!selectedLead) return;
+        setIsDeletingLead(true);
+        try {
+            const res = await fetch(`${API_BASE}/lead.php?action=delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: selectedLead.id })
+            });
+            const data = await res.json();
+            if (data.status) {
+                fetchLeads(pagination.page);
+                showToast('Berhasil menghapus lead.');
+                setShowDeleteConfirm(false);
+                setSelectedLead(null);
+            } else {
+                showToast('Gagal menghapus lead: ' + (data.message || 'Unknown error'), 'error');
+            }
+        } catch (err) {
+            console.error('Failed to delete lead:', err);
+            showToast('Terjadi kesalahan saat menghapus lead.', 'error');
+        } finally {
+            setIsDeletingLead(false);
         }
     };
 
@@ -355,7 +385,22 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                     <h3 className="font-display font-bold text-lg text-[#111111] tracking-wide">Detail Lead: {title}</h3>
                                     <div className="text-xs text-gray-500 mt-1">ID: {selectedLead.id}</div>
                                 </div>
-                                <button onClick={() => setSelectedLead(null)} className="text-gray-400 hover:text-[#E60012] transition-colors"><X size={24} /></button>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="text-gray-400 hover:text-[#E60012] transition-colors"
+                                        title="Hapus Lead"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                    <button 
+                                        onClick={() => setSelectedLead(null)} 
+                                        className="text-gray-400 hover:text-[#E60012] transition-colors"
+                                        title="Tutup"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
                             </div>
                             
                             <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8">
@@ -489,6 +534,54 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                         </div>
                                     </>
                                 )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {showDeleteConfirm && selectedLead && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/40 z-[120] backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => !isDeletingLead && setShowDeleteConfirm(false)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden p-6 text-center"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Trash2 size={32} className="text-[#E60012]" />
+                            </div>
+                            <h3 className="font-display font-bold text-xl text-[#111111] mb-2">Hapus Data Lead?</h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Apakah Anda yakin ingin menghapus data lead dari <strong>{selectedLead.customer_name || 'Konsumen'}</strong>? Tindakan ini tidak dapat dibatalkan.
+                            </p>
+                            <div className="flex justify-center gap-3">
+                                <button 
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={isDeletingLead}
+                                    className="px-4 py-2 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={handleDeleteLead}
+                                    disabled={isDeletingLead}
+                                    className="px-4 py-2 rounded font-bold text-sm bg-[#E60012] text-white hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isDeletingLead ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                            Menghapus...
+                                        </>
+                                    ) : (
+                                        'Ya, Hapus'
+                                    )}
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>

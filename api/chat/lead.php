@@ -25,6 +25,9 @@ switch ($action) {
     case 'count_new':
         countNewLeads();
         break;
+    case 'delete':
+        deleteLead();
+        break;
     default:
         jsonResponse(false, 'Invalid action. Use: create, list, get, update, by_session, count_new', null, 400);
 }
@@ -399,4 +402,28 @@ function countNewLeads()
     $counts['total'] = array_sum($counts);
 
     jsonResponse(true, '', $counts);
+}
+
+// ============================================================
+// DELETE — Hapus lead by ID
+// ============================================================
+function deleteLead()
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        jsonResponse(false, 'Method not allowed', null, 405);
+    }
+
+    $body = getPostBody();
+    $id   = $body['id'] ?? '';
+
+    if (empty($id)) {
+        jsonResponse(false, 'id parameter is required', null, 400);
+    }
+
+    $db = getDB();
+
+    $stmt = $db->prepare("DELETE FROM chat_leads WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+
+    jsonResponse(true, 'Lead berhasil dihapus');
 }

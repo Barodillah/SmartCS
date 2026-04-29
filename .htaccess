@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Map sitemap.xml to sitemap.php
+  RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+
+  # 2. Map llms*.txt requests to llms.php
+  RewriteRule ^llms\.txt$ llms.php?type=index [L,QSA]
+  RewriteRule ^llms-full\.txt$ llms.php?type=full [L,QSA]
+  RewriteRule ^llms-products\.txt$ llms.php?type=products [L,QSA]
+  RewriteRule ^llms-lokasi-dealer\.txt$ llms.php?type=lokasi-dealer [L,QSA]
+  RewriteRule ^llms-artikel\.txt$ llms.php?type=artikel-index [L,QSA]
+  RewriteRule ^llms-artikel-([^/]+)\.txt$ llms.php?type=artikel-detail&slug=$1 [L,QSA]
+
+  # 3. Social Media Crawler Detection (from public/.htaccess)
+  # Route crawlers to serve.php for proper OG meta tags
+  RewriteCond %{HTTP_USER_AGENT} facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|Discordbot|Pinterest|Googlebot|bingbot|Applebot|redditbot|Embedly|Quora\ Link\ Preview|vkShare|Google-InspectionTool [NC]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.*)$ serve.php [L]
+
+  # 4. Well-known AI policies
+  RewriteRule ^\.well-known/ai\.txt$ .well-known/ai.txt [L]
+
+  # 5. Normal SPA Routing (from public/.htaccess)
+  # Skip rewrite for existing files or index.html
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

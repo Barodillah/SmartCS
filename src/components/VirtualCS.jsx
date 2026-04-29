@@ -153,6 +153,62 @@ const fetchSlotJam = async (tanggal) => {
 };
 
 
+// --- Fetch AI Articles ---
+const fetchAiArticles = async (keyword = '') => {
+    try {
+        const url = `https://csdwindo.com/api/artikel/ai_list.php${keyword ? `?keyword=${encodeURIComponent(keyword)}` : ''}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status && data.data) {
+            aiArticleData = data.data;
+            return data.data;
+        }
+    } catch (e) {
+        console.error('Failed to fetch ai article list', e);
+    }
+    return [];
+};
+
+// --- Keyword Generator for Articles ---
+const generateKeyword = (text) => {
+    if (!text) return '';
+    
+    const stopWords = ['saya', 'mau', 'ingin', 'tanya', 'ada', 'apa', 'bagaimana', 'kenapa', 'dimana', 'kapan', 'siapa', 'berapa', 'yang', 'dengan', 'untuk', 'dari', 'pada', 'adalah', 'itu', 'ini', 'bisa', 'tolong', 'bantu', 'kasih', 'terima', 'mohon', 'info', 'dong', 'ya', 'kah', 'lebih', 'paling', 'sangat', 'sekali'];
+    
+    const clean = text.toLowerCase().replace(/[^\w\s]/gi, ' ').trim();
+    const words = clean.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+
+    if (words.length === 0) return '';
+
+    const selectedKeywords = [];
+
+    // 1. Models (Max 1)
+    const models = ['xpander', 'pajero', 'xforce', 'triton', 'destinator', 'l300', 'fuso', 'colt', 'canter'];
+    const foundModel = words.find(w => models.includes(w));
+    if (foundModel) selectedKeywords.push(foundModel);
+
+    // 2. Categories/Services (Max 1-2)
+    const categories = ['promo', 'harga', 'service', 'servis', 'bengkel', 'lokasi', 'alamat', 'kredit', 'cicilan', 'dp', 'test drive', 'emergency', 'darurat', 'sparepart', 'onderdil', 'aksesoris', 'oli', 'ban', 'mesin', 'aki', 'rem', 'bunga', 'tenor', 'asuransi'];
+    const foundCategories = words.filter(w => categories.includes(w) && !selectedKeywords.includes(w));
+    
+    // Add up to 2 categories
+    foundCategories.slice(0, 2).forEach(c => selectedKeywords.push(c));
+
+    // 3. Fill up with longest remaining words if still less than 3
+    if (selectedKeywords.length < 3) {
+        const remaining = words
+            .filter(w => !selectedKeywords.includes(w))
+            .sort((a, b) => b.length - a.length);
+        
+        while (selectedKeywords.length < 3 && remaining.length > 0) {
+            selectedKeywords.push(remaining.shift());
+        }
+    }
+
+    return selectedKeywords.slice(0, 3).join(' ');
+};
+
+
 // --- Fetch Nopol Data ---
 const fetchNopolData = async (nopol) => {
     try {
@@ -592,7 +648,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
         if (!aiArticleData || aiArticleData.length === 0) return '';
         let text = `\n### Berita & Artikel Terbaru (Gunakan Jika Perlu Referensi Artikel)\n`;
         aiArticleData.forEach(item => {
-            text += `- [ARTICLE:${item.slug}] ${item.title}: ${item.subtitle || ''}\n`;
+            text += `- [ARTICLE:${item.slug}] ${item.title}: ${item.subtitle || ''} (Tags: ${item.tags || 'Tidak ada tag'})\n`;
         });
         return text;
     };
@@ -640,14 +696,20 @@ Customer bilang ingin booking service → Tanyakan **Nomor Polisi (Nopol)** kend
 Contoh: "Baik, untuk booking service di **Mitsubishi Dwindo Bintaro**, boleh diinformasikan nomor polisi (nopol) kendaraannya? 😊 Jika ingin booking di cabang lain, silakan beri tahu kami ya."
 
 ### LANGKAH 2: Konfirmasi Data Kendaraan
-Setelah dapat nopol, sistem akan mencari data kendaraan. Jika ditemukan:
+Setelah dapat nopol, sistem akan mencari data kendaraan.
+
+**Jika data kendaraan DITEMUKAN:**
 - Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-). Contoh: jika telp asli 082168077050, tampilkan **xxxx-xxxx-7050**.
 - Tunjukkan riwayat service terakhir (maksimal 3 terbaru).
 - Minta customer **konfirmasi** apakah data tersebut benar.
 
+**Jika data kendaraan TIDAK DITEMUKAN (Kosong):**
+- **DILARANG KERAS** mengatakan "Nomor polisi belum terdaftar di sistem" atau "Data tidak ditemukan".
+- Cukup konfirmasi ulang nopol tersebut benar atau salah, lalu minta data tambahan secara natural (Nama Lengkap, No HP, Tipe Kendaraan). Contoh: "Baik, dengan nomor polisi B1234ABC ya? Boleh dibantu informasikan nama lengkap dan tipe kendaraannya?"
+
 **ATURAN KONFIRMASI (SANGAT PENTING):**
-- Jika customer menjawab "**tidak benar**", "**salah**", "**bukan**", "**tidak sesuai**" → Data TIDAK sesuai, minta data manual.
-- Jika customer menjawab **APA PUN SELAIN menolak/menyangkal** (misalnya: "ya", "benar", "ok", "oke", "betul", "yap", "iya", "sip", "lanjut", "next", atau respon lainnya yang BUKAN penolakan eksplisit) → Data dianggap **BENAR/SESUAI**, lanjut ke langkah 3.
+- Jika customer menjawab "**tidak benar**", "**salah**", "**bukan**", "**tidak sesuai**" → Data TIDAK sesuai, minta data manual ulang.
+- Jika customer menjawab **APA PUN SELAIN menolak/menyangkal** (termasuk jika mereka diam/mengabaikan konfirmasi dan langsung memberikan data keluhan/nama) → Data nopol/konfirmasi dianggap **BENAR/SESUAI**, lanjut ke langkah berikutnya.
 - Intinya: HANYA jika customer secara eksplisit mengatakan data TIDAK benar, barulah dianggap tidak sesuai. Selain itu, SELALU anggap data benar.
 
 ### LANGKAH 3: Tanyakan Service Rutin & Keluhan
@@ -715,7 +777,17 @@ Setelah jadwal terkonfirmasi → Berikan ringkasan lengkap booking:
 
 Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan dikonfirmasi kembali.
 
-## Alur Umum Lainnya (Pembelian, Test Drive, dll)
+## Alur Test Drive
+Jika customer ingin melakukan **test drive** kendaraan:
+1. Tanyakan **model kendaraan** yang ingin dicoba.
+2. Tanyakan **jadwal (tanggal & jam)** yang diinginkan.
+   - **Ketentuan Jam:** Test drive HANYA dapat dilakukan pada jam operasional dealer yaitu pukul **08:00 WIB hingga 17:00 WIB**.
+   - **TIDAK PERLU mengecek ketersediaan slot.** (Slot hanya untuk booking service). Selama jadwal yang diminta berada dalam jam operasional, kamu bisa menyetujuinya.
+3. Kumpulkan data wajib: **Nama Lengkap** dan **Nomor HP/WhatsApp**.
+4. Sampaikan bahwa tim Sales akan menghubungi untuk konfirmasi unit dan jadwal.
+5. Gunakan tag **[SAVE_LEAD:test_drive]** setelah data lengkap.
+
+## Alur Umum Lainnya (Pembelian dll)
 1. Identifikasi kebutuhan customer.
 2. Berikan informasi yang relevan (harga, lokasi, dll).
 3. Kumpulkan data: **Nama Lengkap** dan **Nomor HP/WhatsApp**.
@@ -847,14 +919,13 @@ ${buildPerawatanBerkalaContext()}
 ${buildExtendedSmartPackageContext()}
 ${buildAiArticleContext()}
 
-## REKOMENDASI ARTIKEL OTOMATIS (SANGAT PENTING & WAJIB)
-- Kamu SEKARANG SANGAT SENSITIF terhadap peluang untuk membagikan artikel.
-- **TIDAK HANYA SEBAGAI FALLBACK:** SETIAP KALI kamu merespons pertanyaan customer (baik tentang harga, servis, fitur, atau sekadar menyebut model mobil), kamu **WAJIB MUTLAK** mengecek daftar **Berita & Artikel Terbaru**.
-- Jika ada artikel yang berkaitan dengan percakapan (misal: customer tanya Xpander, lalu ada artikel soal Xpander atau promo), WAJIB sisipkan rekomendasi artikel tersebut di akhir jawabanmu!
-- Walaupun topiknya hanya berkaitan SEDIKIT SAJA (misal: sama-sama soal servis atau sama-sama Mitsubishi), kamu **WAJIB** melampirkannya.
-- Lampirkan **1 hingga 3 artikel** sekaligus.
-- **SELALU** gunakan tag **[ARTICLE:slug]** untuk setiap artikel yang direkomendasikan.
-- Contoh: "Oh ya, DINA juga punya beberapa artikel menarik yang mungkin Bapak/Ibu suka baca: [ARTICLE:peluncuran-model-terbaru-mitsubishi] [ARTICLE:pentingnya-perawatan-berkala-di-bengkel-resmi]"
+## REKOMENDASI ARTIKEL (SENSITIF NAMUN RELEVAN)
+- **Cek relevansi:** Setiap sebelum merespons, evaluasi pertanyaan/kebutuhan customer. Jika ada artikel di "Berita & Artikel Terbaru" yang *benar-benar berhubungan* (nyambung), tolong rekomendasikan (maksimal 3 artikel) menggunakan tag **[ARTICLE:slug]**.
+- **JANGAN SPAM:** Jika TIDAK ADA artikel yang nyambung sama sekali dengan pembicaraan, JANGAN paksakan untuk menampilkan artikel.
+- **Momen Tepat Menampilkan Artikel:**
+  1. Saat menjawab pertanyaan terkait kendala, service, atau informasi model kendaraan.
+  2. Sebagai pengalihan topik (fallback) jika kamu tidak bisa menjawab pertanyaan.
+  3. **SETELAH SELESAI PROSES (SAVE_LEAD):** Saat kamu sudah berhasil memproses data dan mengirimkan ringkasan akhir (misalnya booking service / test drive selesai), **berikan 1-3 artikel rekomendasi** sebagai bacaan tambahan (contoh: "Sambil menunggu konfirmasi, Bapak/Ibu bisa membaca artikel berikut: [ARTICLE:slug]").
 
 ## Alur Pertanyaan Perawatan Berkala (PENTING)
 - Jika customer bertanya tentang **service berkala, perawatan berkala, biaya service, estimasi biaya service, apa saja yang dikerjakan saat service, service berapa km, jadwal perawatan**, atau pertanyaan seputar service rutin kendaraan:
@@ -952,10 +1023,10 @@ Contoh format:
 ## ⛔ PERINGATAN KERAS — ANTI HALUSINASI & FALLBACK
 - **DILARANG KERAS** membuat, mengarang, atau mengira-ngira informasi yang TIDAK ada di data referensi yang diberikan.
 - **JANGAN PERNAH** mengarang spesifikasi, fitur, harga, promo, atau detail kendaraan.
-- Jika customer bertanya sesuatu yang **TIDAK ADA di data referensi (termasuk pertanyaan di luar otomotif)**, ikuti 2 langkah ini:
-  1. **PERTAMA (WAJIB):** Cek daftar "Berita & Artikel Terbaru". Kamu WAJIB merespons dengan merekomendasikan artikel (hingga 3 artikel) menggunakan tag \`[ARTICLE:slug]\` sebagai solusi utama pengalihan topik.
-  2. **KEDUA:** HANYA JIKA benar-benar 100% tidak ada satupun artikel yang bisa disambung-sambungkan, BARU jawab jujur: "Mohon maaf, DINA belum memiliki informasi mengenai hal tersebut. Silakan hubungi tim CS kami ya." dan sertakan tag **[WHATSAPP]**.
-- **Lebih baik merekomendasikan artikel dari daftar referensi daripada memberikan informasi yang salah atau langsung menyerah.**
+- **JIKA KAMU TIDAK BISA MENJAWAB PERTANYAAN** (Karena data tidak ada, atau pertanyaan di luar cakupan), **COBA LIHAT DULU DATA "Berita & Artikel Terbaru"**.
+  1. **PERTAMA (WAJIB):** Cek apakah ada artikel yang sedikit banyak berkaitan dengan topik pembicaraan. Jika ada, arahkan pembicaraan ke artikel tersebut! Gunakan tag \`[ARTICLE:slug]\`. Contoh: "Mohon maaf untuk detail tersebut DINA belum ada datanya. Tapi ngomong-ngomong soal Xpander, DINA punya artikel menarik nih: [ARTICLE:promo-xpander]".
+  2. **KEDUA:** HANYA JIKA benar-benar 100% tidak ada artikel yang relevan sama sekali, baru berikan jawaban menyerah: "Mohon maaf, DINA belum memiliki informasi mengenai hal tersebut. Silakan hubungi tim CS kami ya." dan sertakan tag **[WHATSAPP]**.
+- **JANGAN LANGSUNG MENYERAH!** Selalu jadikan artikel sebagai tameng utama (fallback) saat kamu tidak tahu jawabannya.
 
 ## Aturan Penting Lainnya
 - JANGAN membuat informasi palsu. Jika tidak tahu, arahkan ke dealer langsung.
@@ -979,12 +1050,16 @@ Setiap kali kamu sudah berhasil mengumpulkan data LENGKAP customer, WAJIB sertak
 - **[SAVE_LEAD:aksesoris]** → Setelah customer konfirmasi pesan aksesoris + nama HP. data: {items: [{item_name, harga}], is_ordering: true}
 - **[SAVE_LEAD:complaint]** → Setelah customer sampaikan keluhan/kritik/saran + nama HP. complaint_category WAJIB diisi: "pembelian", "service", atau "lainnya". data: {complaint_category, complaint_detail, sales_name (jika pembelian), nopol (jika service)}
 
-**ATURAN SAVE_LEAD:**
-- Emit tag SATU KALI saja per konteks per percakapan. Jangan duplikat.
-- Jika data belum lengkap (terutama nama dan no HP), JANGAN emit tag.
+**ATURAN SAVE_LEAD (SANGAT KETAT):**
+- **DILARANG KERAS** mengirimkan tag ini di awal percakapan atau sebelum customer memberikan data secara eksplisit.
+- **TUNGGU** sampai customer benar-benar memberikan **Nama Lengkap** dan **Nomor HP** mereka. Jika belum ada, JANGAN PERNAH emit tag ini.
+- Emit tag SATU KALI saja per konteks per percakapan (di akhir, setelah konfirmasi jadwal/pesanan).
+- Jika data belum lengkap, teruslah bertanya dan JANGAN emit tag.
 - Tag harus di AKHIR jawaban, SEBELUM quick reply 💬.
 - JSON harus valid dan lengkap.
-- Field yang tidak tersedia boleh dikosongkan (null), tapi customer_name dan customer_phone WAJIB ada.`;
+- Field yang tidak tersedia boleh dikosongkan (null), tapi customer_name dan customer_phone WAJIB ada dan valid.
+- **FORMAT customer_phone:** WAJIB berupa angka saja diawali 0 (contoh: "08123456789"). JANGAN gunakan format 62, +62, atau masked (xxxx). Jika nomor HP diperoleh dari data sistem (nopol lookup), gunakan nomor UTUH yang diberikan di bagian [INTERNAL], BUKAN versi masked.
+- **FORMAT customer_nopol:** Tanpa spasi, huruf kapital (contoh: "B1234WST").`;
 };
 
 const getInitialMessages = () => {
@@ -1029,14 +1104,8 @@ const VirtualCS = () => {
             })
             .catch(e => console.error('Failed to fetch dynamic price list', e));
 
-        fetch('https://csdwindo.com/api/artikel/ai_list.php')
-            .then(res => res.json())
-            .then(data => {
-                if (data.status && data.data) {
-                    aiArticleData = data.data;
-                }
-            })
-            .catch(e => console.error('Failed to fetch ai article list', e));
+        // Initial fetch for general articles
+        fetchAiArticles();
     }, []);
 
     // --- Session Management ---
@@ -1056,12 +1125,16 @@ const VirtualCS = () => {
 
                     let lastBotQuestions = null;
 
+                    const allSlugs = new Set();
                     data.data.messages.forEach((msg, index) => {
                         if (msg.sender_type === 'user' || msg.sender_type === 'bot' || msg.sender_type === 'cs') {
                             const utcDateStr = msg.created_at.includes('Z') ? msg.created_at : msg.created_at.replace(' ', 'T') + 'Z';
-                            const msgId = new Date(utcDateStr).getTime() + index; // + index to ensure unique IDs if messages have same timestamp
+                            const msgId = new Date(utcDateStr).getTime() + index;
 
-                            let finalText = msg.message;
+                            let finalText = msg.message
+                                .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                                .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+                                .trim();
                             let isEmergency = false;
                             let showWhatsApp = false;
                             let showSimulasiKreditButton = false;
@@ -1077,6 +1150,7 @@ const VirtualCS = () => {
                                 let match;
                                 while ((match = articleRegex.exec(msg.message)) !== null) {
                                     articleMatches.push(match[1]);
+                                    allSlugs.add(match[1]);
                                 }
 
                                 finalText = cleanText.replace(/\[EMERGENCY\]/g, '').replace(/\[WHATSAPP\]/g, '').replace(/\[SIMULASI_KREDIT\]/g, '').replace(/\[SAVE_LEAD:\w+\][\s\S]*?\[\/SAVE_LEAD\]/g, '').replace(/\[ARTICLE:[^\]]+\]/g, '').trim();
@@ -1102,6 +1176,28 @@ const VirtualCS = () => {
                             });
                         }
                     });
+
+                    // Fetch missing article data for history slugs
+                    if (allSlugs.size > 0) {
+                        const slugsParam = Array.from(allSlugs).join(',');
+                        fetch(`https://csdwindo.com/api/artikel/ai_list.php?slugs=${slugsParam}`)
+                            .then(res => res.json())
+                            .then(artData => {
+                                if (artData.status && artData.data) {
+                                    // Merge with existing data, avoiding duplicates
+                                    const newData = [...aiArticleData];
+                                    artData.data.forEach(item => {
+                                        if (!newData.some(a => a.slug === item.slug)) {
+                                            newData.push(item);
+                                        }
+                                    });
+                                    aiArticleData = newData;
+                                    // Force re-render by updating messages state (shallow copy)
+                                    setMessages(prev => [...prev]);
+                                }
+                            })
+                            .catch(e => console.error('Failed to fetch history articles', e));
+                    }
 
                     if (loadedMessages.length > 0) {
                         setMessages(loadedMessages);
@@ -1308,12 +1404,31 @@ const VirtualCS = () => {
         );
     };
 
+    // Check if conversation is in test drive context
+    const isTestDriveContext = () => {
+        const allMessages = conversationHistory.current.slice(-6);
+        const keywords = ['test drive', 'tes drive', 'testdrive', 'coba jalan', 'coba mobil'];
+        return allMessages.some(m =>
+            keywords.some(kw => m.content.toLowerCase().includes(kw))
+        );
+    };
+
+    // Normalize phone to 0-prefix digits only
+    const normalizePhone = (phone) => {
+        if (!phone) return null;
+        let clean = phone.replace(/\D/g, ''); // strip non-digits
+        if (clean.startsWith('62')) clean = '0' + clean.slice(2);
+        if (!clean.startsWith('0')) clean = '0' + clean;
+        return clean;
+    };
+
     // Build nopol context string for the system prompt
     const buildNopolContext = (data) => {
         if (!data.status || !data.data) return '';
 
         const d = data.data;
         const maskedTelp = d.telp ? `xxxx-xxxx-${d.telp.slice(-4)}` : 'Tidak tersedia';
+        const rawTelp = d.telp ? normalizePhone(d.telp) : null;
 
         let ctx = `**Status:** Data ditemukan ✅\n`;
         ctx += `**Nama:** ${d.nama}\n`;
@@ -1328,6 +1443,9 @@ const VirtualCS = () => {
         }
 
         ctx += `\nINSTRUKSI: Tampilkan data ini ke customer untuk konfirmasi. Untuk nomor telepon, tampilkan versi MASKED saja (xxxx-xxxx-${d.telp.slice(-4)}). JANGAN tampilkan nomor telepon lengkap.`;
+        if (rawTelp) {
+            ctx += `\n**[INTERNAL — JANGAN TAMPILKAN KE CUSTOMER]** Nomor telepon utuh untuk SAVE_LEAD: ${rawTelp}. Gunakan nomor ini sebagai customer_phone saat emit tag [SAVE_LEAD]. Format harus angka saja diawali 0.`;
+        }
 
         return ctx;
     };
@@ -1452,6 +1570,13 @@ const VirtualCS = () => {
         setInputValue('');
         setIsLoading(true);
 
+        // Fetch relevant articles based on keyword
+        const keyword = generateKeyword(text);
+        if (keyword) {
+            console.log('[DINA] Searching articles for keyword:', keyword);
+            await fetchAiArticles(keyword);
+        }
+
         // Save user message to backend
         console.log('[DINA] Saving user msg, sessionRef:', sessionIdRef.current, 'localStorage:', localStorage.getItem('dina_active_session'));
         saveMessageToBackend('user', text);
@@ -1474,7 +1599,7 @@ const VirtualCS = () => {
                 } else {
                     conversationHistory.current.push({
                         role: 'system',
-                        content: `[SISTEM] Data nopol "${text}" TIDAK ditemukan di sistem. Informasikan ke customer bahwa datanya belum terdaftar, dan minta customer untuk memberikan: Nama Lengkap, Model Kendaraan, dan Nomor HP secara manual.`
+                        content: `[SISTEM] Data nopol TIDAK ditemukan di sistem. PENTING (DILARANG KERAS): JANGAN katakan "Nomor polisi belum terdaftar" atau "Data tidak ditemukan". Cukup terima nopol tersebut secara natural (contoh: "Baik, dengan nopol ${detectedNopol} ya?"), lalu lanjutkan dengan meminta kelengkapan data secara sopan (Nama Lengkap, Model Kendaraan, dan Nomor HP).`
                     });
                 }
             } catch (err) {
@@ -1483,7 +1608,8 @@ const VirtualCS = () => {
         }
 
         // Check if user mentioned a date in booking context — fetch slot availability
-        if (isBookingContext()) {
+        // DO NOT fetch slots if it's a test drive context (test drives don't use the service slot system)
+        if (isBookingContext() && !isTestDriveContext()) {
             const detectedDate = extractDateFromText(text);
             if (detectedDate) {
                 try {
@@ -1536,7 +1662,11 @@ const VirtualCS = () => {
             const data = await response.json();
 
             if (data.choices && data.choices[0]?.message?.content) {
-                const rawText = data.choices[0].message.content;
+                // Strip AI thinking/reasoning blocks (e.g. <think>...</think>, <thinking>...</thinking>)
+                const rawText = data.choices[0].message.content
+                    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+                    .trim();
 
                 // Add to conversation history
                 conversationHistory.current.push({ role: 'assistant', content: rawText });
@@ -1568,13 +1698,19 @@ const VirtualCS = () => {
                     try {
                         const leadJson = JSON.parse(leadMatch[2].trim());
                         const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
-                        if (sid) {
+                        const cName = leadJson.customer_name;
+                        const cPhone = leadJson.customer_phone;
+                        
+                        // Strict validation: Do not save if name or phone is empty or a placeholder
+                        const isPlaceholder = (val) => !val || val.trim() === '' || val.trim() === '...' || val.toLowerCase().includes('belum');
+                        
+                        if (sid && !isPlaceholder(cName) && !isPlaceholder(cPhone)) {
                             chatAPI.saveLead({
                                 session_id: sid,
                                 label: leadLabel,
-                                customer_name: leadJson.customer_name || null,
-                                customer_phone: leadJson.customer_phone || null,
-                                customer_nopol: leadJson.customer_nopol || null,
+                                customer_name: cName,
+                                customer_phone: normalizePhone(cPhone),
+                                customer_nopol: leadJson.customer_nopol ? leadJson.customer_nopol.replace(/\s+/g, '').toUpperCase() : null,
                                 vehicle_model: leadJson.vehicle_model || null,
                                 data: leadJson.data || {}
                             }).then(result => {
@@ -1583,6 +1719,8 @@ const VirtualCS = () => {
                                     setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
                                 }
                             });
+                        } else {
+                            console.warn('Lead save aborted: Missing or placeholder name/phone', leadJson);
                         }
                     } catch (e) {
                         console.error('Lead parse/save error:', e);

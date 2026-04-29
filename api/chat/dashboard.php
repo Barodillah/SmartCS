@@ -22,6 +22,71 @@ function calculateTrend($db, $table, $dateCol, $whereClause = "") {
     return ($diff > 0 ? "+" : "") . round($diff, 1) . "%";
 }
 
+function getResponseTimeStats($db) {
+    // Fetch last 200 messages to ensure we get enough pairs
+    $stmt = $db->query("
+        SELECT session_id, sender_type, created_at 
+        FROM chat_messages 
+        ORDER BY created_at DESC 
+        LIMIT 200
+    ");
+    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $sessions = [];
+    foreach ($messages as $msg) {
+        $sessions[$msg['session_id']][] = $msg;
+    }
+
+    $pairs = [];
+    foreach ($sessions as $sessionId => $sessionMessages) {
+        usort($sessionMessages, function($a, $b) {
+            return strtotime($a['created_at']) - strtotime($b['created_at']);
+        });
+
+        $lastUserTime = null;
+        foreach ($sessionMessages as $msg) {
+            if ($msg['sender_type'] === 'user') {
+                $lastUserTime = strtotime($msg['created_at']);
+            } elseif ($msg['sender_type'] === 'bot' && $lastUserTime !== null) {
+                $botTime = strtotime($msg['created_at']);
+                $pairs[] = [
+                    'diff' => $botTime - $lastUserTime,
+                    'time' => $botTime
+                ];
+                $lastUserTime = null;
+            }
+        }
+    }
+
+    usort($pairs, function($a, $b) {
+        return $b['time'] - $a['time'];
+    });
+
+    $currentPairs = array_slice($pairs, 0, 20);
+    $previousPairs = array_slice($pairs, 20, 20);
+
+    $currentAvg = 0;
+    if (count($currentPairs) > 0) {
+        $currentAvg = array_sum(array_column($currentPairs, 'diff')) / count($currentPairs);
+    }
+
+    $previousAvg = 0;
+    if (count($previousPairs) > 0) {
+        $previousAvg = array_sum(array_column($previousPairs, 'diff')) / count($previousPairs);
+    }
+
+    $trend = $currentAvg - $previousAvg;
+    
+    if (count($previousPairs) == 0) {
+        $trend = 0;
+    }
+
+    return [
+        'waktu_respon' => $currentAvg > 0 ? round($currentAvg, 1) . "s" : "0s",
+        'trend_respon' => ($trend > 0 ? "+" : "") . round($trend, 1) . "s"
+    ];
+}
+
 try {
     // 1. Total Percakapan (Total Sessions)
     $stmt = $db->query("SELECT COUNT(*) FROM chat_sessions");
@@ -45,9 +110,10 @@ try {
     $stmt = $db->query("SELECT COUNT(*) FROM articles");
     $totalArticles = (int)$stmt->fetchColumn();
 
-    // Waktu Respon (DINA) - Mock for now
-    $waktuRespon = "1.2s";
-    $trendRespon = "-0.4s";
+    // Waktu Respon (DINA)
+    $responStats = getResponseTimeStats($db);
+    $waktuRespon = $responStats['waktu_respon'];
+    $trendRespon = $responStats['trend_respon'];
 
     // Chart Data (Last 7 days of active sessions)
     $stmt = $db->query("

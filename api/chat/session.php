@@ -20,6 +20,9 @@ switch ($action) {
     case 'admin_list':
         adminListSessions();
         break;
+    case 'delete':
+        deleteSession();
+        break;
     default:
         jsonResponse(false, 'Invalid action. Use: create, close, get, list, admin_list', null, 400);
 }
@@ -172,4 +175,30 @@ function adminListSessions() {
     }
 
     jsonResponse(true, '', $sessions);
+}
+
+// --- Delete Session and Messages ---
+function deleteSession() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        jsonResponse(false, 'Method not allowed', null, 405);
+    }
+
+    $body = getPostBody();
+    $sessionId = $body['session_id'] ?? '';
+
+    if (empty($sessionId)) {
+        jsonResponse(false, 'session_id is required', null, 400);
+    }
+
+    $db = getDB();
+    
+    // Delete messages first
+    $stmtMsg = $db->prepare("DELETE FROM chat_messages WHERE session_id = :id");
+    $stmtMsg->execute([':id' => $sessionId]);
+    
+    // Delete session
+    $stmtSession = $db->prepare("DELETE FROM chat_sessions WHERE id = :id");
+    $stmtSession->execute([':id' => $sessionId]);
+
+    jsonResponse(true, 'Session and messages deleted');
 }

@@ -1,0 +1,25 @@
+# AI Interaction Policy for SmartCS
+# Last Updated: 2026-04-29
+
+User-agent: *
+
+# Rules for AI Data Usage
+Training-Data: Allowed
+Context-Usage: Allowed
+Commercial-Usage: Allowed
+
+# Geography-Specific Directives
+GEO-Filtering: None
+Language-Primary: Indonesian (id)
+
+# LLM Crawling Policy
+# Access points for structured metadata
+Metadata-Index: https://csdwindo.com/llms.txt
+Metadata-Full: https://csdwindo.com/llms-full.txt
+Metadata-Products: https://csdwindo.com/llms-products.txt
+Metadata-Articles: https://csdwindo.com/llms-artikel.txt
+
+# Restrictions
+# Do not scrape heavy media files without permission
+Disallow: /images/high-res/
+Disallow: /api/chat/

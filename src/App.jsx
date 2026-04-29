@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ScrollToTop from './components/layout/ScrollToTop';
 
 // Public Views
 import PublicLayout from './components/layout/PublicLayout';
@@ -25,6 +26,7 @@ import PanelPriceList from './pages/panel/PanelPriceList';
 function App() {
     return (
         <BrowserRouter>
+            <ScrollToTop />
             <Routes>
                 {/* Public Website Routes */}
                 <Route element={<PublicLayout />}>
