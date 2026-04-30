@@ -20,5 +20,5 @@ export const Prospect = () => <GenericPage title="Prospect Leads" desc="Data pot
 export const Emergency = () => <GenericPage title="Emergency Center" desc="Daftar laporan layanan darurat (Mogok / Kecelakaan)." icon={<AlertTriangle size={32} />} />;
 export const Sparepart = () => <GenericPage title="Sparepart Requests" desc="Permintaan ketersediaan dan harga suku cadang." icon={<Wrench size={32} />} />;
 export const Complaint = () => <GenericPage title="Customer Complaint" desc="Kelola keluhan dan masukan dari pelanggan." icon={<ShieldAlert size={32} />} />;
-export const Users = () => <GenericPage title="CS & Admin Users" desc="Kelola role dan user yang bisa mengakses dashboard ini." icon={<UserCog size={32} />} />;
+
 export const KnowledgeHub = ({ title }) => <GenericPage title={`Knowledge: ${title}`} desc={`Kelola data base pengetahuan AI untuk ${title}.`} icon={<BookOpen size={32} />} />;

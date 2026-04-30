@@ -98,6 +98,16 @@ const PanelChat = () => {
     // Delete state
     const [sessionToDelete, setSessionToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem('admin_user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {}
+        }
+    }, []);
 
     // Fetch all sessions (admin list)
     useEffect(() => {
@@ -351,13 +361,15 @@ const PanelChat = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <button 
-                                    onClick={() => setSessionToDelete(selectedSession)}
-                                    className="text-gray-400 hover:text-[#E60012] transition-colors"
-                                    title="Hapus Sesi"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
+                                {user?.role === 'admin' && (
+                                    <button 
+                                        onClick={() => setSessionToDelete(selectedSession)}
+                                        className="text-gray-400 hover:text-[#E60012] transition-colors"
+                                        title="Hapus Sesi"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                )}
                                 <button 
                                     onClick={() => setSelectedSession(null)}
                                     className="text-gray-400 hover:text-white transition-colors"

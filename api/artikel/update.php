@@ -1,7 +1,7 @@
 <?php
 // === Article Update API ===
 // POST: Update article fields (full or partial)
-require_once __DIR__ . '/../chat/config.php';
+require_once __DIR__ . '/../config.php';
 
 $body = getPostBody();
 

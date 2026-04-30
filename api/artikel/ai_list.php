@@ -2,7 +2,7 @@
 // === AI Article Context API ===
 // Fetches simplified article data (slug, title, subtitle, image, tags)
 // for the AI chatbot to use as fallback recommendations.
-require_once __DIR__ . '/../chat/config.php';
+require_once __DIR__ . '/../config.php';
 
 $pdo = getDB();
 

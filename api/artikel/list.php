@@ -1,7 +1,7 @@
 <?php
 // === Article List API ===
 // GET: Fetch all articles with engagement counts
-require_once __DIR__ . '/../chat/config.php';
+require_once __DIR__ . '/../config.php';
 
 $pdo = getDB();
 

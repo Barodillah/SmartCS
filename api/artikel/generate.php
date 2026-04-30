@@ -1,7 +1,7 @@
 <?php
 // === Article AI Generate API ===
 // POST: Generate article content via OpenRouter AI
-require_once __DIR__ . '/../chat/config.php';
+require_once __DIR__ . '/../config.php';
 
 $body = getPostBody();
 

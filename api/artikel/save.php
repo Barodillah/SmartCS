@@ -1,7 +1,7 @@
 <?php
 // === Article Save API ===
 // POST: Create new article
-require_once __DIR__ . '/../chat/config.php';
+require_once __DIR__ . '/../config.php';
 
 $body = getPostBody();
 

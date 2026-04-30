@@ -64,6 +64,16 @@ const chatAPI = {
             });
             return await res.json();
         } catch (e) { console.error('Lead save error:', e); return null; }
+    },
+    saveBookingLegacy: async (bookingData) => {
+        try {
+            const res = await fetch(`${CHAT_API_BASE}/booking_legacy.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingData)
+            });
+            return await res.json();
+        } catch (e) { console.error('Legacy booking save error:', e); return null; }
     }
 };
 
@@ -172,9 +182,9 @@ const fetchAiArticles = async (keyword = '') => {
 // --- Keyword Generator for Articles ---
 const generateKeyword = (text) => {
     if (!text) return '';
-    
+
     const stopWords = ['saya', 'mau', 'ingin', 'tanya', 'ada', 'apa', 'bagaimana', 'kenapa', 'dimana', 'kapan', 'siapa', 'berapa', 'yang', 'dengan', 'untuk', 'dari', 'pada', 'adalah', 'itu', 'ini', 'bisa', 'tolong', 'bantu', 'kasih', 'terima', 'mohon', 'info', 'dong', 'ya', 'kah', 'lebih', 'paling', 'sangat', 'sekali'];
-    
+
     const clean = text.toLowerCase().replace(/[^\w\s]/gi, ' ').trim();
     const words = clean.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
 
@@ -190,7 +200,7 @@ const generateKeyword = (text) => {
     // 2. Categories/Services (Max 1-2)
     const categories = ['promo', 'harga', 'service', 'servis', 'bengkel', 'lokasi', 'alamat', 'kredit', 'cicilan', 'dp', 'test drive', 'emergency', 'darurat', 'sparepart', 'onderdil', 'aksesoris', 'oli', 'ban', 'mesin', 'aki', 'rem', 'bunga', 'tenor', 'asuransi'];
     const foundCategories = words.filter(w => categories.includes(w) && !selectedKeywords.includes(w));
-    
+
     // Add up to 2 categories
     foundCategories.slice(0, 2).forEach(c => selectedKeywords.push(c));
 
@@ -199,7 +209,7 @@ const generateKeyword = (text) => {
         const remaining = words
             .filter(w => !selectedKeywords.includes(w))
             .sort((a, b) => b.length - a.length);
-        
+
         while (selectedKeywords.length < 3 && remaining.length > 0) {
             selectedKeywords.push(remaining.shift());
         }
@@ -680,9 +690,37 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
 - Jika user bertanya soal **promo**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail promo untuk unit tersebut dari data referensi promo.
 - Jika user bertanya soal **biaya service, estimasi service, perawatan berkala, apa saja yang dikerjakan saat service, service berapa km**: INI BUKAN BOOKING. Ini adalah pertanyaan informasi. Jawab langsung dari **Data Perawatan Berkala** di bawah. JANGAN menanyakan nopol. JANGAN masuk ke alur booking.
 - Jika user secara eksplisit ingin **booking service / daftar service / jadwalkan service / buat janji service**: BARU ikuti alur booking service di bawah (yang meminta nopol).
+- Jika user ingin **cek status booking / cek booking service / apakah booking sudah terdaftar / sudah terdaftar belum**: ikuti **Alur Cek Status Booking Service** di bawah.
 - **BEDAKAN DENGAN JELAS:** "tanya biaya service" ≠ "booking service". "Mau tahu service 60.000 km" ≠ "mau booking service". Hanya jika customer menyatakan ingin **menjadwalkan/mendaftar/booking**, barulah masuk alur booking.
 - Jika user bertanya **lokasi/alamat**: Langsung berikan informasi cabang dealer yang relevan.
 - Jika user bertanya **test drive**: Tanyakan model yang diminati dan jadwal yang diinginkan, lalu minta nama & nomor HP.
+
+## Alur Cek Status Booking Service (PENTING)
+Alur ini diikuti jika customer ingin **mengecek status booking service**, **mengecek apakah booking-nya sudah terdaftar**, **cek booking**, atau **cek pendaftaran service**.
+
+Keyword yang menandakan CEK BOOKING: "cek booking", "cek status booking", "status booking", "booking saya", "sudah terdaftar", "sudah terdaftar belum", "apakah booking sudah", "cek pendaftaran", "cek service saya", "cek jadwal service", "apakah sudah terdaftar".
+
+### LANGKAH 1: Tanyakan Nopol
+Customer ingin cek status booking → Tanyakan **Nomor Polisi (Nopol)** kendaraannya.
+Contoh: "Baik, untuk mengecek status booking service, boleh diinformasikan nomor polisi (nopol) kendaraannya? 😊"
+
+### LANGKAH 2: Tampilkan Data Booking Terakhir
+Setelah dapat nopol, sistem akan mencari data booking kendaraan.
+
+**Jika data booking DITEMUKAN (ada booking aktif/terbaru):**
+- Tampilkan data booking service **terakhir** (terbaru): Nama pemilik, kendaraan, tanggal booking, jam booking, jenis service.
+- Konfirmasi apakah itu booking yang dimaksud customer.
+- Contoh: "Berikut data booking service terakhir Anda:\n- Nama: [nama]\n- Kendaraan: [kendaraan]\n- Tanggal: [tanggal]\n- Jam: [jam]\n- Jenis Service: [jenis]\n\nApakah ini booking yang Bapak/Ibu maksud? 😊"
+
+**Jika data booking TIDAK DITEMUKAN:**
+- Informasikan bahwa belum ada data booking service yang tercatat untuk nopol tersebut.
+- **Langsung tawarkan** untuk membuat booking service baru.
+- Contoh: "Mohon maaf, untuk nopol [nopol] belum ada data booking service yang tercatat. Apakah Bapak/Ibu ingin melakukan booking service sekarang? 😊"
+
+### LANGKAH 3: Respons Customer
+- Jika customer **mengonfirmasi** ("ya", "benar", "itu") → Sampaikan bahwa booking sudah tercatat dan ditangani oleh Service Advisor. Tanyakan ada yang bisa dibantu lagi.
+- Jika customer **menyangkal** ("bukan", "salah", "belum ada", "belum booking") → Tawarkan untuk membuat booking service baru. Jika customer setuju, lanjut ke **Alur Booking Service** LANGKAH 3 (karena nopol sudah diketahui).
+- Jika customer ingin booking baru → Langsung lanjutkan ke **Alur Booking Service** dari LANGKAH 3 (tanyakan service rutin & keluhan).
 
 ## Alur Booking Service (PENTING — IKUTI URUTAN INI DENGAN KETAT)
 **PERHATIAN:** Alur ini HANYA diikuti jika customer secara EKSPLISIT ingin **booking / daftar / jadwalkan service** (membuat janji service). Jika customer hanya bertanya **biaya service, estimasi service, apa yang dikerjakan saat service**, itu BUKAN booking — jawab langsung dari data perawatan berkala tanpa menanyakan nopol.
@@ -700,7 +738,7 @@ Setelah dapat nopol, sistem akan mencari data kendaraan.
 
 **Jika data kendaraan DITEMUKAN:**
 - Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-). Contoh: jika telp asli 082168077050, tampilkan **xxxx-xxxx-7050**.
-- Tunjukkan riwayat service terakhir (maksimal 3 terbaru).
+- Tunjukkan riwayat booking service terakhir (maksimal 3 terbaru).
 - Minta customer **konfirmasi** apakah data tersebut benar.
 
 **Jika data kendaraan TIDAK DITEMUKAN (Kosong):**
@@ -1404,6 +1442,21 @@ const VirtualCS = () => {
         );
     };
 
+    // Check if conversation is in check booking status context
+    const isCheckBookingContext = () => {
+        const allMessages = conversationHistory.current.slice(-8);
+        const keywords = [
+            'cek booking', 'cek status booking', 'status booking', 'booking saya',
+            'sudah terdaftar', 'terdaftar belum', 'apakah booking', 'cek pendaftaran',
+            'cek service saya', 'cek jadwal service', 'apakah sudah terdaftar',
+            'booking sudah', 'sudah di booking', 'sudah dibooking', 'udah terdaftar',
+            'udah ke daftar', 'udah kedaftar', 'udah di daftar'
+        ];
+        return allMessages.some(m =>
+            keywords.some(kw => m.content.toLowerCase().includes(kw))
+        );
+    };
+
     // Check if conversation is in test drive context
     const isTestDriveContext = () => {
         const allMessages = conversationHistory.current.slice(-6);
@@ -1445,6 +1498,50 @@ const VirtualCS = () => {
         ctx += `\nINSTRUKSI: Tampilkan data ini ke customer untuk konfirmasi. Untuk nomor telepon, tampilkan versi MASKED saja (xxxx-xxxx-${d.telp.slice(-4)}). JANGAN tampilkan nomor telepon lengkap.`;
         if (rawTelp) {
             ctx += `\n**[INTERNAL — JANGAN TAMPILKAN KE CUSTOMER]** Nomor telepon utuh untuk SAVE_LEAD: ${rawTelp}. Gunakan nomor ini sebagai customer_phone saat emit tag [SAVE_LEAD]. Format harus angka saja diawali 0.`;
+        }
+
+        return ctx;
+    };
+
+    // Build booking status context string for check booking flow
+    const buildBookingStatusContext = (data, nopolStr) => {
+        if (!data.status || !data.data) {
+            return `**Status Booking:** Data TIDAK ditemukan ❌\n**Nopol:** ${nopolStr}\nBelum ada data booking service yang tercatat untuk nopol ini.\n\nINSTRUKSI: Informasikan bahwa belum ada booking service tercatat untuk nopol ini, lalu TAWARKAN untuk membuat booking service baru.`;
+        }
+
+        const d = data.data;
+        const maskedTelp = d.telp ? `xxxx-xxxx-${d.telp.slice(-4)}` : 'Tidak tersedia';
+        const rawTelp = d.telp ? normalizePhone(d.telp) : null;
+
+        let ctx = `**Status Booking:** Data ditemukan ✅\n`;
+        ctx += `**Nama:** ${d.nama}\n`;
+        ctx += `**Kendaraan:** ${d.kendaraan}\n`;
+        ctx += `**Telp (masked):** ${maskedTelp}\n`;
+
+        if (d.riwayat && d.riwayat.length > 0) {
+            // Show the latest booking (first entry = terbaru)
+            const latest = d.riwayat[0];
+            ctx += `\n**Booking Service Terakhir (Terbaru):**\n`;
+            ctx += `- Tanggal: ${latest.tanggal}\n`;
+            ctx += `- Jam: ${latest.jam}\n`;
+            ctx += `- Jenis Service: ${latest.jenis}\n`;
+            if (latest.keluhan) ctx += `- Keluhan: ${latest.keluhan}\n`;
+            if (latest.by) ctx += `- Service Advisor: ${latest.by}\n`;
+
+            // Check if it's an upcoming booking (today or future)
+            const today = getCurrentJakartaTime().isoDate;
+            if (latest.tanggal >= today) {
+                ctx += `\n✅ **Booking ini AKTIF** (tanggal ${latest.tanggal} — hari ini atau akan datang).\n`;
+            } else {
+                ctx += `\n⚠️ **Booking ini sudah BERLALU** (tanggal ${latest.tanggal}).\n`;
+            }
+        } else {
+            ctx += `\n**Booking Service:** Tidak ada riwayat booking ditemukan.\n`;
+        }
+
+        ctx += `\nINSTRUKSI: Tampilkan data booking terakhir ini ke customer untuk konfirmasi. Tanyakan apakah ini booking yang dimaksud. Untuk nomor telepon, tampilkan versi MASKED saja. Jika customer menyangkal atau data tidak sesuai, tawarkan untuk membuat booking service baru.`;
+        if (rawTelp) {
+            ctx += `\n**[INTERNAL — JANGAN TAMPILKAN KE CUSTOMER]** Nomor telepon utuh untuk SAVE_LEAD: ${rawTelp}.`;
         }
 
         return ctx;
@@ -1584,23 +1681,37 @@ const VirtualCS = () => {
         // Add to conversation history
         conversationHistory.current.push({ role: 'user', content: text });
 
-        // Check if user sent a nopol in booking context
+        // Check if user sent a nopol in booking or check-booking context
         const detectedNopol = extractNopol(text);
-        if (detectedNopol && isBookingContext()) {
+        const inCheckBooking = isCheckBookingContext();
+        const inBooking = isBookingContext();
+
+        if (detectedNopol && (inBooking || inCheckBooking)) {
             try {
                 const nopolData = await fetchNopolData(detectedNopol);
-                if (nopolData.status && nopolData.data) {
-                    nopolContext.current = buildNopolContext(nopolData);
-                    // Add system context as an assistant-invisible note
+
+                if (inCheckBooking) {
+                    // Cek Status Booking flow — build booking status context
+                    const bookingCtx = buildBookingStatusContext(nopolData, detectedNopol);
+                    nopolContext.current = bookingCtx;
                     conversationHistory.current.push({
                         role: 'system',
-                        content: `[SISTEM] Data nopol berhasil ditemukan. Berikut datanya:\n${nopolContext.current}`
+                        content: `[SISTEM] Customer meminta CEK STATUS BOOKING. Berikut data booking untuk nopol ${detectedNopol}:\n${bookingCtx}`
                     });
                 } else {
-                    conversationHistory.current.push({
-                        role: 'system',
-                        content: `[SISTEM] Data nopol TIDAK ditemukan di sistem. PENTING (DILARANG KERAS): JANGAN katakan "Nomor polisi belum terdaftar" atau "Data tidak ditemukan". Cukup terima nopol tersebut secara natural (contoh: "Baik, dengan nopol ${detectedNopol} ya?"), lalu lanjutkan dengan meminta kelengkapan data secara sopan (Nama Lengkap, Model Kendaraan, dan Nomor HP).`
-                    });
+                    // Normal booking flow
+                    if (nopolData.status && nopolData.data) {
+                        nopolContext.current = buildNopolContext(nopolData);
+                        conversationHistory.current.push({
+                            role: 'system',
+                            content: `[SISTEM] Data nopol berhasil ditemukan. Berikut datanya:\n${nopolContext.current}`
+                        });
+                    } else {
+                        conversationHistory.current.push({
+                            role: 'system',
+                            content: `[SISTEM] Data nopol TIDAK ditemukan di sistem. PENTING (DILARANG KERAS): JANGAN katakan "Nomor polisi belum terdaftar" atau "Data tidak ditemukan". Cukup terima nopol tersebut secara natural (contoh: "Baik, dengan nopol ${detectedNopol} ya?"), lalu lanjutkan dengan meminta kelengkapan data secara sopan (Nama Lengkap, Model Kendaraan, dan Nomor HP).`
+                        });
+                    }
                 }
             } catch (err) {
                 console.error('Nopol fetch error:', err);
@@ -1700,10 +1811,10 @@ const VirtualCS = () => {
                         const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
                         const cName = leadJson.customer_name;
                         const cPhone = leadJson.customer_phone;
-                        
+
                         // Strict validation: Do not save if name or phone is empty or a placeholder
                         const isPlaceholder = (val) => !val || val.trim() === '' || val.trim() === '...' || val.toLowerCase().includes('belum');
-                        
+
                         if (sid && !isPlaceholder(cName) && !isPlaceholder(cPhone)) {
                             chatAPI.saveLead({
                                 session_id: sid,
@@ -1719,6 +1830,24 @@ const VirtualCS = () => {
                                     setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
                                 }
                             });
+
+                            // --- Sync booking to legacy database (fire-and-forget) ---
+                            if (leadLabel === 'booking' && leadJson.data) {
+                                const ld = leadJson.data;
+                                chatAPI.saveBookingLegacy({
+                                    tanggal: ld.booking_date || '',
+                                    jam: ld.booking_time || '',
+                                    kendaraan: leadJson.vehicle_model || '',
+                                    nopol: (leadJson.customer_nopol || '').replace(/\s+/g, ''),
+                                    nama: cName || '',
+                                    telp: normalizePhone(cPhone) || '',
+                                    jenis: `${ld.service_type || ''} ${ld.service_km || ''}`.trim(),
+                                    keluhan: ld.keluhan || ''
+                                }).then(r => {
+                                    if (r?.status) console.log('Legacy booking synced:', r.data);
+                                    else console.warn('Legacy booking sync failed:', r);
+                                });
+                            }
                         } else {
                             console.warn('Lead save aborted: Missing or placeholder name/phone', leadJson);
                         }

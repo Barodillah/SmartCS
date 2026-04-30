@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-require_once '../chat/config.php';
+require_once '../config.php';
 $pdo = getDB();
 
 try {

@@ -1,7 +1,7 @@
 <?php
 // === Price List API ===
 // Menggunakan config dari chat API untuk koneksi database
-require_once '../chat/config.php';
+require_once '../config.php';
 
 // Setup tabel jika belum ada
 $db = getDB();

@@ -1,35 +1,112 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Lock, ArrowRight } from 'lucide-react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { Lock, ArrowRight, User, Mail, KeyRound } from 'lucide-react';
 import PanelSidebar from './PanelSidebar';
 import PanelHeader from './PanelHeader';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
 const PanelLayout = () => {
+    const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     
     // Auth State
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [pinInput, setPinInput] = useState('');
-    const [error, setError] = useState(false);
+    const [authMode, setAuthMode] = useState('login'); // 'login', 'forgot', 'reset'
+    
+    // Form States
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
 
     // Initial check from sessionStorage
     useEffect(() => {
-        const auth = sessionStorage.getItem('admin_auth_temp');
-        if (auth === '1066') {
+        const token = sessionStorage.getItem('admin_token');
+        if (token) {
             setIsAuthenticated(true);
         }
     }, []);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        if (pinInput === '1066') {
-            sessionStorage.setItem('admin_auth_temp', '1066');
-            setIsAuthenticated(true);
-            setError(false);
-        } else {
-            setError(true);
-            setPinInput('');
+        setError('');
+        setLoading(true);
+        try {
+            const res = await fetch('https://csdwindo.com/api/auth/login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (data.status) {
+                sessionStorage.setItem('admin_token', data.data.token);
+                sessionStorage.setItem('admin_user', JSON.stringify(data.data.user));
+                setIsAuthenticated(true);
+            } else {
+                setError(data.message || 'Login gagal');
+            }
+        } catch (err) {
+            console.error("Login fetch error:", err);
+            setError(`Error: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMsg('');
+        setLoading(true);
+        try {
+            const res = await fetch('https://csdwindo.com/api/auth/forgot-password.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (data.status) {
+                setSuccessMsg(data.message);
+                setAuthMode('reset');
+            } else {
+                setError(data.message || 'Gagal mengirim OTP');
+            }
+        } catch (err) {
+            setError(`Error: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMsg('');
+        setLoading(true);
+        try {
+            const res = await fetch('https://csdwindo.com/api/auth/reset-password.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, otp, password: newPassword })
+            });
+            const data = await res.json();
+            if (data.status) {
+                setSuccessMsg(data.message);
+                setAuthMode('login');
+                setPassword('');
+                setOtp('');
+                setNewPassword('');
+            } else {
+                setError(data.message || 'Gagal reset password');
+            }
+        } catch (err) {
+            setError(`Error: ${err.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -40,32 +117,139 @@ const PanelLayout = () => {
                     <div className="w-16 h-16 bg-[#111111] flex items-center justify-center mx-auto mb-6" style={{ clipPath: ANGULAR_CLIP }}>
                         <Lock size={24} className="text-white" />
                     </div>
-                    <h1 className="font-display font-bold text-2xl text-[#111111] tracking-wide mb-2">RESTRICTED AREA</h1>
-                    <p className="text-gray-500 text-sm mb-8">Silakan masukkan PIN otorisasi untuk mengakses Admin Dashboard.</p>
+                    
+                    <h1 className="font-display font-bold text-2xl text-[#111111] tracking-wide mb-2">
+                        {authMode === 'login' && 'RESTRICTED AREA'}
+                        {authMode === 'forgot' && 'LUPA PASSWORD'}
+                        {authMode === 'reset' && 'RESET PASSWORD'}
+                    </h1>
+                    <p className="text-gray-500 text-sm mb-6">
+                        {authMode === 'login' && 'Silakan masuk untuk mengakses Admin Dashboard.'}
+                        {authMode === 'forgot' && 'Masukkan email terdaftar Anda untuk menerima OTP.'}
+                        {authMode === 'reset' && 'Masukkan kode OTP dan password baru Anda.'}
+                    </p>
 
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <div>
-                            <input 
-                                type="password" 
-                                value={pinInput}
-                                onChange={(e) => setPinInput(e.target.value)}
-                                placeholder="Masukkan PIN..." 
-                                className={`w-full text-center tracking-[0.5em] text-lg font-bold border-b-2 py-2 focus:outline-none transition-colors ${
-                                    error ? 'border-[#E60012] text-[#E60012] placeholder-red-200' : 'border-gray-300 focus:border-[#111111]'
-                                }`}
-                                autoFocus
-                            />
-                            {error && <p className="text-[#E60012] text-xs mt-2 font-medium">PIN yang Anda masukkan salah!</p>}
-                        </div>
-                        <button 
-                            type="submit" 
-                            className="w-full bg-[#E60012] text-white flex items-center justify-center gap-2 py-3 font-display font-bold text-sm tracking-wider uppercase hover:bg-[#B5000F] transition-colors"
-                            style={{ clipPath: ANGULAR_CLIP }}
-                        >
-                            <span>Masuk Panel</span>
-                            <ArrowRight size={16} />
-                        </button>
-                    </form>
+                    {error && <div className="bg-red-50 text-[#E60012] p-3 mb-4 text-sm border border-red-200">{error}</div>}
+                    {successMsg && <div className="bg-green-50 text-green-700 p-3 mb-4 text-sm border border-green-200">{successMsg}</div>}
+
+                    {authMode === 'login' && (
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <div className="relative">
+                                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Email Address" 
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:border-[#111111] focus:outline-none transition-colors"
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="relative">
+                                <KeyRound size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input 
+                                    type="password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Password" 
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:border-[#111111] focus:outline-none transition-colors"
+                                    required
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-[#E60012] text-white flex items-center justify-center gap-2 py-3 font-display font-bold text-sm tracking-wider uppercase hover:bg-[#B5000F] transition-colors disabled:opacity-50"
+                                style={{ clipPath: ANGULAR_CLIP }}
+                            >
+                                <span>{loading ? 'Memproses...' : 'Masuk Panel'}</span>
+                                <ArrowRight size={16} />
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={() => { setAuthMode('forgot'); setError(''); setSuccessMsg(''); }}
+                                className="text-sm text-gray-500 hover:text-[#111111] mt-4"
+                            >
+                                Lupa Password?
+                            </button>
+                        </form>
+                    )}
+
+                    {authMode === 'forgot' && (
+                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                            <div className="relative">
+                                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Email Address" 
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:border-[#111111] focus:outline-none transition-colors"
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-[#111111] text-white flex items-center justify-center gap-2 py-3 font-display font-bold text-sm tracking-wider uppercase hover:bg-[#333333] transition-colors disabled:opacity-50"
+                                style={{ clipPath: ANGULAR_CLIP }}
+                            >
+                                <span>{loading ? 'Memproses...' : 'Kirim OTP'}</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={() => { setAuthMode('login'); setError(''); setSuccessMsg(''); }}
+                                className="text-sm text-gray-500 hover:text-[#111111] mt-4"
+                            >
+                                Kembali ke Login
+                            </button>
+                        </form>
+                    )}
+
+                    {authMode === 'reset' && (
+                        <form onSubmit={handleResetPassword} className="space-y-4">
+                            <div className="relative">
+                                <input 
+                                    type="text" 
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    placeholder="Kode OTP (6 digit)" 
+                                    className="w-full px-4 py-2 border border-gray-300 focus:border-[#111111] focus:outline-none transition-colors text-center tracking-widest font-bold"
+                                    required
+                                    maxLength={6}
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="relative">
+                                <KeyRound size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input 
+                                    type="password" 
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Password Baru" 
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 focus:border-[#111111] focus:outline-none transition-colors"
+                                    required
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full bg-[#E60012] text-white flex items-center justify-center gap-2 py-3 font-display font-bold text-sm tracking-wider uppercase hover:bg-[#B5000F] transition-colors disabled:opacity-50"
+                                style={{ clipPath: ANGULAR_CLIP }}
+                            >
+                                <span>{loading ? 'Memproses...' : 'Reset Password'}</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={() => { setAuthMode('login'); setError(''); setSuccessMsg(''); }}
+                                className="text-sm text-gray-500 hover:text-[#111111] mt-4"
+                            >
+                                Kembali ke Login
+                            </button>
+                        </form>
+                    )}
                 </div>
             </div>
         );

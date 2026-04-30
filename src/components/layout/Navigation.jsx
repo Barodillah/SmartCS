@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Search } from 'lucide-react';
 import AngularButton from '../ui/AngularButton';
+import GlobalSearchModal from '../ui/GlobalSearchModal';
 
 const Navigation = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const location = useLocation();
 
     const navLinks = [
@@ -62,10 +64,11 @@ const Navigation = () => {
                     </Link>
                     <AngularButton
                         variant="primary"
-                        className="!px-6 !py-2.5 !text-[10px]"
-                        onClick={() => window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: 'Saya ingin melakukan Test Drive' } }))}
+                        className="!px-4 !py-2.5"
+                        onClick={() => setSearchOpen(true)}
+                        aria-label="Search"
                     >
-                        Test Drive
+                        <Search size={18} />
                     </AngularButton>
                     <button 
                         className="lg:hidden flex items-center justify-center text-white ml-2 transition-transform duration-300" 
@@ -106,6 +109,7 @@ const Navigation = () => {
                     </Link>
                 </div>
             </div>
+            <GlobalSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </nav>
     );
 };

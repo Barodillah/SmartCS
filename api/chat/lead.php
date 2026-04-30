@@ -2,7 +2,7 @@
 // === DINA Chat API — Lead Management ===
 // Single table `chat_leads` menyimpan semua respon spesifik per konteks
 // Labels: booking, test_drive, prospect, emergency, sparepart, complaint, aksesoris
-require_once __DIR__ . '/config.php';
+require_once dirname(__DIR__) . '/config.php';
 
 $action = $_GET['action'] ?? '';
 

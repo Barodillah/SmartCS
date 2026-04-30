@@ -43,7 +43,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
     const [modalLoading, setModalLoading] = useState(false);
     const [copied, setCopied] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-    
+
     const [statusUpdate, setStatusUpdate] = useState('');
     const [notesUpdate, setNotesUpdate] = useState('');
     const [updateLoading, setUpdateLoading] = useState(false);
@@ -51,6 +51,16 @@ const LeadManager = ({ label, title, desc, icon }) => {
     // Delete State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingLead, setIsDeletingLead] = useState(false);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem('admin_user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {}
+        }
+    }, []);
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -139,7 +149,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                 // Refresh list
                 fetchLeads(pagination.page);
                 showToast('Berhasil memperbarui lead.');
-                
+
                 // Tutup modal agar kembali ke halaman list utama
                 setTimeout(() => {
                     setSelectedLead(null);
@@ -183,7 +193,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
 
     const formatWhatsAppText = (lead) => {
         const d = lead.data || {};
-        let text = `*LEAD BARU - ${title.toUpperCase()}*\n\n`;
+        let text = `*FROM DINA - ${title.toUpperCase()}*\n\n`;
         text += `*Data Konsumen*\n`;
         text += `Nama: ${lead.customer_name || '-'}\n`;
         text += `No HP: ${lead.customer_phone || '-'}\n`;
@@ -191,7 +201,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
         if (lead.customer_nopol) text += `Nopol: ${lead.customer_nopol}\n`;
         text += `\n*Detail Spesifik*\n`;
 
-        switch(label) {
+        switch (label) {
             case 'booking':
                 text += `Jenis Service: ${d.service_type || '-'}\n`;
                 text += `Jarak Tempuh (KM): ${d.service_km || '-'}\n`;
@@ -262,8 +272,8 @@ const LeadManager = ({ label, title, desc, icon }) => {
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <select 
-                        value={statusFilter} 
+                    <select
+                        value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="px-3 py-2 border border-[#E5E5E5] rounded text-sm focus:outline-none focus:border-[#E60012] bg-white"
                     >
@@ -273,9 +283,9 @@ const LeadManager = ({ label, title, desc, icon }) => {
                         ))}
                     </select>
                     <div className="relative w-full sm:w-64">
-                        <input 
-                            type="text" 
-                            placeholder="Cari nama, hp, nopol..." 
+                        <input
+                            type="text"
+                            placeholder="Cari nama, hp, nopol..."
                             value={search}
                             onKeyDown={(e) => e.key === 'Enter' && fetchLeads(1)}
                             onChange={(e) => setSearch(e.target.value)}
@@ -312,8 +322,8 @@ const LeadManager = ({ label, title, desc, icon }) => {
                     ) : (
                         <div className="divide-y divide-[#E5E5E5]">
                             {leads.map(lead => (
-                                <div 
-                                    key={lead.id} 
+                                <div
+                                    key={lead.id}
                                     onClick={() => openLeadDetail(lead)}
                                     className="p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-[#FAFAFA] cursor-pointer transition-colors"
                                 >
@@ -344,19 +354,19 @@ const LeadManager = ({ label, title, desc, icon }) => {
                         </div>
                     )}
                 </div>
-                
+
                 {/* Pagination (Simple) */}
                 <div className="border-t border-[#E5E5E5] p-3 flex justify-between items-center text-xs text-gray-500 shrink-0 bg-white">
                     <span>Menampilkan halaman {pagination.page} dari {pagination.totalPages || 1}</span>
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             disabled={pagination.page <= 1}
                             onClick={() => fetchLeads(pagination.page - 1)}
                             className="px-3 py-1 border border-[#E5E5E5] rounded hover:bg-gray-50 disabled:opacity-50"
                         >
                             Prev
                         </button>
-                        <button 
+                        <button
                             disabled={pagination.page >= pagination.totalPages}
                             onClick={() => fetchLeads(pagination.page + 1)}
                             className="px-3 py-1 border border-[#E5E5E5] rounded hover:bg-gray-50 disabled:opacity-50"
@@ -370,12 +380,12 @@ const LeadManager = ({ label, title, desc, icon }) => {
             {/* Detail Modal */}
             <AnimatePresence>
                 {selectedLead && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/40 z-[100] backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={() => setSelectedLead(null)}
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ y: 50, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: 20, scale: 0.95 }}
                             className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
                             onClick={e => e.stopPropagation()}
@@ -386,15 +396,17 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                     <div className="text-xs text-gray-500 mt-1">ID: {selectedLead.id}</div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <button 
-                                        onClick={() => setShowDeleteConfirm(true)}
-                                        className="text-gray-400 hover:text-[#E60012] transition-colors"
-                                        title="Hapus Lead"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
-                                    <button 
-                                        onClick={() => setSelectedLead(null)} 
+                                    {user?.role === 'admin' && (
+                                        <button
+                                            onClick={() => setShowDeleteConfirm(true)}
+                                            className="text-gray-400 hover:text-[#E60012] transition-colors"
+                                            title="Hapus Lead"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setSelectedLead(null)}
                                         className="text-gray-400 hover:text-[#E60012] transition-colors"
                                         title="Tutup"
                                     >
@@ -402,7 +414,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8">
                                 {modalLoading && !selectedLead.recent_messages ? (
                                     <div className="flex-1 flex items-center justify-center">
@@ -447,13 +459,13 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                                     )) : <span className="text-gray-400 italic">Tidak ada data tambahan</span>}
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
                                                 <h4 className="text-xs font-bold uppercase tracking-wider text-blue-800 mb-3">Update Progress</h4>
                                                 <div className="space-y-4">
                                                     <div>
                                                         <label className="block text-xs text-blue-600 mb-1">Status</label>
-                                                        <select 
+                                                        <select
                                                             value={statusUpdate}
                                                             onChange={e => setStatusUpdate(e.target.value)}
                                                             className="w-full px-3 py-2 border border-blue-200 rounded text-sm focus:outline-none focus:border-blue-400 bg-white"
@@ -465,14 +477,14 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs text-blue-600 mb-1">Catatan Internal (Notes)</label>
-                                                        <textarea 
+                                                        <textarea
                                                             value={notesUpdate}
                                                             onChange={e => setNotesUpdate(e.target.value)}
                                                             className="w-full px-3 py-2 border border-blue-200 rounded text-sm focus:outline-none focus:border-blue-400 bg-white h-20 resize-none"
                                                             placeholder="Tambahkan catatan untuk tim..."
                                                         ></textarea>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={handleUpdateLead}
                                                         disabled={updateLoading}
                                                         className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded transition-colors disabled:opacity-50"
@@ -486,8 +498,8 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                         {/* Right Col: Actions & Context */}
                                         <div className="w-full md:w-64 space-y-4 flex flex-col">
                                             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 border-b border-[#E5E5E5] pb-1">Quick Actions</h4>
-                                            
-                                            <button 
+
+                                            <button
                                                 onClick={() => copyToClipboard(formatWhatsAppText(selectedLead))}
                                                 className="w-full flex items-center gap-2 p-3 text-sm border border-gray-200 rounded hover:bg-gray-50 transition-colors text-left"
                                             >
@@ -495,7 +507,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                                 <span className="flex-1 font-medium">{copied ? 'Tersalin!' : 'Copy WA Format'}</span>
                                             </button>
 
-                                            <button 
+                                            <button
                                                 onClick={() => directWhatsApp(selectedLead.customer_phone)}
                                                 className="w-full flex items-center gap-2 p-3 text-sm bg-green-50 text-green-700 border border-green-200 rounded hover:bg-green-100 transition-colors text-left"
                                             >
@@ -504,7 +516,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                                 <ExternalLink size={12} className="opacity-50" />
                                             </button>
 
-                                            <button 
+                                            <button
                                                 onClick={() => navigate('/panel/chat', { state: { openSessionId: selectedLead.session_id } })}
                                                 className="w-full flex items-center gap-2 p-3 text-sm bg-[#111111] text-white rounded hover:bg-[#222222] transition-colors text-left"
                                             >
@@ -523,7 +535,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                                         selectedLead.recent_messages.slice(-5).map((m, i) => (
                                                             <div key={i} className={`p-1.5 rounded ${m.sender_type === 'user' ? 'bg-gray-100 text-gray-800' : 'bg-[#E60012]/10 text-[#E60012]'}`}>
                                                                 <span className="font-bold">{m.sender_type === 'user' ? 'Konsumen' : 'Bot'}: </span>
-                                                                {m.message.length > 60 ? m.message.substring(0,60)+'...' : m.message}
+                                                                {m.message.length > 60 ? m.message.substring(0, 60) + '...' : m.message}
                                                             </div>
                                                         ))
                                                     ) : (
@@ -543,12 +555,12 @@ const LeadManager = ({ label, title, desc, icon }) => {
             {/* Delete Confirmation Modal */}
             <AnimatePresence>
                 {showDeleteConfirm && selectedLead && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/40 z-[120] backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={() => !isDeletingLead && setShowDeleteConfirm(false)}
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                             className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden p-6 text-center"
                             onClick={e => e.stopPropagation()}
@@ -561,14 +573,14 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                 Apakah Anda yakin ingin menghapus data lead dari <strong>{selectedLead.customer_name || 'Konsumen'}</strong>? Tindakan ini tidak dapat dibatalkan.
                             </p>
                             <div className="flex justify-center gap-3">
-                                <button 
+                                <button
                                     onClick={() => setShowDeleteConfirm(false)}
                                     disabled={isDeletingLead}
                                     className="px-4 py-2 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50"
                                 >
                                     Batal
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleDeleteLead}
                                     disabled={isDeletingLead}
                                     className="px-4 py-2 rounded font-bold text-sm bg-[#E60012] text-white hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"

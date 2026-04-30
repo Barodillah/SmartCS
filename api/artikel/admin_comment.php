@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../chat/config.php';
+require_once '../config.php';
 $pdo = getDB();
 
 try {

@@ -14,13 +14,25 @@ import {
     ShieldAlert,
     X,
     Package,
-    FileText
+    FileText,
+    LogOut,
+    Database
 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
 const PanelSidebar = ({ isOpen, setIsOpen }) => {
     const [knowledgeOpen, setKnowledgeOpen] = useState(false);
     const [badgeCounts, setBadgeCounts] = useState({});
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const storedUser = sessionStorage.getItem('admin_user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {}
+        }
+    }, []);
 
     useEffect(() => {
         const fetchCounts = async () => {
@@ -41,15 +53,33 @@ const PanelSidebar = ({ isOpen, setIsOpen }) => {
         { name: 'Dashboard', path: '/panel', icon: <LayoutDashboard size={18} />, exact: true },
         { name: 'Chat History', path: '/panel/chat', icon: <MessageSquare size={18} /> },
         { name: 'Booking Service', label: 'booking', path: '/panel/booking', icon: <CalendarCheck size={18} /> },
-        { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} /> },
-        { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} /> },
-        { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} /> },
-        { name: 'Sparepart', label: 'sparepart', path: '/panel/sparepart', icon: <Wrench size={18} /> },
-        { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} /> },
+        { name: 'Data Booking', label: 'data_booking', path: '/panel/data-booking', icon: <Database size={18} /> },
+        { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} />, roles: ['admin'], division: 'sales' },
+        { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} />, roles: ['admin'], division: 'sales' },
+        { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} />, roles: ['admin'], division: 'service' },
+        { name: 'Sparepart', label: 'sparepart', path: '/panel/sparepart', icon: <Wrench size={18} />, roles: ['admin'], division: 'service' },
+        { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} />, roles: ['admin'], division: 'service' },
         { name: 'Complaint', label: 'complaint', path: '/panel/complaint', icon: <ShieldAlert size={18} /> },
-        { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} /> },
-        { name: 'Users', path: '/panel/users', icon: <UserCog size={18} /> },
+        { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} />, roles: ['admin'] },
+        { name: 'Users', path: '/panel/users', icon: <UserCog size={18} />, roles: ['admin'] },
     ];
+
+    const filteredNavigations = navigations.filter(item => {
+        if (!user) return false;
+        if (user.role === 'admin') return true;
+        
+        // Cek jika item hanya untuk admin
+        if (item.roles && item.roles.includes('admin') && !item.division) {
+            return false;
+        }
+
+        // Cek pembatasan divisi untuk staff
+        if (item.division && user.role === 'staff') {
+            return user.divisi === item.division;
+        }
+
+        return true;
+    });
 
     const knowledgeSubMenu = [
         { name: 'Price List', path: '/panel/knowledge/price-list' },
@@ -77,8 +107,9 @@ const PanelSidebar = ({ isOpen, setIsOpen }) => {
             </div>
 
             {/* Sidebar Links */}
-            <div className="py-6 px-4 space-y-1 h-[calc(100vh-4rem)] overflow-y-auto">
-                {navigations.map((item) => (
+            <div className="py-6 px-4 h-[calc(100vh-4rem)] overflow-y-auto flex flex-col justify-between">
+                <div className="space-y-1">
+                    {filteredNavigations.map((item) => (
                     <NavLink
                         key={item.name}
                         to={item.path}
@@ -104,36 +135,53 @@ const PanelSidebar = ({ isOpen, setIsOpen }) => {
                 ))}
 
                 {/* Dropdown Knowledge */}
-                <div>
+                {user?.role === 'admin' && (
+                    <div>
+                        <button
+                            onClick={() => setKnowledgeOpen(!knowledgeOpen)}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <BookOpen size={18} />
+                                <span>Knowledge</span>
+                            </div>
+                            <ChevronDown size={14} className={`transition-transform duration-200 ${knowledgeOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {knowledgeOpen && (
+                            <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
+                                {knowledgeSubMenu.map((sub) => (
+                                    <NavLink
+                                        key={sub.name}
+                                        to={sub.path}
+                                        onClick={() => setIsOpen(false)}
+                                        className={({ isActive }) =>
+                                            `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                                ? 'text-[#E60012] bg-[#E60012]/10'
+                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                            }`
+                                        }
+                                    >
+                                        {sub.name}
+                                    </NavLink>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-white/10">
                     <button
-                        onClick={() => setKnowledgeOpen(!knowledgeOpen)}
-                        className="w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group"
+                        onClick={() => {
+                            sessionStorage.removeItem('admin_token');
+                            sessionStorage.removeItem('admin_user');
+                            window.location.href = '/panel';
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded text-sm font-medium transition-colors text-gray-400 hover:bg-white/5 hover:text-white group"
                     >
-                        <div className="flex items-center gap-3">
-                            <BookOpen size={18} />
-                            <span>Knowledge</span>
-                        </div>
-                        <ChevronDown size={14} className={`transition-transform duration-200 ${knowledgeOpen ? 'rotate-180' : ''}`} />
+                        <LogOut size={18} className="group-hover:text-[#E60012] transition-colors" />
+                        <span>Logout</span>
                     </button>
-                    {knowledgeOpen && (
-                        <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
-                            {knowledgeSubMenu.map((sub) => (
-                                <NavLink
-                                    key={sub.name}
-                                    to={sub.path}
-                                    onClick={() => setIsOpen(false)}
-                                    className={({ isActive }) =>
-                                        `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
-                                            ? 'text-[#E60012] bg-[#E60012]/10'
-                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                        }`
-                                    }
-                                >
-                                    {sub.name}
-                                </NavLink>
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
         </aside>

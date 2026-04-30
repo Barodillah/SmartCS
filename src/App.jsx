@@ -20,8 +20,10 @@ import LeadManager from './pages/panel/LeadManager';
 import ArticleManager from './pages/panel/ArticleManager';
 import ArticleEditor from './pages/panel/ArticleEditor';
 import CommentManager from './pages/panel/CommentManager';
-import { Users, KnowledgeHub } from './pages/panel/GenericPages';
+import { KnowledgeHub } from './pages/panel/GenericPages';
+import Users from './pages/panel/Users';
 import PanelPriceList from './pages/panel/PanelPriceList';
+import DataBookingLegacy from './pages/panel/DataBookingLegacy';
 
 function App() {
     return (
@@ -44,6 +46,7 @@ function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="chat" element={<PanelChat />} />
                     <Route path="booking" element={<LeadManager label="booking" title="Booking Service" desc="Kelola permohonan booking service dari client." icon="CalendarCheck" />} />
+                    <Route path="data-booking" element={<DataBookingLegacy />} />
                     <Route path="test-drive" element={<LeadManager label="test_drive" title="Test Drive" desc="Kelola permohonan penjadwalan test drive kendaraan." icon="CarFront" />} />
                     <Route path="prospect" element={<LeadManager label="prospect" title="Prospect Leads" desc="Data potensi prospek pembelian kendaraan dari chatbot." icon="Users" />} />
                     <Route path="emergency" element={<LeadManager label="emergency" title="Emergency Center" desc="Daftar laporan layanan darurat (Mogok / Kecelakaan)." icon="AlertTriangle" />} />

@@ -1,7 +1,7 @@
 <?php
 // === Article Delete API ===
 // POST: Delete article by ID
-require_once __DIR__ . '/../chat/config.php';
+require_once __DIR__ . '/../config.php';
 
 $body = getPostBody();
 
