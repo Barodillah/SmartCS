@@ -803,17 +803,22 @@ ${bookingDatesText}
 ${slotContext ? `### Data Ketersediaan Slot Saat Ini (dari sistem)\n${slotContext}\n` : ''}
 Presentasikan saran tanggal terdekat dan jam yang tersedia dengan jelas, namun selalu persilakan customer memilih tanggal lain jika mereka menginginkan. Setelah customer memilih, konfirmasi jadwalnya.
 
-### LANGKAH 5: Konfirmasi & Selesai
-Setelah jadwal terkonfirmasi → Berikan ringkasan lengkap booking:
-- Nama pemilik
-- Kendaraan
-- Jenis service (kecil/besar)
-- Keluhan (jika ada)
-- Tanggal & jam booking
-- Lokasi: **Mitsubishi Dwindo Bintaro**
-- Estimasi waktu pengerjaan
+### LANGKAH 5: Verifikasi No Telp & Konfirmasi Selesai
+Setelah jadwal terkonfirmasi, **SEBELUM** menyimpan data booking, WAJIB lakukan verifikasi identitas:
+1. Minta customer untuk memberikan **nomor telepon lengkap** mereka.
+2. Sampaikan bahwa ini bertujuan untuk verifikasi keamanan agar tidak ada orang lain yang melakukan booking asal menggunakan nomor polisi tersebut.
+3. **Bandingkan** nomor yang diinput customer dengan **Nomor telepon utuh** yang ada di bagian [INTERNAL]. (Bandingkan angkanya saja, abaikan spasi atau karakter +62/0).
+4. Jika nomor telepon yang diinput **TIDAK SAMA / SALAH**, sampaikan: "Mohon maaf, data verifikasi belum sesuai. Nomor telepon yang Anda masukkan tidak sama dengan yang terdaftar untuk kendaraan ini." dan **DILARANG KERAS** menggunakan tag [SAVE_LEAD:booking].
+5. Jika nomor telepon yang diinput **BENAR / SESUAI**, barulah berikan ringkasan lengkap booking:
+   - Nama pemilik
+   - Kendaraan
+   - Jenis service (kecil/besar)
+   - Keluhan (jika ada)
+   - Tanggal & jam booking
+   - Lokasi: **Mitsubishi Dwindo Bintaro**
+   - Estimasi waktu pengerjaan
 
-Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan dikonfirmasi kembali.
+Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan dikonfirmasi kembali. LALU gunakan tag **[SAVE_LEAD:booking]**.
 
 ## Alur Test Drive
 Jika customer ingin melakukan **test drive** kendaraan:
@@ -1129,6 +1134,8 @@ const VirtualCS = () => {
     const conversationHistory = useRef([]);
     const nopolContext = useRef('');
     const slotContext = useRef('');
+    const verifiedPhone = useRef(null);
+    const verificationAttempts = useRef(0);
     const pendingMessage = useRef(null);
 
     // Fetch dynamic price list on mount
@@ -1310,6 +1317,8 @@ const VirtualCS = () => {
         conversationHistory.current = [];
         nopolContext.current = '';
         slotContext.current = '';
+        verifiedPhone.current = null;
+        verificationAttempts.current = 0;
         localStorage.removeItem('dina_active_session');
         setSessionId(null);
         sessionIdRef.current = null;
@@ -1702,6 +1711,10 @@ const VirtualCS = () => {
                     // Normal booking flow
                     if (nopolData.status && nopolData.data) {
                         nopolContext.current = buildNopolContext(nopolData);
+                        // Store verified phone for code-level booking verification
+                        if (nopolData.data.telp) {
+                            verifiedPhone.current = normalizePhone(nopolData.data.telp);
+                        }
                         conversationHistory.current.push({
                             role: 'system',
                             content: `[SISTEM] Data nopol berhasil ditemukan. Berikut datanya:\n${nopolContext.current}`
@@ -1804,6 +1817,17 @@ const VirtualCS = () => {
                 // --- Detect and save lead data (fire-and-forget) ---
                 const leadRegex = /\[SAVE_LEAD:(\w+)\]([\s\S]*?)\[\/SAVE_LEAD\]/g;
                 let leadMatch;
+                let bookingPhoneRejected = false;
+
+                // Helper: Strip prefix (0, 62, +62) and compare digits only
+                const stripPhonePrefix = (phone) => {
+                    if (!phone) return '';
+                    let digits = phone.replace(/\D/g, '');
+                    if (digits.startsWith('62')) digits = digits.slice(2);
+                    if (digits.startsWith('0')) digits = digits.slice(1);
+                    return digits;
+                };
+
                 while ((leadMatch = leadRegex.exec(rawText)) !== null) {
                     const leadLabel = leadMatch[1];
                     try {
@@ -1816,6 +1840,39 @@ const VirtualCS = () => {
                         const isPlaceholder = (val) => !val || val.trim() === '' || val.trim() === '...' || val.toLowerCase().includes('belum');
 
                         if (sid && !isPlaceholder(cName) && !isPlaceholder(cPhone)) {
+                            // --- PHONE VERIFICATION for booking leads (code-level enforcement) ---
+                            if (leadLabel === 'booking' && verifiedPhone.current) {
+                                const inputDigits = stripPhonePrefix(cPhone);
+                                const verifiedDigits = stripPhonePrefix(verifiedPhone.current);
+
+                                if (inputDigits !== verifiedDigits) {
+                                    verificationAttempts.current += 1;
+                                    const attemptsLeft = 3 - verificationAttempts.current;
+                                    console.warn(`BOOKING BLOCKED: Phone verification failed (attempt ${verificationAttempts.current}/3).`, { input: cPhone, verified: verifiedPhone.current });
+
+                                    bookingPhoneRejected = true;
+
+                                    // Inject system message so AI knows verification failed
+                                    if (attemptsLeft > 0) {
+                                        conversationHistory.current.push({
+                                            role: 'system',
+                                            content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL (percobaan ${verificationAttempts.current}/3). Nomor yang diinput customer TIDAK COCOK dengan data di sistem. Sisa kesempatan: ${attemptsLeft}x. JANGAN tampilkan ringkasan booking. Minta customer memasukkan nomor telepon yang benar sekali lagi.`
+                                        });
+                                    } else {
+                                        conversationHistory.current.push({
+                                            role: 'system',
+                                            content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL 3x BERTURUT-TURUT. Booking DIBATALKAN. JANGAN tampilkan ringkasan booking. Sampaikan mohon maaf booking tidak dapat diproses.`
+                                        });
+                                    }
+
+                                    // Skip saving entirely
+                                    continue;
+                                } else {
+                                    // Phone matched — reset attempts
+                                    verificationAttempts.current = 0;
+                                }
+                            }
+
                             chatAPI.saveLead({
                                 session_id: sid,
                                 label: leadLabel,
@@ -1856,16 +1913,41 @@ const VirtualCS = () => {
                     }
                 }
 
-                setQuickQuestions(questions);
-                setMessages(prev => [...prev, {
-                    id: Date.now() + 1,
-                    type: 'bot',
-                    text: finalText,
-                    showLocationButton: isEmergency,
-                    showWhatsAppButton: showWhatsApp,
-                    showSimulasiKreditButton: showSimulasiKreditButton,
-                    articles: articleMatches
-                }]);
+                // --- Display response to user ---
+                if (bookingPhoneRejected) {
+                    // Phone verification failed — REPLACE AI response with rejection message
+                    const attemptsLeft = 3 - verificationAttempts.current;
+                    let rejectionText;
+
+                    if (attemptsLeft > 0) {
+                        rejectionText = `Mohon maaf, **verifikasi nomor telepon belum sesuai** \u{1F512}\n\nNomor telepon yang Anda masukkan tidak cocok dengan data yang terdaftar untuk kendaraan ini.\n\nSilakan coba masukkan kembali nomor telepon Anda yang benar. *(Kesempatan tersisa: ${attemptsLeft}x)*`;
+                    } else {
+                        rejectionText = `Mohon maaf, verifikasi nomor telepon telah **gagal 3 kali** \u{1F512}\n\nDemi keamanan, booking service tidak dapat diproses saat ini. Pastikan Anda adalah pemilik kendaraan yang terdaftar.\n\nTerima kasih atas pengertiannya. \u{1F64F}`;
+                    }
+
+                    setQuickQuestions(attemptsLeft > 0
+                        ? ['Coba lagi', 'Hubungi CS']
+                        : ['Booking ulang', 'Hubungi CS', 'Info lainnya']
+                    );
+                    setMessages(prev => [...prev, {
+                        id: Date.now() + 1,
+                        type: 'bot',
+                        text: rejectionText,
+                        showWhatsAppButton: attemptsLeft <= 0
+                    }]);
+                } else {
+                    // Normal display
+                    setQuickQuestions(questions);
+                    setMessages(prev => [...prev, {
+                        id: Date.now() + 1,
+                        type: 'bot',
+                        text: finalText,
+                        showLocationButton: isEmergency,
+                        showWhatsAppButton: showWhatsApp,
+                        showSimulasiKreditButton: showSimulasiKreditButton,
+                        articles: articleMatches
+                    }]);
+                }
             } else {
                 throw new Error('Invalid response');
             }
