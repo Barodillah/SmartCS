@@ -166,6 +166,48 @@ const DataBookingLegacy = () => {
         }
     };
 
+    const executeCancelBooking = async () => {
+        if (!deleteConfirmId) return;
+        setIsDeleting(true);
+        
+        const bookingToCancel = bookings.find(b => b.id === deleteConfirmId);
+        if (!bookingToCancel) {
+            setIsDeleting(false);
+            return;
+        }
+
+        const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+        const payload = { 
+            ...bookingToCancel, 
+            user: user.nama || 'STAFF',
+            forceStatus: 'CANCEL'
+        };
+
+        try {
+            const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            
+            if (data.status) {
+                showToast('Status booking diubah menjadi Cancel');
+                setDetailModalData(null);
+                setDeleteConfirmId(null);
+                fetchBookings();
+            } else {
+                showToast(data.message || 'Gagal cancel booking', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const handleSave = async (formData) => {
         setIsSaving(true);
         
@@ -407,23 +449,37 @@ const DataBookingLegacy = () => {
                             <p className="text-sm text-gray-500 mb-6">
                                 Apakah Anda yakin ingin menghapus data booking ini? Tindakan ini tidak dapat dibatalkan.
                             </p>
-                            <div className="flex justify-center gap-3">
+                            <div className="flex flex-col sm:flex-row justify-center gap-3">
                                 <button
                                     onClick={() => setDeleteConfirmId(null)}
                                     disabled={isDeleting}
-                                    className="px-4 py-2.5 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                    className="px-4 py-2.5 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50 order-3 sm:order-1"
                                 >
                                     Batal
                                 </button>
                                 <button
-                                    onClick={executeDelete}
+                                    onClick={executeCancelBooking}
                                     disabled={isDeleting}
-                                    className="px-4 py-2.5 rounded font-bold text-sm bg-[#E60012] text-white hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 shadow-md"
+                                    className="px-4 py-2.5 rounded font-bold text-sm bg-gray-500 text-white hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md order-2 sm:order-2"
                                 >
                                     {isDeleting ? (
                                         <>
                                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                            Menghapus...
+                                            Proses...
+                                        </>
+                                    ) : (
+                                        'Cancel Booking'
+                                    )}
+                                </button>
+                                <button
+                                    onClick={executeDelete}
+                                    disabled={isDeleting}
+                                    className="px-4 py-2.5 rounded font-bold text-sm bg-[#E60012] text-white hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md order-1 sm:order-3"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                            Hapus
                                         </>
                                     ) : (
                                         'Ya, Hapus'

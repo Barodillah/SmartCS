@@ -27,6 +27,10 @@ import Users from './pages/panel/Users';
 import PanelPriceList from './pages/panel/PanelPriceList';
 import DataBookingLegacy from './pages/panel/DataBookingLegacy';
 import SalesSurvey from './pages/panel/SalesSurvey';
+import WarrantyMMKSI from './pages/panel/WarrantyMMKSI';
+import WarrantyKTB from './pages/panel/WarrantyKTB';
+import DataPDIMMKSI from './pages/panel/DataPDIMMKSI';
+import DataPDIKTB from './pages/panel/DataPDIKTB';
 
 function App() {
     return (
@@ -59,6 +63,10 @@ function App() {
                     <Route path="aksesoris" element={<LeadManager label="aksesoris" title="Aksesoris Requests" desc="Permintaan aksesoris kendaraan." icon="Package" />} />
                     <Route path="complaint" element={<LeadManager label="complaint" title="Customer Complaint" desc="Kelola keluhan dan masukan dari pelanggan." icon="ShieldAlert" />} />
                     <Route path="sales-survey" element={<SalesSurvey />} />
+                    <Route path="warranty/mmksi" element={<WarrantyMMKSI />} />
+                    <Route path="warranty/ktb" element={<WarrantyKTB />} />
+                    <Route path="data-pdi/mmksi" element={<DataPDIMMKSI />} />
+                    <Route path="data-pdi/ktb" element={<DataPDIKTB />} />
                     <Route path="artikel" element={<ArticleManager />} />
                     <Route path="artikel/create" element={<ArticleEditor />} />
                     <Route path="artikel/edit/:id" element={<ArticleEditor />} />

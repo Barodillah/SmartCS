@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     MessageSquare,
+    Search,
     CalendarCheck,
     CarFront,
     Users,
@@ -31,6 +32,8 @@ const WhatsappIcon = ({ size = 18, className = "" }) => (
 
 const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
     const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+    const [warrantyOpen, setWarrantyOpen] = useState(false);
+    const [pdiOpen, setPdiOpen] = useState(false);
     const [badgeCounts, setBadgeCounts] = useState({});
     const [user, setUser] = useState(null);
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
@@ -135,6 +138,16 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'Service', path: '/panel/knowledge/service' },
     ];
 
+    const warrantySubMenu = [
+        { name: 'MMKSI', path: '/panel/warranty/mmksi' },
+        { name: 'KTB', path: '/panel/warranty/ktb' },
+    ];
+
+    const pdiSubMenu = [
+        { name: 'MMKSI', path: '/panel/data-pdi/mmksi' },
+        { name: 'KTB', path: '/panel/data-pdi/ktb' },
+    ];
+
     const effectiveIsMinimized = isMinimized && !isMobile;
 
     const sidebarWidth = effectiveIsMinimized ? 'lg:w-20 w-64' : 'w-64';
@@ -165,8 +178,8 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
             </div>
 
             {/* Sidebar Links */}
-            <div className={`py-6 px-4 h-[calc(100vh-4rem)] flex flex-col justify-between ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'}`}>
-                <div className="space-y-1">
+            <div className="h-[calc(100vh-4rem)] flex flex-col">
+                <div className={`py-6 px-4 flex-1 ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'} space-y-1`}>
                     {filteredNavigations.map((item) => (
                         <NavLink
                             key={item.name}
@@ -201,6 +214,94 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                             )}
                         </NavLink>
                     ))}
+
+                    {/* Dropdown Cek Warranty */}
+                    {(user?.role === 'admin' || user?.role === 'pkl' || (user?.role === 'staff' && user?.divisi === 'sales')) && (
+                        <div>
+                            <button
+                                onClick={() => setWarrantyOpen(!warrantyOpen)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group relative"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="min-w-[18px] flex items-center justify-center">
+                                        <Search size={18} />
+                                    </div>
+                                    {!effectiveIsMinimized && <span className="whitespace-nowrap transition-all duration-300">Cek Warranty</span>}
+                                </div>
+                                {!effectiveIsMinimized && <ChevronDown size={14} className={`transition-transform duration-200 ${warrantyOpen ? 'rotate-180' : ''}`} />}
+                                {/* Tooltip */}
+                                {effectiveIsMinimized && (
+                                    <div className="absolute left-full ml-2 px-3 py-2 bg-[#222222] text-white text-sm whitespace-nowrap rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[999] shadow-xl border border-white/10 flex items-center shadow-black/50">
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#222222] border-b border-l border-white/10 transform rotate-45"></div>
+                                        <span className="font-bold tracking-wide">Cek Warranty</span>
+                                    </div>
+                                )}
+                            </button>
+                            {warrantyOpen && !effectiveIsMinimized && (
+                                <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
+                                    {warrantySubMenu.map((sub) => (
+                                        <NavLink
+                                            key={sub.name}
+                                            to={sub.path}
+                                            onClick={() => setIsOpen(false)}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                                    ? 'text-[#E60012] bg-[#E60012]/10'
+                                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                }`
+                                            }
+                                        >
+                                            {sub.name}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Dropdown Data PDI */}
+                    {(user?.role === 'admin' || user?.role === 'pkl' || (user?.role === 'staff' && user?.divisi === 'sales')) && (
+                        <div>
+                            <button
+                                onClick={() => setPdiOpen(!pdiOpen)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group relative"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="min-w-[18px] flex items-center justify-center">
+                                        <Database size={18} />
+                                    </div>
+                                    {!effectiveIsMinimized && <span className="whitespace-nowrap transition-all duration-300">Data PDI</span>}
+                                </div>
+                                {!effectiveIsMinimized && <ChevronDown size={14} className={`transition-transform duration-200 ${pdiOpen ? 'rotate-180' : ''}`} />}
+                                {/* Tooltip */}
+                                {effectiveIsMinimized && (
+                                    <div className="absolute left-full ml-2 px-3 py-2 bg-[#222222] text-white text-sm whitespace-nowrap rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[999] shadow-xl border border-white/10 flex items-center shadow-black/50">
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#222222] border-b border-l border-white/10 transform rotate-45"></div>
+                                        <span className="font-bold tracking-wide">Data PDI</span>
+                                    </div>
+                                )}
+                            </button>
+                            {pdiOpen && !effectiveIsMinimized && (
+                                <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
+                                    {pdiSubMenu.map((sub) => (
+                                        <NavLink
+                                            key={sub.name}
+                                            to={sub.path}
+                                            onClick={() => setIsOpen(false)}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                                    ? 'text-[#E60012] bg-[#E60012]/10'
+                                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                }`
+                                            }
+                                        >
+                                            {sub.name}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Dropdown Knowledge */}
                     {user?.role === 'admin' && (
@@ -247,7 +348,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                     )}
                 </div>
 
-                <div className="mt-8 pt-4 border-t border-white/10">
+                <div className="p-4 border-t border-white/10 bg-[#111111] shrink-0">
                     <button
                         onClick={() => {
                             sessionStorage.removeItem('admin_token');

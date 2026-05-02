@@ -6,8 +6,11 @@ import SurveySearchModal from '../../components/panel/survey/SurveySearchModal';
 
 const API_BASE = 'https://csdwindo.com/api/panel/sales_survey.php';
 
+const displayStatus = (status) => status === 'PKT' ? 'PERLU FOLLOW UP' : status;
+
 const getBadgeColor = (status) => {
-    switch (status) {
+    const s = displayStatus(status);
+    switch (s) {
         case 'PERLU FOLLOW UP': return 'bg-blue-100 text-blue-700';
         case 'PUAS': case 'PROMOTOR': return 'bg-green-100 text-green-700';
         case 'SARAN': case 'BIASA SAJA': return 'bg-yellow-100 text-yellow-700';
@@ -18,6 +21,25 @@ const getBadgeColor = (status) => {
     }
 };
 
+const calculateWaAge = (waDate) => {
+    if (!waDate) return { text: '', days: 0 };
+    const wa = new Date(waDate + 'T00:00:00+07:00');
+    if (isNaN(wa.getTime())) return { text: '', days: 0 };
+    const now = new Date();
+    const nowJakarta = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    nowJakarta.setHours(0, 0, 0, 0);
+    wa.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor(Math.abs(nowJakarta - wa) / (1000 * 60 * 60 * 24));
+    return { text: `${diffDays} hari`, days: diffDays };
+};
+
+const getWaAgeColor = (days) => {
+    if (days > 10) return 'text-red-600 font-bold';
+    if (days > 7) return 'text-orange-500 font-bold';
+    if (days >= 3) return 'text-green-600 font-bold';
+    return 'text-gray-400';
+};
+
 const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
     const [status, setStatus] = useState('');
     const [est, setEst] = useState('');
@@ -26,7 +48,7 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
 
     useEffect(() => {
         if (data) {
-            setStatus(data.status);
+            setStatus(displayStatus(data.status));
             setEst(data.est || '');
             setNote(data.note || '');
             setPkt(data.pkt || 'No');
@@ -136,9 +158,20 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                 </div>
                 <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1">
                     <div className="space-y-4 text-sm">
-                        <div className="flex flex-col">
-                            <span className="text-gray-500 text-xs">Nama Konsumen</span>
-                            <span className="font-bold text-base">{data.nama}</span>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col">
+                                <span className="text-gray-500 text-xs">Nama Konsumen</span>
+                                <span className="font-bold text-base">{data.nama}</span>
+                            </div>
+                            {data.wa_date && (
+                                <div className="flex flex-col">
+                                    <span className="text-gray-500 text-xs">Umur (dari Warranty)</span>
+                                    <span className={`font-bold text-base ${getWaAgeColor(calculateWaAge(data.wa_date).days)}`}>
+                                        {calculateWaAge(data.wa_date).days} Hari
+                                    </span>
+                                    <span className="text-gray-400 text-[10px] mt-0.5">WA Date: {data.wa_date}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="flex flex-col">
                             <span className="text-gray-500 text-xs">No. Telp / WhatsApp</span>
@@ -152,7 +185,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                             <div className="flex flex-col"><span className="text-gray-500 text-xs">Sales / SPV</span><span className="font-medium">{data.sales} / {data.spv}</span></div>
                             <div className="flex flex-col">
                                 <span className="text-gray-500 text-xs">Status Survey</span>
-                                <div><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase mt-1 ${getBadgeColor(data.status)}`}>{data.status}</span></div>
+                                <div><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase mt-1 ${getBadgeColor(data.status)}`}>{displayStatus(data.status)}</span></div>
                             </div>
                         </div>
                         {(data.est || data.note) && (
@@ -173,7 +206,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                                             <div className="w-2 h-2 mt-1 rounded-full bg-[#E60012] shrink-0 relative z-10"></div>
                                             <div className="flex-1 pb-1">
                                                 <div className="flex justify-between items-start mb-0.5">
-                                                    <span className="font-bold text-gray-800">{log.status}</span>
+                                                    <span className="font-bold text-gray-800">{displayStatus(log.status)}</span>
                                                     <span className="text-gray-400 text-[10px]">{log.date}</span>
                                                 </div>
                                                 {log.pkt && log.pkt !== 'No' && <div className="text-green-600 text-[10px] mb-1">PKT: {log.pkt}</div>}
@@ -262,7 +295,36 @@ const SalesSurvey = () => {
             const res = await fetch(url);
             const data = await res.json();
             if (data.status) {
-                setSurveys(data.data || []);
+                let fetchedData = data.data || [];
+
+                if (filterBelum) {
+                    try {
+                        const resPkt = await fetch(`${API_BASE}?action=list&filter=pkt`);
+                        const dataPkt = await resPkt.json();
+                        if (dataPkt.status) {
+                            const pktItems = (dataPkt.data || []).filter(item => item.status === 'PKT' || item.status === 'PERLU FOLLOW UP');
+                            const combined = [...pktItems, ...fetchedData];
+
+                            // Remove duplicates by id
+                            const uniqueMap = new Map();
+                            combined.forEach(item => uniqueMap.set(item.id, item));
+                            fetchedData = Array.from(uniqueMap.values());
+
+                            // Sort PKT to top
+                            fetchedData.sort((a, b) => {
+                                const isAPkt = a.status === 'PKT' || a.status === 'PERLU FOLLOW UP';
+                                const isBPkt = b.status === 'PKT' || b.status === 'PERLU FOLLOW UP';
+                                if (isAPkt && !isBPkt) return -1;
+                                if (!isAPkt && isBPkt) return 1;
+                                return new Date(b.time) - new Date(a.time);
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Error fetching PKT data:', e);
+                    }
+                }
+
+                setSurveys(fetchedData);
                 setBelumCount(data.belum_follow_up || 0);
             } else {
                 showToast('Gagal memuat data survey', 'error');
@@ -391,7 +453,8 @@ const SalesSurvey = () => {
                                             <div className="font-bold text-sm text-[#111111]">{item.nama}</div>
                                         </div>
                                         <div className="md:hidden flex flex-col items-end gap-1">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>{item.status}</span>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>{displayStatus(item.status)}</span>
+                                            {item.wa_date && <span className={`text-[10px] ${getWaAgeColor(calculateWaAge(item.wa_date).days)}`}>{calculateWaAge(item.wa_date).text}</span>}
                                             {item.est && <span className="text-[10px] text-gray-500 font-bold">Nilai: {item.est}</span>}
                                         </div>
                                     </div>
@@ -414,7 +477,8 @@ const SalesSurvey = () => {
                                     </div>
 
                                     <div className="hidden md:flex md:col-span-2 flex-col gap-1 items-start">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>{item.status}</span>
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>{displayStatus(item.status)}</span>
+                                        {item.wa_date && <span className={`text-[10px] ${getWaAgeColor(calculateWaAge(item.wa_date).days)}`}>{calculateWaAge(item.wa_date).text}</span>}
                                         {item.est && <span className="text-[10px] text-gray-500 font-bold">Nilai: {item.est}</span>}
                                     </div>
                                 </div>

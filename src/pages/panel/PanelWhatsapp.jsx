@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Phone, Clock, Calendar, RefreshCw, Check, ShieldAlert } from 'lucide-react';
+import { Phone, Clock, Calendar, RefreshCw, Check, ShieldAlert, UploadCloud } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../../utils/constants';
+import * as XLSX from 'xlsx';
 
 const API_BASE = 'https://csdwindo.com/api/panel/wa_followup.php';
 
@@ -64,11 +65,12 @@ const getTimeAgo = (timestamp) => {
 
 // =================== WA MESSAGE BUILDERS ===================
 
-const buildKonfirmasiMessage = (item) => {
+const buildKonfirmasiMessage = async (item) => {
     const salam = getSalam();
     const hari = getHariIndonesia(item.tanggal);
     const tgl = formatTanggal(item.tanggal);
     const isUpdate = item.status === 'UBAH';
+    const sapaan = await guessGender(item.nama);
 
     let pesan = `${salam}, kami dari Mitsubishi Bintaro\n\n`;
 
@@ -97,13 +99,14 @@ const buildKonfirmasiMessage = (item) => {
     return pesan;
 };
 
-const buildH1Message = (item) => {
+const buildH1Message = async (item) => {
     const salam = getSalam();
     const hari = getHariIndonesia(item.tanggal);
     const tgl = formatTanggal(item.tanggal);
+    const sapaan = await guessGender(item.nama);
 
     let pesan = `*REMINDER BOOKING SERVICE*\n\n`;
-    pesan += `${salam} Bapak/Ibu *${item.nama}*\n\n`;
+    pesan += `${salam} ${sapaan} *${item.nama}*\n\n`;
     pesan += `Kami mengingatkan bahwa *besok* Anda memiliki jadwal service:\n\n`;
     pesan += `Waktu : *${hari} ${tgl}, ${item.jam}*\n`;
     pesan += `Kendaraan : *${item.kendaraan}, ${item.nopol}*\n\n`;
@@ -122,15 +125,120 @@ const buildH1Message = (item) => {
     return pesan;
 };
 
-const buildH30MenitMessage = (item) => {
+const buildH30MenitMessage = async (item) => {
     const salam = getSalam();
     const hari = getHariIndonesia(item.tanggal);
     const tgl = formatTanggal(item.tanggal);
+    const sapaan = await guessGender(item.nama);
 
-    let pesan = `${salam}, mengingatkan kembali bahwa hari ini *${hari} ${tgl}*, Pukul *${item.jam}*, ada jadwal booking service untuk kendaraan Bapak/Ibu\n`;
+    let pesan = `${salam}, mengingatkan kembali bahwa hari ini *${hari} ${tgl}*, Pukul *${item.jam}*, ada jadwal booking service untuk kendaraan ${sapaan}\n`;
     pesan += `Kendaraan : *${item.kendaraan}, ${item.nopol}*\n\n`;
-    pesan += `_Demi kenyamanan Bapak/Ibu ${item.nama}, Kami ingatkan datang *tepat waktu*, tidak lebih awal maupun terlambat, dikarenakan Stall dan Mekaniknya sudah kami siapkan sesuai Jam Booking._\n\n`;
+    pesan += `_Demi kenyamanan ${sapaan} ${item.nama}, Kami ingatkan datang *tepat waktu*, tidak lebih awal maupun terlambat, dikarenakan Stall dan Mekaniknya sudah kami siapkan sesuai Jam Booking._\n\n`;
     pesan += `_*Note* : Mohon konfirmasi kedatangan, Reschedule, atau Pembatalan dengan membalas pesan ini_`;
+
+    return pesan;
+};
+
+const guessGender = async (name) => {
+    try {
+        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+        if (!apiKey) return "Bapak/Ibu";
+
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "~google/gemini-flash-latest",
+                messages: [
+                    { role: "system", content: "Tebak gender dari nama orang Indonesia. Balas HANYA dengan satu kata: Bapak atau Ibu. Jika tidak yakin balas Bapak/Ibu." },
+                    { role: "user", content: name }
+                ],
+                temperature: 0,
+                max_tokens: 50
+            })
+        });
+
+        if (!res.ok) return "Bapak/Ibu";
+
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content?.trim();
+
+        if (reply) {
+            if (reply.includes("Bapak") && !reply.includes("Ibu")) return "Bapak";
+            if (reply.includes("Ibu") && !reply.includes("Bapak")) return "Ibu";
+            if (reply === "Bapak" || reply === "Ibu") return reply;
+        }
+        return "Bapak/Ibu";
+    } catch (err) {
+        console.error("Gender guess error:", err);
+        return "Bapak/Ibu";
+    }
+};
+
+const buildPktMessage = async (item) => {
+    const salam = getSalam();
+    const sapaan = await guessGender(item.nama);
+    let pesan = `${salam} ${sapaan} *${item.nama}*,\n\n`;
+    pesan += `Terima kasih telah melakukan pembelian kendaraan *${item.kendaraan}* dengan nomor rangka *${item.rangka}*.\n\n`;
+    pesan += `Saya ingin menanyakan bagaimana pelayanan sales kami:\n`;
+    pesan += `- Apakah sales kami sudah menjelaskan fitur-fitur kendaraannya?\n`;
+    pesan += `- Apakah ${sapaan} puas dan merasa terbantu dengan pelayanan sales kami?\n`;
+    pesan += `- Apakah sales mengikuti proses penyerahan kendaraan?\n`;
+    pesan += `- Apakah ${sapaan} ada saran atau masukan untuk pelayanan sales kami?\n\n`;
+    pesan += `Jika ada kendala atau ingin booking service bisa hubungi kami dengan membalas pesan ini, atau melalui DINA dengan layanan 24 jam https://csdwindo.com`;
+    return pesan;
+};
+
+const buildStnkMessage = async (item) => {
+    const jam = new Date().getHours();
+    let salam = 'Selamat Pagi';
+    if (jam >= 11 && jam < 15) salam = 'Selamat Siang';
+    else if (jam >= 15 && jam < 18) salam = 'Selamat Sore';
+    else if (jam >= 18) salam = 'Selamat Malam';
+
+    const sapaan = await guessGender(item.nama);
+    const dateObj = new Date(item.one_year);
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const format_tanggal = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+
+    let pesan = `${salam} ${sapaan} *${item.nama}*,\n\n`;
+    pesan += `Kami dari Mitsubishi Bintaro ingin mengingatkan Anda untuk membayar pajak STNK tahunan mobil *${item.kendaraan}* No. Polisi *${item.nopol}*, yang jatuh tempo pada *${format_tanggal}*.\n\n`;
+    pesan += `Pesan ini kami kirim sebagai pengingat rutin. Kami sangat menghargai perhatian ${sapaan} agar tidak melewatkan pembayaran ini untuk menjaga legalitas kendaraan dan menghindari denda.\n\n`;
+    pesan += `_*Jika ${sapaan} sudah membayar, silakan abaikan pesan ini.*_\n\n`;
+    pesan += `Silakan hubungi kami jika ada pertanyaan atau butuh bantuan. Terima kasih atas kerjasamanya.\n\n`;
+    pesan += `Hormat kami,\nDwindo Berlian Samjaya.`;
+
+    return pesan;
+};
+
+const buildBpkbMessage = async (item) => {
+    const jam = new Date().getHours();
+    let salam = 'Selamat Pagi';
+    if (jam >= 11 && jam < 15) salam = 'Selamat Siang';
+    else if (jam >= 15 && jam < 18) salam = 'Selamat Sore';
+    else if (jam >= 18) salam = 'Selamat Malam';
+
+    const sapaan = await guessGender(item.nama);
+
+    let pesan = `${salam}, Kami dari Mitsubishi Bintaro ingin dengan hormat mengingatkan ${sapaan} *${item.nama}* bahwa BPKB untuk kendaraan *${item.kendaraan || 'Mitsubishi'}* dengan nomor rangka *${item.rangka}* sudah dapat diambil. Kami sangat berharap ${sapaan} berkenan untuk mengambilnya di kantor kami pada waktu yang memungkinkan. Mohon maaf apabila pemberitahuan ini mengganggu kesibukan ${sapaan}, namun hal ini merupakan upaya kami untuk memberikan pelayanan terbaik kepada pelanggan kami.\n\n`;
+
+    pesan += `*SYARAT SYARAT PENGAMBILAN BPKB*\n`;
+    pesan += `_Waktu pengambilan Senin - Jumat, 09:00 s/d 15:00_\n\n`;
+
+    pesan += `PERORANGAN / PERUSAHAAN / CV / YAYASAN\n\n`;
+    pesan += `A. Diambil sendiri oleh pemilik\n1. Membawa KTP asli/SIM asli\n\n`;
+
+    pesan += `B. Diambil oleh kuasa dari pemilik\n1. Membawa KTP asli Pemilik BPKB ( pemberi kuasa)\n2. Membawa KTP asli Penerima Kuasa\n3. Membawa surat kuasa bermaterai yang telah ditandatangani oleh Pemilik BPKB dan penerima kuasanya\n\n`;
+
+    pesan += `C. Jika pemilik BPKB meninggal dunia\n1. Membawa surat kematian pemilik BPKB\n2. Membawa kartu keluarga pemilik BPKB\n3. Membawa surat kuasa dari seluruh ahli waris dan KTP asli ahli waris pemberi kuasa\n4. Membawa surat keterangan ahli waris\n5. Membawa KTP asli penerima kuasa\n\n`;
+
+    pesan += `D. Oleh Perusahaan/CV/Yayasan\n1. Membawa surat kuasa bermaterai dari Perusahaan ( diatas kop surat ) + Stempel Perusahaan/CV/Yayasan dan ditandatangani oleh pejabat berwenang\n2. Membawa copy KTP pemberi kuasa dan penerima kuasa\n3. Membawa Stempel Perusahaan/CV/Yayasan\n\n`;
+
+    pesan += `Terima kasih atas kerjasama dan kepercayaan Anda sebagai pelanggan kami.\n\n`;
+    pesan += `Hormat kami,\nMitsubishi Bintaro`;
 
     return pesan;
 };
@@ -157,6 +265,7 @@ const getBadgeColor = (status) => {
         case 'REQUEST': return 'bg-blue-100 text-blue-700';
         case 'UBAH': return 'bg-orange-100 text-orange-700';
         case 'BOOKING': return 'bg-purple-100 text-purple-700';
+        case 'PKT': case 'PERLU FOLLOW UP': return 'bg-green-100 text-green-700';
         default: return 'bg-gray-100 text-gray-700';
     }
 };
@@ -191,7 +300,11 @@ const PanelWhatsapp = () => {
     const [konfirmasiData, setKonfirmasiData] = useState([]);
     const [h1Data, setH1Data] = useState([]);
     const [h30Data, setH30Data] = useState([]);
+    const [pktData, setPktData] = useState([]);
+    const [pajakStnkData, setPajakStnkData] = useState([]);
+    const [bpkbReadyData, setBpkbReadyData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [updatingIds, setUpdatingIds] = useState(new Set());
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const [confirmModal, setConfirmModal] = useState({ show: false, item: null, message: '' });
@@ -208,18 +321,45 @@ const PanelWhatsapp = () => {
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [resKonf, resH1, resH30] = await Promise.all([
+            const [resKonf, resH1, resH30, resPkt, resStnk, resBpkb] = await Promise.all([
                 fetch(`${API_BASE}?tab=konfirmasi`),
                 fetch(`${API_BASE}?tab=h1`),
                 fetch(`${API_BASE}?tab=h30`),
+                fetch(`https://csdwindo.com/api/panel/sales_survey.php?action=list`),
+                fetch(`${API_BASE}?tab=pajak_stnk`),
+                fetch(`${API_BASE}?tab=bpkb_ready`)
             ]);
             const dataKonf = await resKonf.json();
             const dataH1 = await resH1.json();
             const dataH30 = await resH30.json();
+            const dataPkt = await resPkt.json();
+            const dataStnk = await resStnk.json();
+            const dataBpkb = await resBpkb.json();
 
             setKonfirmasiData(dataKonf.status ? dataKonf.data : []);
             setH1Data(dataH1.status ? dataH1.data : []);
             setH30Data(dataH30.status ? dataH30.data : []);
+            setPajakStnkData(dataStnk.status ? dataStnk.data : []);
+            setBpkbReadyData(dataBpkb.status ? dataBpkb.data : []);
+
+            if (dataPkt.status) {
+                const now = new Date();
+                const nowJakarta = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+                nowJakarta.setHours(0, 0, 0, 0);
+
+                const validPkt = (dataPkt.data || []).filter(item => {
+                    if (item.status !== 'PKT' && item.status !== 'PERLU FOLLOW UP') return false;
+                    if (!item.wa_date) return false;
+
+                    const wa = new Date(item.wa_date + 'T00:00:00+07:00');
+                    if (isNaN(wa.getTime())) return false;
+                    wa.setHours(0, 0, 0, 0);
+
+                    const diffDays = Math.floor((nowJakarta - wa) / (1000 * 60 * 60 * 24));
+                    return diffDays >= 0 && diffDays < 3;
+                });
+                setPktData(validPkt);
+            }
         } catch (err) {
             console.error('Error fetching WA data:', err);
             showToast('Gagal memuat data', 'error');
@@ -234,11 +374,11 @@ const PanelWhatsapp = () => {
 
     // Konfirmasi: kirim WA dan update status ke BOOKING
     const handleKonfirmasi = async (item) => {
-        const msg = buildKonfirmasiMessage(item);
-        openWhatsapp(item.telp, msg);
-
         setUpdatingIds(prev => new Set(prev).add(item.id));
         try {
+            const msg = await buildKonfirmasiMessage(item);
+            openWhatsapp(item.telp, msg);
+
             const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
             const res = await fetch(API_BASE, {
                 method: 'PUT',
@@ -267,7 +407,7 @@ const PanelWhatsapp = () => {
     };
 
     // H-1: kirim WA saja
-    const handleH1 = (item) => {
+    const handleH1 = async (item) => {
         const now = new Date();
         const hours = now.getHours();
 
@@ -281,40 +421,203 @@ const PanelWhatsapp = () => {
             return;
         }
 
-        executeSendH1(item);
+        await executeSendH1(item);
     };
 
-    const executeSendH1 = (item) => {
-        const msg = buildH1Message(item);
-        openWhatsapp(item.telp, msg);
-        showToast(`WA H-1 dikirim ke ${item.nama}`);
-        setConfirmModal({ show: false, item: null, message: '' });
+    const executeSendH1 = async (item) => {
+        setUpdatingIds(prev => new Set(prev).add(item.id));
+        try {
+            const msg = await buildH1Message(item);
+            openWhatsapp(item.telp, msg);
+            showToast(`WA H-1 dikirim ke ${item.nama}`);
+            setConfirmModal({ show: false, item: null, message: '' });
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses pesan WA', 'error');
+        } finally {
+            setUpdatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
     };
 
     // H-30 Menit: kirim WA saja, cek jam
-    const handleH30 = (item) => {
+    const handleH30 = async (item) => {
         if (isJamPassed(item.jam)) {
             showToast(`Jam booking ${item.jam} sudah lewat, tidak bisa kirim WA`, 'error');
             return;
         }
-        const msg = buildH30MenitMessage(item);
-        openWhatsapp(item.telp, msg);
-        showToast(`WA Reminder dikirim ke ${item.nama}`);
+        setUpdatingIds(prev => new Set(prev).add(item.id));
+        try {
+            const msg = await buildH30MenitMessage(item);
+            openWhatsapp(item.telp, msg);
+            showToast(`WA Reminder dikirim ke ${item.nama}`);
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses pesan WA', 'error');
+        } finally {
+            setUpdatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
+    const handlePkt = async (item) => {
+        setUpdatingIds(prev => new Set(prev).add(item.id));
+        try {
+            const msg = await buildPktMessage(item);
+            openWhatsapp(item.telp, msg);
+            showToast(`WA PKT dikirim ke ${item.nama}`);
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses pesan WA', 'error');
+        } finally {
+            setUpdatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
+    const handlePajakStnk = async (item) => {
+        setUpdatingIds(prev => new Set(prev).add(item.id));
+        try {
+            const msg = await buildStnkMessage(item);
+            openWhatsapp(item.telp, msg);
+
+            const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+            const res = await fetch(API_BASE, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: item.id,
+                    action: 'WA STNK',
+                    user: user.nama || 'ADMIN'
+                })
+            });
+            const data = await res.json();
+            if (data.status) {
+                showToast(`Masa berlaku STNK ${item.nama} diperbarui.`);
+                fetchAllData();
+            } else {
+                showToast(data.message || 'Gagal memperbarui STNK', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses WA STNK', 'error');
+        } finally {
+            setUpdatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
+    const handleBpkbReady = async (item) => {
+        setUpdatingIds(prev => new Set(prev).add(item.id));
+        try {
+            const msg = await buildBpkbMessage(item);
+            openWhatsapp(item.telp, msg);
+
+            const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+            const res = await fetch(API_BASE, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: item.id,
+                    action: 'WA BPKB',
+                    user: user.nama || 'ADMIN'
+                })
+            });
+            const data = await res.json();
+            if (data.status) {
+                showToast(`Status BPKB ${item.nama} diperbarui.`);
+                fetchAllData();
+            } else {
+                showToast(data.message || 'Gagal memperbarui BPKB', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses WA BPKB', 'error');
+        } finally {
+            setUpdatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                // Get all first column items (Rangka)
+                const rangkas = [];
+                for (let i = 0; i < data.length; i++) {
+                    if (data[i] && data[i][0]) {
+                        rangkas.push(String(data[i][0]).trim());
+                    }
+                }
+
+                if (rangkas.length > 0) {
+                    const res = await fetch(API_BASE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'upload_bpkb', data: rangkas })
+                    });
+                    const resData = await res.json();
+                    if (resData.status) {
+                        showToast(resData.message, 'success');
+                        fetchAllData();
+                    } else {
+                        showToast(resData.message, 'error');
+                    }
+                } else {
+                    showToast('File excel kosong atau tidak memiliki format yang benar', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal membaca file Excel', 'error');
+            } finally {
+                setIsUploading(false);
+            }
+        };
+        reader.readAsBinaryString(file);
     };
 
     const tabs = [
         { key: 'Konfirmasi', label: 'Konfirmasi', count: konfirmasiData.length },
         { key: 'H-1', label: 'H-1', count: h1Data.length },
         { key: 'H-30 Menit', label: 'H-30 Menit', count: h30Data.length },
-        { key: 'H+2 PKT', label: 'H+2 PKT', count: 0 },
-        { key: 'Pajak STNK', label: 'Pajak STNK', count: 0 },
-        { key: 'BPKB Ready', label: 'BPKB Ready', count: 0 },
+        { key: 'H+2 PKT', label: 'H+2 PKT', count: pktData.length },
+        { key: 'Pajak STNK', label: 'Pajak STNK', count: pajakStnkData.length },
+        { key: 'BPKB Ready', label: 'BPKB Ready', count: bpkbReadyData.length },
     ];
 
     const currentData = activeTab === 'Konfirmasi' ? konfirmasiData
         : activeTab === 'H-1' ? h1Data
             : activeTab === 'H-30 Menit' ? h30Data
-                : [];
+                : activeTab === 'H+2 PKT' ? pktData
+                    : activeTab === 'Pajak STNK' ? pajakStnkData
+                        : activeTab === 'BPKB Ready' ? bpkbReadyData
+                            : [];
 
     let displayData = [...currentData];
     if (activeTab === 'H-30 Menit') {
@@ -331,6 +634,9 @@ const PanelWhatsapp = () => {
         if (activeTab === 'Konfirmasi') handleKonfirmasi(item);
         else if (activeTab === 'H-1') handleH1(item);
         else if (activeTab === 'H-30 Menit') handleH30(item);
+        else if (activeTab === 'H+2 PKT') handlePkt(item);
+        else if (activeTab === 'Pajak STNK') handlePajakStnk(item);
+        else if (activeTab === 'BPKB Ready') handleBpkbReady(item);
     };
 
     return (
@@ -383,11 +689,11 @@ const PanelWhatsapp = () => {
 
                 {/* Table Header */}
                 <div className="bg-[#fcfcfc] border-b border-[#E5E5E5] grid grid-cols-[60px_90px_2fr_2fr_2fr_80px_120px] gap-3 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider shrink-0 hidden md:grid">
-                    <div>Jam</div>
-                    <div>Tanggal</div>
+                    <div>{activeTab === 'H+2 PKT' ? 'FU' : activeTab === 'Pajak STNK' ? 'Sisa' : activeTab === 'BPKB Ready' ? '-' : 'Jam'}</div>
+                    <div>{activeTab === 'H+2 PKT' ? 'Warranty' : activeTab === 'Pajak STNK' ? 'Jatuh Tempo' : activeTab === 'BPKB Ready' ? 'Tanggal' : 'Tanggal'}</div>
                     <div>Nama</div>
                     <div>Kendaraan</div>
-                    <div>Service</div>
+                    <div>{activeTab === 'H+2 PKT' ? 'Sales' : activeTab === 'Pajak STNK' ? 'TNKB' : activeTab === 'BPKB Ready' ? 'Sales / SPV' : 'Service'}</div>
                     <div>Status</div>
                     <div className="text-right">Aksi</div>
                 </div>
@@ -398,10 +704,34 @@ const PanelWhatsapp = () => {
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
                         </div>
-                    ) : (activeTab === 'H+2 PKT' || activeTab === 'Pajak STNK' || activeTab === 'BPKB Ready') ? (
-                        <div className="text-center py-20">
-                            <div className="mx-auto text-gray-300 mb-4 flex justify-center"><Calendar size={32} /></div>
-                            <p className="text-gray-500 text-sm">Fitur {activeTab} akan segera hadir.</p>
+                    ) : activeTab === 'BPKB Ready' && displayData.length === 0 ? (
+                        <div className="p-6 md:p-10 max-w-2xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300">
+                            <h2 className="text-xl font-bold mb-6 text-center">Upload Data BPKB (Excel)</h2>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    onChange={handleFileUpload}
+                                    disabled={isUploading}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                <div className={`border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center transition-colors ${isUploading ? 'border-gray-200 bg-gray-50' : 'border-[#E60012]/30 bg-red-50 hover:bg-red-100 hover:border-[#E60012]/50'
+                                    }`}>
+                                    {isUploading ? (
+                                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#E60012] border-t-transparent mb-4"></div>
+                                    ) : (
+                                        <UploadCloud size={48} className="text-[#E60012]/60 mb-4" />
+                                    )}
+                                    <span className="text-sm font-bold text-[#111111]">
+                                        {isUploading ? 'Memproses File...' : 'Klik atau drag file kesini untuk upload'}
+                                    </span>
+                                    {!isUploading && (
+                                        <span className="text-xs text-gray-500 mt-2 text-center max-w-xs">
+                                            Format file harus .xlsx / .xls dan Nomor Rangka berada pada kolom pertama (Kolom A)
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ) : displayData.length === 0 ? (
                         <div className="text-center py-20">
@@ -410,6 +740,8 @@ const PanelWhatsapp = () => {
                                 {activeTab === 'Konfirmasi' && 'Tidak ada booking dengan status REQUEST / UBAH.'}
                                 {activeTab === 'H-1' && 'Tidak ada booking BOOKING untuk besok.'}
                                 {activeTab === 'H-30 Menit' && 'Tidak ada booking BOOKING untuk hari ini.'}
+                                {activeTab === 'H+2 PKT' && 'Tidak ada data survey PKT dengan umur WA kurang dari 3 hari.'}
+                                {activeTab === 'Pajak STNK' && 'Tidak ada konsumen yang perlu diingatkan pajak STNK dalam 30 hari kedepan.'}
                             </p>
                         </div>
                     ) : (
@@ -419,6 +751,39 @@ const PanelWhatsapp = () => {
                                 const tooEarly = activeTab === 'H-30 Menit' && isTooEarlyForH30(item.jam);
                                 const isUpdating = updatingIds.has(item.id);
                                 const isEarly = activeTab === 'H-1' && new Date().getHours() < 15;
+                                const isPktTab = activeTab === 'H+2 PKT';
+                                const isStnkTab = activeTab === 'Pajak STNK';
+                                const isBpkbTab = activeTab === 'BPKB Ready';
+
+                                let diffDays = 0;
+                                if (isPktTab && item.wa_date) {
+                                    const now = new Date();
+                                    const nowJakarta = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+                                    nowJakarta.setHours(0, 0, 0, 0);
+                                    const wa = new Date(item.wa_date + 'T00:00:00+07:00');
+                                    wa.setHours(0, 0, 0, 0);
+                                    if (!isNaN(wa.getTime())) {
+                                        diffDays = Math.floor((nowJakarta - wa) / (1000 * 60 * 60 * 24));
+                                    }
+                                }
+
+                                let stnkDays = 0;
+                                let tnkbDays = 0;
+                                if (isStnkTab) {
+                                    const now = new Date();
+                                    const nowJakarta = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+                                    nowJakarta.setHours(0, 0, 0, 0);
+                                    if (item.one_year) {
+                                        const stnkDate = new Date(item.one_year + 'T00:00:00+07:00');
+                                        stnkDate.setHours(0, 0, 0, 0);
+                                        stnkDays = Math.floor((stnkDate - nowJakarta) / (1000 * 60 * 60 * 24));
+                                    }
+                                    if (item.five_year) {
+                                        const tnkbDate = new Date(item.five_year + 'T00:00:00+07:00');
+                                        tnkbDate.setHours(0, 0, 0, 0);
+                                        tnkbDays = Math.floor((tnkbDate - nowJakarta) / (1000 * 60 * 60 * 24));
+                                    }
+                                }
 
                                 return (
                                     <div
@@ -428,23 +793,42 @@ const PanelWhatsapp = () => {
                                     >
                                         <div className="flex justify-between items-start md:block">
                                             <div className="flex items-center gap-2 md:block">
-                                                <span className="inline-block bg-[#E60012]/10 text-[#E60012] px-2 py-1 rounded text-xs font-bold">
-                                                    {item.jam}
-                                                </span>
+                                                {!isPktTab && !isStnkTab && !isBpkbTab ? (
+                                                    <span className="inline-block bg-[#E60012]/10 text-[#E60012] px-2 py-1 rounded text-xs font-bold">
+                                                        {item.jam}
+                                                    </span>
+                                                ) : isPktTab ? (
+                                                    <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">
+                                                        H+2
+                                                    </span>
+                                                ) : isStnkTab ? (
+                                                    <span className="inline-block bg-orange-100 text-orange-700 px-2 py-1 rounded text-[10px] font-bold text-center whitespace-nowrap">
+                                                        {stnkDays} hari
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">
+                                                        BPKB
+                                                    </span>
+                                                )}
                                                 <div className="md:hidden text-xs">
-                                                    <span className="font-bold text-[#111111]">{item.tanggal ? formatTanggal(item.tanggal) : '-'}</span>
-                                                    <span className="text-gray-400 text-[10px] ml-1">{item.tanggal ? getHariIndonesia(item.tanggal) : ''}</span>
+                                                    <span className="font-bold text-[#111111]">{isPktTab ? formatTanggal(item.wa_date) : isStnkTab ? formatTanggal(item.one_year) : (item.wa_date || item.tanggal ? formatTanggal(item.wa_date || item.tanggal) : '-')}</span>
+                                                    <span className="text-gray-400 text-[10px] ml-1">{isPktTab ? getHariIndonesia(item.wa_date) : isStnkTab ? '' : (item.wa_date || item.tanggal ? getHariIndonesia(item.wa_date || item.tanggal) : '')}</span>
                                                 </div>
                                             </div>
-                                            <div className="md:hidden">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>
-                                                    {item.status || 'REQUEST'}
+                                            <div className="md:hidden flex flex-col items-end">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(isStnkTab ? 'STNK' : isBpkbTab ? item.bpkb : item.status)}`}>
+                                                    {isStnkTab ? 'STNK' : isBpkbTab ? item.bpkb : (item.status || 'REQUEST')}
                                                 </span>
+                                                {isPktTab && (
+                                                    <div className="text-[10px] font-bold text-blue-600 mt-1">
+                                                        Umur: {diffDays} Hari
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="hidden md:block text-xs">
-                                            <div className="font-bold text-[#111111]">{item.tanggal ? formatTanggal(item.tanggal) : '-'}</div>
-                                            <div className="text-gray-400 text-[10px]">{item.tanggal ? getHariIndonesia(item.tanggal) : ''}</div>
+                                            <div className="font-bold text-[#111111]">{isPktTab ? formatTanggal(item.wa_date) : isStnkTab ? formatTanggal(item.one_year) : (item.wa_date || item.tanggal ? formatTanggal(item.wa_date || item.tanggal) : '-')}</div>
+                                            <div className="text-gray-400 text-[10px]">{isPktTab ? getHariIndonesia(item.wa_date) : isStnkTab ? '' : (item.wa_date || item.tanggal ? getHariIndonesia(item.wa_date || item.tanggal) : '')}</div>
                                         </div>
                                         <div className="text-sm">
                                             <span className="text-xs font-medium text-gray-400 md:hidden block mb-0.5">Nama & Kontak</span>
@@ -455,23 +839,39 @@ const PanelWhatsapp = () => {
                                         </div>
                                         <div className="text-xs text-gray-600 bg-gray-50 p-3 md:p-0 md:bg-transparent rounded border border-[#E5E5E5] md:border-none">
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider md:hidden block mb-1">Kendaraan</span>
-                                            <div className="font-bold text-[#111111]">{item.kendaraan}</div>
-                                            <div className="mt-0.5 font-mono text-xs font-bold text-gray-500">{item.nopol}</div>
+                                            <div className="font-bold text-[#111111]">{item.kendaraan || 'Tidak Diketahui'}</div>
+                                            <div className="mt-0.5 font-mono text-xs font-bold text-gray-500">{isPktTab ? item.rangka : item.nopol}</div>
                                         </div>
                                         <div className="text-xs text-gray-600 bg-gray-50 p-3 md:p-0 md:bg-transparent rounded border border-[#E5E5E5] md:border-none">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider md:hidden block mb-1">Service</span>
-                                            <div className="flex items-center gap-1">
-                                                <span className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded text-[10px] font-bold tracking-wide">{item.jenis}</span>
-                                            </div>
-                                            {item.keluhan && <div className="text-gray-500 mt-1.5 italic leading-relaxed">"{item.keluhan}"</div>}
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider md:hidden block mb-1">{isPktTab ? 'Sales' : isStnkTab ? 'TNKB' : isBpkbTab ? 'Sales / SPV' : 'Service'}</span>
+                                            {isPktTab ? (
+                                                <div className="font-bold text-gray-800">{item.sales}</div>
+                                            ) : isStnkTab ? (
+                                                <>
+                                                    <div className="font-bold text-gray-800">{formatTanggal(item.five_year)}</div>
+                                                    <div className="text-[10px] text-gray-500">{tnkbDays} hari</div>
+                                                </>
+                                            ) : isBpkbTab ? (
+                                                <>
+                                                    <div className="font-bold text-gray-800">{item.sales}</div>
+                                                    <div className="text-[10px] text-gray-500">{item.spv}</div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded text-[10px] font-bold tracking-wide">{item.jenis}</span>
+                                                    </div>
+                                                    {item.keluhan && <div className="text-gray-500 mt-1.5 italic leading-relaxed">"{item.keluhan}"</div>}
+                                                </>
+                                            )}
                                         </div>
                                         <div className="hidden md:block">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>
-                                                {item.status || 'REQUEST'}
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(isStnkTab ? 'REQUEST' : isBpkbTab ? item.bpkb : item.status)}`}>
+                                                {isStnkTab ? 'STNK' : isBpkbTab ? item.bpkb : (item.status || 'REQUEST')}
                                             </span>
-                                            {item.time && (
-                                                <div className="text-[10px] text-gray-400 font-medium mt-1">
-                                                    {getTimeAgo(item.time)}
+                                            {isPktTab && (
+                                                <div className="text-[10px] font-bold text-blue-600 mt-1">
+                                                    Umur: {diffDays} Hari
                                                 </div>
                                             )}
                                         </div>

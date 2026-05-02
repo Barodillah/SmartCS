@@ -16,6 +16,59 @@ $conn = getLegacyDB();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+if ($method === 'POST') {
+    $action = $_POST['action'] ?? '';
+    if ($action === 'upload_pdi_mmksi') {
+        $json_data = $_POST['data'] ?? '[]';
+        $rows = json_decode($json_data, true);
+        
+        if (!is_array($rows) || empty($rows)) {
+            echo json_encode(['status' => false, 'message' => 'Data tidak valid']);
+            exit;
+        }
+        
+        $inserted = 0;
+        $skipped = 0;
+        
+        foreach ($rows as $row) {
+            $exnama = mysqli_real_escape_string($conn, $row['nama'] ?? '');
+            $extelp = mysqli_real_escape_string($conn, $row['telp'] ?? '');
+            
+            // Handle date format if needed (legacy uses raw date from excel)
+            $exdate = $row['date'] ?? '';
+            if (is_numeric($exdate)) {
+                // Excel serial date to YYYY-MM-DD
+                $unix_date = ($exdate - 25569) * 86400;
+                $exdate = gmdate("Y-m-d", $unix_date);
+            }
+            $exwadate = mysqli_real_escape_string($conn, $exdate);
+            $expdidate = mysqli_real_escape_string($conn, $exdate);
+            
+            $exrangka = mysqli_real_escape_string($conn, $row['rangka'] ?? '');
+            $exkendaraan = mysqli_real_escape_string($conn, $row['kendaraan'] ?? '');
+            $exsales = mysqli_real_escape_string($conn, $row['sales'] ?? '');
+            $exspv = mysqli_real_escape_string($conn, $row['spv'] ?? '');
+            
+            // Check if rangka already exists
+            $cekrangka = mysqli_num_rows(mysqli_query($conn, "SELECT * FROM surveyupdate WHERE rangka = '$exrangka'"));
+        
+            if ($cekrangka === 0 && !empty($exrangka)) {
+                $queryexcel = "INSERT INTO surveyupdate VALUES (NULL, NULL, 'PDI', '$exnama', '$extelp', '$exrangka', '$exkendaraan', '$exspv', '$exsales', '$expdidate', '$exwadate', '', '', '', '', '', '')";
+                mysqli_query($conn, $queryexcel);
+                $inserted++;
+            } else {
+                $skipped++;
+            }
+        }
+        
+        echo json_encode([
+            'status' => true,
+            'message' => "Berhasil mengupload. Masuk: $inserted, Dilewati: $skipped (Duplikat)"
+        ]);
+        exit;
+    }
+}
+
 if ($method === 'GET') {
     $action = $_GET['action'] ?? 'list';
 
@@ -113,11 +166,12 @@ if ($method === 'GET') {
     $raw  = file_get_contents('php://input');
     $body = json_decode($raw, true);
 
-    $id     = (int)($body['id'] ?? 0);
-    $status = mysqli_real_escape_string($conn, $body['status'] ?? '');
-    $est    = mysqli_real_escape_string($conn, $body['est'] ?? '');
-    $note   = mysqli_real_escape_string($conn, $body['note'] ?? '');
-    $pkt    = mysqli_real_escape_string($conn, $body['pkt'] ?? 'No');
+    $id      = (int)($body['id'] ?? 0);
+    $status  = mysqli_real_escape_string($conn, $body['status'] ?? '');
+    $est     = mysqli_real_escape_string($conn, $body['est'] ?? '');
+    $note    = mysqli_real_escape_string($conn, $body['note'] ?? '');
+    $pkt     = mysqli_real_escape_string($conn, $body['pkt'] ?? 'No');
+    $wa_date = mysqli_real_escape_string($conn, $body['wa_date'] ?? '');
 
     if ($id <= 0 || empty($status)) {
         echo json_encode(['status' => false, 'message' => 'ID dan status wajib diisi']);
@@ -125,10 +179,12 @@ if ($method === 'GET') {
     }
 
     // Update surveyupdate table
+    $waDateSql = !empty($wa_date) ? ", wa_date = '$wa_date'" : "";
     $updateQuery = "UPDATE surveyupdate SET 
                     status = '$status',
                     est = '$est',
                     note = '$note'
+                    $waDateSql
                     WHERE id = $id";
 
     if (mysqli_query($conn, $updateQuery)) {

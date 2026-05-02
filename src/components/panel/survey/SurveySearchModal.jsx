@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Loader2, User, Car } from 'lucide-react';
+import { Search, X, Loader2, User, Car, Truck } from 'lucide-react';
 
 const API_BASE = 'https://csdwindo.com/api/panel/sales_survey.php';
 
@@ -14,7 +14,7 @@ const getBadgeColor = (status) => {
     }
 };
 
-const SurveySearchModal = ({ isOpen, onClose, onSelect, onSearchSubmit }) => {
+const SurveySearchModal = ({ isOpen, onClose, onSelect, onSearchSubmit, apiBase = 'https://csdwindo.com/api/panel/sales_survey.php', itemIcon = 'car' }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ const SurveySearchModal = ({ isOpen, onClose, onSelect, onSearchSubmit }) => {
         const fetchResults = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`${API_BASE}?action=list&search=${encodeURIComponent(query)}`);
+                const res = await fetch(`${apiBase}?action=list&search=${encodeURIComponent(query)}`);
                 const data = await res.json();
                 if (active && data.status) setResults(data.data || []);
             } catch (e) { console.error(e); }
@@ -104,7 +104,9 @@ const SurveySearchModal = ({ isOpen, onClose, onSelect, onSearchSubmit }) => {
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${getBadgeColor(item.status)}`}>{item.status}</span>
                                                 </div>
                                                 <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                    <span className="flex items-center gap-1"><Car size={12} /> {item.kendaraan}</span>
+                                                    <span className="flex items-center gap-1">
+                                                        {itemIcon === 'truck' ? <Truck size={12} /> : <Car size={12} />} {item.kendaraan}
+                                                    </span>
                                                     <span className="flex items-center gap-1"><User size={12} /> {item.sales}</span>
                                                 </div>
                                             </div>
