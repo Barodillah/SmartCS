@@ -20,7 +20,8 @@ import {
     Database,
     ChevronLeft,
     ChevronRight,
-    Menu
+    Menu,
+    BrainCircuit
 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
@@ -46,14 +47,16 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
     }, []);
 
     const prevPathRef = React.useRef(location.pathname);
+    const isMinimizedRef = React.useRef(isMinimized);
+    useEffect(() => { isMinimizedRef.current = isMinimized; }, [isMinimized]);
 
     useEffect(() => {
         // Only auto-unminimize if we just navigated AWAY from whatsapp
-        if (prevPathRef.current === '/panel/whatsapp' && location.pathname !== '/panel/whatsapp' && isMinimized) {
+        if (prevPathRef.current === '/panel/whatsapp' && location.pathname !== '/panel/whatsapp' && isMinimizedRef.current) {
             setIsMinimized(false);
         }
         prevPathRef.current = location.pathname;
-    }, [location.pathname, isMinimized, setIsMinimized]);
+    }, [location.pathname, setIsMinimized]);
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('admin_user');
@@ -107,6 +110,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'Sales Survey', label: 'sales_survey', path: '/panel/sales-survey', icon: <FileText size={18} />, roles: ['admin'], division: 'sales' },
         { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} />, roles: ['admin'] },
         { name: 'Panel Whatsapp', label: 'whatsapp', path: '/panel/whatsapp', icon: <WhatsappIcon size={18} /> },
+        { name: 'AI Churn Analysis', path: '/panel/churn-prediction', icon: <BrainCircuit size={18} />, roles: ['admin'] },
         { name: 'Users', path: '/panel/users', icon: <UserCog size={18} />, roles: ['admin'] },
     ];
 

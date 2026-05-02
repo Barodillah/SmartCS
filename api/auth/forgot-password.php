@@ -20,14 +20,14 @@ try {
         // Generate 6 digit OTP
         $otp = sprintf("%06d", mt_rand(1, 999999));
         $expires_at = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-        
+
         // Save OTP
         $stmt_otp = $db->prepare("INSERT INTO otps (user_id, otp, expires_at) VALUES (?, ?, ?)");
         $stmt_otp->execute([$user['id'], $otp, $expires_at]);
-        
+
         // Send Email
         try {
-            $mailer = new SMTPMailer('smtp.hostinger.com', 465, 'noreply@csdwindo.com', 'Bintaro.100066');
+            $mailer = new SMTPMailer('smtp.hostinger.com', 465, 'noreply@csdwindo.com', '');
             $subject = "Kode OTP Reset Password";
             $message = "
             <html>
@@ -43,14 +43,14 @@ try {
             </body>
             </html>
             ";
-            
+
             $mailer->send($email, $subject, $message, 'noreply@csdwindo.com', 'SmartCS Admin');
         } catch (Exception $e) {
             error_log("SMTP Error: " . $e->getMessage());
             // Tetap berikan success response untuk security (tidak membocorkan email ada/tidak atau error email)
         }
     }
-    
+
     // Selalu kirimkan pesan sukses terlepas email ada/tidak untuk menghindari email enumeration attack
     jsonResponse(true, 'Jika email terdaftar, kode OTP telah dikirimkan ke email Anda.');
 

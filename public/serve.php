@@ -100,7 +100,22 @@ function resolveOG($path, $siteUrl, $defaultOG)
 
     // ─── Home Page ───
     if ($path === '/' || $path === '') {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if (strpos($host, 'booking.') === 0) {
+            $og['title'] = 'Booking Service Mitsubishi Bintaro';
+            $og['description'] = 'Jadwalkan layanan servis bengkel resmi Mitsubishi Motors Dwindo Bintaro. Cepat, mudah, dan bebas antre via online.';
+            $og['image'] = $siteUrl . '/logo/mitsubishi-motors/logo_text_black.png';
+            return $og;
+        }
         // Use default OG
+        return $og;
+    }
+
+    // ─── Booking Service ───
+    if ($path === '/booking') {
+        $og['title'] = 'Booking Service Mitsubishi Bintaro';
+        $og['description'] = 'Jadwalkan layanan servis bengkel resmi Mitsubishi Motors Dwindo Bintaro. Cepat, mudah, dan bebas antre via online.';
+        $og['image'] = $siteUrl . '/logo/mitsubishi-motors/logo_text_black.png';
         return $og;
     }
 

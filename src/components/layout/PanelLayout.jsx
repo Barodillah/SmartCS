@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Lock, ArrowRight, User, Mail, KeyRound } from 'lucide-react';
 import PanelSidebar from './PanelSidebar';
 import PanelHeader from './PanelHeader';
@@ -7,6 +7,7 @@ import { ANGULAR_CLIP } from '../../utils/constants';
 
 const PanelLayout = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     
@@ -31,6 +32,35 @@ const PanelLayout = () => {
             setIsAuthenticated(true);
         }
     }, []);
+
+    // Dynamic Title for Panel Pages
+    useEffect(() => {
+        const isPanel = window.location.pathname.startsWith('/panel') || window.location.hostname.startsWith('panel.');
+        if (!isPanel) return;
+
+        let title = 'Panel Dashboard - CSDwindo';
+        const path = location.pathname;
+
+        if (path.includes('/chat')) title = 'Chat History - Panel CSDwindo';
+        else if (path.includes('/whatsapp')) title = 'Panel WhatsApp - CSDwindo';
+        else if (path.includes('/data-booking')) title = 'Data Booking - Panel CSDwindo';
+        else if (path.includes('/booking')) title = 'Booking Service - Panel CSDwindo';
+        else if (path.includes('/test-drive')) title = 'Test Drive - Panel CSDwindo';
+        else if (path.includes('/prospect')) title = 'Prospect Leads - Panel CSDwindo';
+        else if (path.includes('/emergency')) title = 'Emergency Center - Panel CSDwindo';
+        else if (path.includes('/sparepart')) title = 'Sparepart Requests - Panel CSDwindo';
+        else if (path.includes('/aksesoris')) title = 'Aksesoris Requests - Panel CSDwindo';
+        else if (path.includes('/complaint')) title = 'Customer Complaint - Panel CSDwindo';
+        else if (path.includes('/sales-survey')) title = 'Sales Survey - Panel CSDwindo';
+        else if (path.includes('/artikel')) title = 'Artikel - Panel CSDwindo';
+        else if (path.includes('/users')) title = 'Users - Panel CSDwindo';
+        else if (path.includes('/warranty')) title = 'Warranty - Panel CSDwindo';
+        else if (path.includes('/data-pdi')) title = 'Data PDI - Panel CSDwindo';
+        else if (path.includes('/churn-prediction')) title = 'AI Insights - Panel CSDwindo';
+        else if (path.includes('/knowledge')) title = 'Knowledge - Panel CSDwindo';
+
+        document.title = title;
+    }, [location.pathname]);
 
     const handleLogin = async (e) => {
         e.preventDefault();

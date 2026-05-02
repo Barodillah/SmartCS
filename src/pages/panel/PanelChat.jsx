@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation, ExternalLink, Trash2 } from 'lucide-react';
+import { MessageSquare, Clock, Globe, Monitor, Smartphone, Tablet, X, Search, MapPin, Navigation, ExternalLink, Trash2, Bot, RefreshCw } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../../utils/constants';
@@ -88,7 +88,7 @@ const PanelChat = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const location = useLocation();
-    
+
     // Detail view state
     const [selectedSession, setSelectedSession] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -100,12 +100,17 @@ const PanelChat = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [user, setUser] = useState(null);
 
+    // AI Summary state
+    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+    const [summaryText, setSummaryText] = useState('');
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
     useEffect(() => {
         const storedUser = sessionStorage.getItem('admin_user');
         if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
-            } catch (e) {}
+            } catch (e) { }
         }
     }, []);
 
@@ -199,6 +204,67 @@ const PanelChat = () => {
         }
     };
 
+    // AI Summary Handler
+    const handleGenerateSummary = async (forceRegenerate = false) => {
+        if (!selectedSession || messages.length === 0) return;
+        setIsSummaryModalOpen(true);
+
+        const cacheKey = `chat_summary_${selectedSession.id}`;
+        if (!forceRegenerate) {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                setSummaryText(cached);
+                return;
+            }
+        }
+
+        setIsGeneratingSummary(true);
+        setSummaryText('');
+
+        try {
+            // Filter system messages and format for AI
+            const chatLog = messages
+                .filter(msg => msg.sender_type !== 'system')
+                .map(msg => `${msg.sender_type === 'user' ? 'User' : 'CS'}: ${msg.message}`)
+                .join('\n');
+
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "model": "xiaomi/mimo-v2-flash",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Buat ringkasan percakapan yang jelas dan singkat (maksimal 3-4 kalimat). Fokus pada masalah pelanggan dan status penyelesaian. Gunakan bahasa Indonesia yang profesional."
+                        },
+                        {
+                            "role": "user",
+                            "content": chatLog
+                        }
+                    ]
+                })
+            });
+
+            const data = await response.json();
+            if (data.choices && data.choices.length > 0) {
+                const summary = data.choices[0].message.content;
+                setSummaryText(summary);
+                localStorage.setItem(cacheKey, summary);
+            } else {
+                setSummaryText("Gagal menghasilkan ringkasan.");
+            }
+        } catch (error) {
+            console.error("AI Summary Error:", error);
+            setSummaryText("Terjadi kesalahan saat menghubungi API.");
+        } finally {
+            setIsGeneratingSummary(false);
+        }
+    };
+
     // Scroll to bottom
     useEffect(() => {
         if (selectedSession && !loadingMessages) {
@@ -239,7 +305,7 @@ const PanelChat = () => {
     };
 
     // Filtered sessions
-    const filteredSessions = sessions.filter(s => 
+    const filteredSessions = sessions.filter(s =>
         s.first_user_message?.toLowerCase().includes(search.toLowerCase()) ||
         s.id.includes(search) ||
         s.ip_address?.includes(search)
@@ -254,9 +320,9 @@ const PanelChat = () => {
                     <p className="text-gray-500 text-sm mt-1">Pantau percakapan chatbot dari semua pengunjung.</p>
                 </div>
                 <div className="relative w-full sm:w-64">
-                    <input 
-                        type="text" 
-                        placeholder="Cari pesan atau IP..." 
+                    <input
+                        type="text"
+                        placeholder="Cari pesan atau IP..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-[#E5E5E5] rounded text-sm focus:outline-none focus:border-[#E60012] transition-colors"
@@ -290,8 +356,8 @@ const PanelChat = () => {
                     ) : (
                         <div className="divide-y divide-[#E5E5E5]">
                             {filteredSessions.map(session => (
-                                <div 
-                                    key={session.id} 
+                                <div
+                                    key={session.id}
                                     onClick={() => openSession(session)}
                                     className="p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-[#FAFAFA] cursor-pointer transition-colors"
                                 >
@@ -362,15 +428,24 @@ const PanelChat = () => {
                             </div>
                             <div className="flex items-center gap-4">
                                 {user?.role === 'admin' && (
-                                    <button 
-                                        onClick={() => setSessionToDelete(selectedSession)}
-                                        className="text-gray-400 hover:text-[#E60012] transition-colors"
-                                        title="Hapus Sesi"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={() => handleGenerateSummary()}
+                                            className="text-gray-400 hover:text-[#00B2A9] transition-colors"
+                                            title="AI Summary"
+                                        >
+                                            <Bot size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => setSessionToDelete(selectedSession)}
+                                            className="text-gray-400 hover:text-[#E60012] transition-colors"
+                                            title="Hapus Sesi"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </>
                                 )}
-                                <button 
+                                <button
                                     onClick={() => setSelectedSession(null)}
                                     className="text-gray-400 hover:text-white transition-colors"
                                     title="Tutup"
@@ -400,56 +475,55 @@ const PanelChat = () => {
                                         let leadLabel = leadMatch ? leadMatch[1] : null;
 
                                         return (
-                                        <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : 'items-start'}`}>
-                                            <div
-                                                className={`max-w-[85%] p-3.5 text-[13px] leading-relaxed shadow-sm ${
-                                                    msg.sender_type === 'user'
-                                                        ? 'bg-[#111111] text-white'
-                                                        : msg.sender_type === 'cs'
-                                                            ? 'bg-[#E60012] text-white'
-                                                            : 'bg-white text-[#444444] border border-[#E5E5E5]'
-                                                }`}
-                                                style={{ borderRadius: msg.sender_type === 'user' ? '12px 12px 0 12px' : '0 12px 12px 12px' }}
-                                            >
-                                                {msg.sender_type === 'cs' && (
-                                                    <div className="text-[9px] font-bold opacity-70 mb-1 uppercase tracking-wider">You (CS Admin)</div>
-                                                )}
-                                                {msg.sender_type === 'user' ? (
-                                                    msg.message
-                                                ) : (
-                                                    <div
-                                                        className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_code]:text-[11px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:text-[12px]"
-                                                        dangerouslySetInnerHTML={{ __html: parseChatMarkdown(cleanMessage(msg.message)) }}
-                                                    />
-                                                )}
-                                            </div>
-                                            {coords && (
-                                                <div className="max-w-[85%] mt-1">
-                                                    <LocationMap lat={coords.lat} lng={coords.lng} />
+                                            <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : 'items-start'}`}>
+                                                <div
+                                                    className={`max-w-[85%] p-3.5 text-[13px] leading-relaxed shadow-sm ${msg.sender_type === 'user'
+                                                            ? 'bg-[#111111] text-white'
+                                                            : msg.sender_type === 'cs'
+                                                                ? 'bg-[#E60012] text-white'
+                                                                : 'bg-white text-[#444444] border border-[#E5E5E5]'
+                                                        }`}
+                                                    style={{ borderRadius: msg.sender_type === 'user' ? '12px 12px 0 12px' : '0 12px 12px 12px' }}
+                                                >
+                                                    {msg.sender_type === 'cs' && (
+                                                        <div className="text-[9px] font-bold opacity-70 mb-1 uppercase tracking-wider">You (CS Admin)</div>
+                                                    )}
+                                                    {msg.sender_type === 'user' ? (
+                                                        msg.message
+                                                    ) : (
+                                                        <div
+                                                            className="prose-sm prose-neutral [&_strong]:font-bold [&_em]:italic [&_a]:text-[#E60012] [&_a]:underline [&_hr]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#E60012] [&_blockquote]:pl-2 [&_blockquote]:italic [&_blockquote]:text-gray-500 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_code]:text-[11px] [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:text-[12px]"
+                                                            dangerouslySetInnerHTML={{ __html: parseChatMarkdown(cleanMessage(msg.message)) }}
+                                                        />
+                                                    )}
                                                 </div>
-                                            )}
-                                            {leadLabel && (
-                                                <div className="max-w-[85%] mt-1">
-                                                    <Link 
-                                                        to={`/panel/${leadLabel.replace('_', '-')}`} 
-                                                        className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded text-green-700 text-[11px] font-bold uppercase tracking-wider hover:bg-green-100 transition-colors"
-                                                    >
-                                                        <span>Lead Terbuat: {leadLabel.replace('_', ' ')}</span>
-                                                        <ExternalLink size={12} />
-                                                    </Link>
+                                                {coords && (
+                                                    <div className="max-w-[85%] mt-1">
+                                                        <LocationMap lat={coords.lat} lng={coords.lng} />
+                                                    </div>
+                                                )}
+                                                {leadLabel && (
+                                                    <div className="max-w-[85%] mt-1">
+                                                        <Link
+                                                            to={`/panel/${leadLabel.replace('_', '-')}`}
+                                                            className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded text-green-700 text-[11px] font-bold uppercase tracking-wider hover:bg-green-100 transition-colors"
+                                                        >
+                                                            <span>Lead Terbuat: {leadLabel.replace('_', ' ')}</span>
+                                                            <ExternalLink size={12} />
+                                                        </Link>
+                                                    </div>
+                                                )}
+                                                <div className="text-[10px] font-medium text-gray-400 mt-1 px-1">
+                                                    {formatMessageTime(msg.created_at)}
                                                 </div>
-                                            )}
-                                            <div className="text-[10px] font-medium text-gray-400 mt-1 px-1">
-                                                {formatMessageTime(msg.created_at)}
                                             </div>
-                                        </div>
                                         );
                                     })}
                                     <div ref={messagesEndRef} className="h-2" />
                                 </>
                             )}
                         </div>
-                        
+
                         {/* Input Area / Status Indicator */}
                         <div className="h-16 bg-white border-t border-[#E5E5E5] flex items-center justify-between px-6 shrink-0">
                             {selectedSession.status === 'active' ? (
@@ -469,7 +543,7 @@ const PanelChat = () => {
             {/* Modal Backdrop overlay */}
             <AnimatePresence>
                 {selectedSession && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -483,12 +557,12 @@ const PanelChat = () => {
             {/* Delete Confirmation Modal */}
             <AnimatePresence>
                 {sessionToDelete && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/40 z-[120] backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={() => !isDeleting && setSessionToDelete(null)}
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                             className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden p-6 text-center"
                             onClick={e => e.stopPropagation()}
@@ -501,14 +575,14 @@ const PanelChat = () => {
                                 Apakah Anda yakin ingin menghapus sesi chat ini? Semua pesan dalam sesi ini juga akan ikut terhapus permanen. Tindakan ini tidak dapat dibatalkan.
                             </p>
                             <div className="flex justify-center gap-3">
-                                <button 
+                                <button
                                     onClick={() => setSessionToDelete(null)}
                                     disabled={isDeleting}
                                     className="px-4 py-2 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50"
                                 >
                                     Batal
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleDeleteSession}
                                     disabled={isDeleting}
                                     className="px-4 py-2 rounded font-bold text-sm bg-[#E60012] text-white hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -521,6 +595,57 @@ const PanelChat = () => {
                                     ) : (
                                         'Ya, Hapus Sesi'
                                     )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* AI Summary Modal */}
+            <AnimatePresence>
+                {isSummaryModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/40 z-[120] backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => !isGeneratingSummary && setIsSummaryModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden p-6 text-center"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Bot size={32} className="text-[#00B2A9]" />
+                            </div>
+                            <h3 className="font-display font-bold text-xl text-[#111111] mb-2">Ringkasan AI</h3>
+
+                            <div className="text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg text-left min-h-[100px] flex items-center justify-center">
+                                {isGeneratingSummary ? (
+                                    <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#00B2A9] border-t-transparent"></div>
+                                        <span>Menghasilkan ringkasan...</span>
+                                    </div>
+                                ) : (
+                                    <p className="whitespace-pre-wrap">{summaryText}</p>
+                                )}
+                            </div>
+
+                            <div className="flex justify-center gap-3">
+                                <button
+                                    onClick={() => setIsSummaryModalOpen(false)}
+                                    disabled={isGeneratingSummary}
+                                    className="px-4 py-2 rounded font-bold text-sm bg-gray-100 text-[#444444] hover:bg-gray-200 transition-colors disabled:opacity-50"
+                                >
+                                    Tutup
+                                </button>
+                                <button
+                                    onClick={() => handleGenerateSummary(true)}
+                                    disabled={isGeneratingSummary}
+                                    className="px-4 py-2 rounded font-bold text-sm bg-[#00B2A9] text-white hover:bg-teal-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    <RefreshCw size={16} className={isGeneratingSummary ? 'animate-spin' : ''} />
+                                    Generate Ulang
                                 </button>
                             </div>
                         </motion.div>

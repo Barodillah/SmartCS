@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/layout/ScrollToTop';
 
 // Public Views
@@ -12,6 +12,7 @@ import Aksesoris from './pages/Aksesoris';
 import ArticleList from './pages/ArticleList';
 import ArticleDetail from './pages/ArticleDetail';
 import Cetak from './pages/Cetak';
+import BookingService from './pages/BookingService';
 
 // Panel Views
 import PanelLayout from './components/layout/PanelLayout';
@@ -31,15 +32,24 @@ import WarrantyMMKSI from './pages/panel/WarrantyMMKSI';
 import WarrantyKTB from './pages/panel/WarrantyKTB';
 import DataPDIMMKSI from './pages/panel/DataPDIMMKSI';
 import DataPDIKTB from './pages/panel/DataPDIKTB';
+import ChurnPrediction from './pages/panel/ChurnPrediction';
 
 function App() {
+    // Detect if we are on specific subdomains
+    const isBookingSubdomain = window.location.hostname.startsWith('booking.');
+    const isPanelSubdomain = window.location.hostname.startsWith('panel.');
+
     return (
         <BrowserRouter>
             <ScrollToTop />
             <Routes>
                 {/* Public Website Routes */}
                 <Route element={<PublicLayout />}>
-                    <Route path="/" element={<Home />} />
+                    <Route path="/" element={
+                        isBookingSubdomain ? <BookingService /> : 
+                        isPanelSubdomain ? <Navigate to="/panel" replace /> : 
+                        <Home />
+                    } />
                     <Route path="/price-list" element={<PriceList />} />
                     <Route path="/lokasi-dealer" element={<DealerLocation />} />
                     <Route path="/aksesoris" element={<Aksesoris />} />
@@ -47,6 +57,7 @@ function App() {
                     <Route path="/artikel" element={<ArticleList />} />
                     <Route path="/artikel/:id" element={<ArticleDetail />} />
                     <Route path="/cetak" element={<Cetak />} />
+                    <Route path="/booking" element={<BookingService />} />
                 </Route>
 
                 {/* Admin/CS Panel Routes */}
@@ -72,6 +83,7 @@ function App() {
                     <Route path="artikel/edit/:id" element={<ArticleEditor />} />
                     <Route path="artikel/komentar/:id" element={<CommentManager />} />
                     <Route path="users" element={<Users />} />
+                    <Route path="churn-prediction" element={<ChurnPrediction />} />
 
                     {/* Knowledge base sub-routes */}
                     <Route path="knowledge/price-list" element={<PanelPriceList />} />
