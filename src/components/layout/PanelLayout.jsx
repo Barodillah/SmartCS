@@ -8,6 +8,7 @@ import { ANGULAR_CLIP } from '../../utils/constants';
 const PanelLayout = () => {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
     
     // Auth State
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -266,11 +267,16 @@ const PanelLayout = () => {
                 />
             )}
             
-            <PanelSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+            <PanelSidebar 
+                isOpen={sidebarOpen} 
+                setIsOpen={setSidebarOpen} 
+                isMinimized={isMinimized} 
+                setIsMinimized={setIsMinimized} 
+            />
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <PanelHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#F5F5F5] p-6 lg:p-8">
-                    <Outlet />
+                    <Outlet context={{ isMinimized, setIsMinimized }} />
                 </main>
             </div>
         </div>

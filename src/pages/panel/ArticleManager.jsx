@@ -28,6 +28,14 @@ const CATEGORY_LABELS = {
 
 const ArticleManager = () => {
     const navigate = useNavigate();
+    
+    useEffect(() => {
+        const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+        if (adminUser.role !== 'admin') {
+            navigate('/panel', { replace: true });
+        }
+    }, [navigate]);
+
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');

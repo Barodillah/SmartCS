@@ -23,6 +23,13 @@ const ArticleEditor = () => {
     const { id: editId } = useParams();
     const isEditMode = Boolean(editId);
 
+    useEffect(() => {
+        const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+        if (adminUser.role !== 'admin') {
+            navigate('/panel', { replace: true });
+        }
+    }, [navigate]);
+
     // Form State
     const [formData, setFormData] = useState({
         title: '',

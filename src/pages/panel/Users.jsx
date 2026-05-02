@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserCog, Plus, Edit, Trash2, X, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
@@ -7,6 +8,14 @@ const Users = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+        if (adminUser.role !== 'admin') {
+            navigate('/panel', { replace: true });
+        }
+    }, [navigate]);
 
     // Modals state
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -60,7 +69,13 @@ const Users = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prev => {
+            const newFormData = { ...prev, [name]: value };
+            if (name === 'role' && (value === 'admin' || value === 'pkl')) {
+                newFormData.divisi = '';
+            }
+            return newFormData;
+        });
     };
 
     const handleAdd = async (e) => {
@@ -341,6 +356,7 @@ const Users = () => {
                                     <select name="role" value={formData.role} onChange={handleInputChange} className="w-full border border-gray-300 p-2 focus:border-[#111111] focus:outline-none" required>
                                         <option value="staff">Staff</option>
                                         <option value="admin">Admin</option>
+                                        <option value="pkl">PKL</option>
                                     </select>
                                 </div>
                                 <div>

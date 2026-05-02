@@ -48,7 +48,16 @@ if ($method === 'GET') {
     $date = $_GET['date'] ?? date('Y-m-d');
     $dateEscaped = mysqli_real_escape_string($conn, $date);
     
-    $query = "SELECT * FROM booking WHERE tanggal = '$dateEscaped' ORDER BY time DESC";
+    $sort = $_GET['sort'] ?? 'time';
+    $orderClause = ($sort === 'jam') ? "ORDER BY b.jam ASC" : "ORDER BY b.time DESC";
+
+    // Updated query to include dissatisfaction check and order dynamically
+    $query = "SELECT b.*, 
+              (SELECT COUNT(*) FROM dissatisfation d WHERE d.nopol = b.nopol) as dissatisfaction_count 
+              FROM booking b 
+              WHERE b.tanggal = '$dateEscaped' 
+              $orderClause";
+    
     $result = mysqli_query($conn, $query);
     
     $data = [];
@@ -112,6 +121,8 @@ if ($method === 'GET') {
     $telp      = mysqli_real_escape_string($conn, $body['telp'] ?? '');
     $jenis     = mysqli_real_escape_string($conn, $body['jenis'] ?? '');
     $keluhan   = mysqli_real_escape_string($conn, $body['keluhan'] ?? '');
+    $forceStatus = mysqli_real_escape_string($conn, $body['forceStatus'] ?? '');
+    $newStatus = !empty($forceStatus) ? $forceStatus : 'EDIT';
     
     // Check old data for record
     $oldQuery = mysqli_query($conn, "SELECT * FROM booking WHERE id = $id");
@@ -133,7 +144,7 @@ if ($method === 'GET') {
     
     $query = "UPDATE booking SET 
               user = '$user', tanggal = '$tanggal', jam = '$jam', kendaraan = '$kendaraan', 
-              nopol = '$nopol', nama = '$nama', telp = '$telp', jenis = '$jenis', keluhan = '$keluhan', status = 'EDIT' 
+              nopol = '$nopol', nama = '$nama', telp = '$telp', jenis = '$jenis', keluhan = '$keluhan', status = '$newStatus' 
               WHERE id = $id";
               
     if (mysqli_query($conn, $query)) {
@@ -141,7 +152,7 @@ if ($method === 'GET') {
         $afterRecord = "$user - $tanggal - $jam - $kendaraan - $nopol - $nama - $telp - $jenis - $keluhan";
         
         mysqli_query($conn, "INSERT INTO booking_record (id_booking, id_konsumen, user, status, before_record, after_record) 
-                             VALUES ($id, NULL, '$user', 'EDIT', '$beforeRecord', '$afterRecord')");
+                             VALUES ($id, NULL, '$user', '$newStatus', '$beforeRecord', '$afterRecord')");
                              
         echo json_encode(['status' => true, 'message' => 'Booking berhasil diubah']);
     } else {

@@ -61,6 +61,9 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
         }
     }
 
+    const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+    const isPkl = adminUser.role === 'pkl';
+
     return (
         <AnimatePresence>
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -96,14 +99,16 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
                         </div>
                     </div>
 
-                    <div className="p-4 border-t border-[#E5E5E5] flex justify-end gap-2 bg-gray-50">
-                        <button onClick={() => onDelete(data.id)} className="px-4 py-2 text-sm font-bold text-[#E60012] hover:bg-red-50 rounded transition-colors border border-red-200">
-                            Hapus
-                        </button>
-                        <button onClick={() => onEdit(data)} className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors">
-                            Ubah
-                        </button>
-                    </div>
+                    {!isPkl && (
+                        <div className="p-4 border-t border-[#E5E5E5] flex justify-end gap-2 bg-gray-50">
+                            <button onClick={() => onDelete(data.id)} className="px-4 py-2 text-sm font-bold text-[#E60012] hover:bg-red-50 rounded transition-colors border border-red-200">
+                                Hapus
+                            </button>
+                            <button onClick={() => onEdit(data)} className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors">
+                                Ubah
+                            </button>
+                        </div>
+                    )}
                 </motion.div>
             </div>
         </AnimatePresence>
@@ -125,6 +130,8 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
     const [showDatePicker, setShowDatePicker] = useState(false);
     const datePickerRef = useRef(null);
     const [isFetchingNopol, setIsFetchingNopol] = useState(false);
+    const [ubahStatus, setUbahStatus] = useState(false);
+    const [originalData, setOriginalData] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -164,7 +171,7 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
 
     useEffect(() => {
         if (initialData) {
-            setFormData({
+            const data = {
                 id: initialData.id,
                 tanggal: initialData.tanggal || '',
                 jam: initialData.jam || '',
@@ -174,27 +181,42 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                 telp: initialData.telp || '',
                 jenis: initialData.jenis || '',
                 keluhan: initialData.keluhan || ''
-            });
+            };
+            setFormData(data);
+            setOriginalData({ tanggal: data.tanggal, jam: data.jam, nama: data.nama });
+            setUbahStatus(false);
         } else {
             setFormData({
                 tanggal: new Date().toISOString().split('T')[0],
                 jam: '', kendaraan: '', nopol: '', nama: '', telp: '', jenis: '', keluhan: ''
             });
+            setOriginalData(null);
+            setUbahStatus(false);
         }
     }, [initialData, isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'nopol' ? value.toUpperCase().replace(/\s/g, '') : 
-                    name === 'nama' || name === 'keluhan' ? value.toUpperCase() : value
-        }));
+        const newValue = name === 'nopol' ? value.toUpperCase().replace(/\s/g, '') : 
+                    name === 'nama' || name === 'keluhan' ? value.toUpperCase() : value;
+        
+        setFormData(prev => {
+            const updated = { ...prev, [name]: newValue };
+            // Auto-check ubah status if tanggal, jam, or nama changed from original
+            if (initialData && originalData && ['tanggal', 'jam', 'nama'].includes(name)) {
+                const hasChanged = 
+                    (name === 'tanggal' ? newValue : updated.tanggal) !== originalData.tanggal ||
+                    (name === 'jam' ? newValue : updated.jam) !== originalData.jam ||
+                    (name === 'nama' ? newValue : updated.nama) !== originalData.nama;
+                setUbahStatus(hasChanged);
+            }
+            return updated;
+        });
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+        onSave({ ...formData, ubahStatus: initialData ? ubahStatus : false });
     };
 
     if (!isOpen) return null;
@@ -240,7 +262,13 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                                                 currentDate={formData.tanggal || new Date().toISOString().split('T')[0]} 
                                                 onSelect={(dateStr) => { 
                                                     setFormData(prev => ({...prev, tanggal: dateStr})); 
-                                                    setShowDatePicker(false); 
+                                                    setShowDatePicker(false);
+                                                    if (initialData && originalData) {
+                                                        setUbahStatus(prev => {
+                                                            const hasChanged = dateStr !== originalData.tanggal || formData.jam !== originalData.jam || formData.nama !== originalData.nama;
+                                                            return hasChanged;
+                                                        });
+                                                    }
                                                 }}
                                                 onClose={() => setShowDatePicker(false)}
                                             />
@@ -299,14 +327,29 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                         </form>
                     </div>
 
-                    <div className="p-4 border-t border-[#E5E5E5] flex justify-end gap-2 bg-gray-50 shrink-0">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-[#111111] transition-colors">
-                            Batal
-                        </button>
-                        <button type="submit" form="legacy-booking-form" disabled={isLoading} className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors disabled:opacity-50 flex items-center gap-2 shadow-md">
-                            {isLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : null}
-                            Simpan
-                        </button>
+                    <div className="p-4 border-t border-[#E5E5E5] flex items-center justify-between bg-gray-50 shrink-0">
+                        {initialData ? (
+                            <label className="flex items-center gap-2 cursor-pointer select-none group">
+                                <input
+                                    type="checkbox"
+                                    checked={ubahStatus}
+                                    onChange={(e) => setUbahStatus(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300 text-[#E60012] focus:ring-[#E60012] cursor-pointer accent-[#E60012]"
+                                />
+                                <span className="text-xs font-medium text-gray-500 group-hover:text-[#111111] transition-colors">
+                                    Ubah status ke <span className="font-bold text-orange-600">UBAH</span>
+                                </span>
+                            </label>
+                        ) : <div />}
+                        <div className="flex items-center gap-2">
+                            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-[#111111] transition-colors">
+                                Batal
+                            </button>
+                            <button type="submit" form="legacy-booking-form" disabled={isLoading} className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors disabled:opacity-50 flex items-center gap-2 shadow-md">
+                                {isLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : null}
+                                Simpan
+                            </button>
+                        </div>
                     </div>
                 </motion.div>
             </div>

@@ -4,6 +4,7 @@ import { ANGULAR_CLIP } from '../../utils/constants';
 
 const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
     const [userData, setUserData] = useState(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('admin_user');
@@ -12,7 +13,30 @@ const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
                 setUserData(JSON.parse(storedUser));
             } catch (e) {}
         }
+
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
     }, []);
+
+    const formatTime = (date) => {
+        const timeStr = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        }).format(date).replace(/\./g, ':');
+
+        const dateStr = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        }).format(date);
+
+        return `${timeStr} ${dateStr}`;
+    };
 
     // Helper untuk membuat inisial nama
     const getInitials = (name) => {
@@ -33,7 +57,7 @@ const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
                 </button>
                 <div className="hidden sm:block">
                     <span className="font-display font-bold text-[#111111] uppercase tracking-wider text-sm">
-                        SmartCS Panel
+                        {formatTime(currentTime)}
                     </span>
                 </div>
             </div>

@@ -41,6 +41,7 @@ const getBadgeColor = (status) => {
     switch (s) {
         case 'REQUEST': return 'bg-blue-100 text-blue-700';
         case 'BOOKING': return 'bg-purple-100 text-purple-700';
+        case 'UBAH': return 'bg-orange-100 text-orange-700';
         case 'DATANG': return 'bg-green-100 text-green-700';
         case 'CANCEL': return 'bg-red-100 text-red-700';
         // Fallback untuk status lama
@@ -170,7 +171,12 @@ const DataBookingLegacy = () => {
         
         const method = formData.id ? 'PUT' : 'POST';
         const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
-        const payload = { ...formData, user: user.nama || 'STAFF' };
+        const { ubahStatus, ...cleanFormData } = formData;
+        const payload = { 
+            ...cleanFormData, 
+            user: user.nama || 'STAFF',
+            ...(formData.id ? { forceStatus: ubahStatus ? 'UBAH' : 'BOOKING' } : {})
+        };
 
         try {
             const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
@@ -300,26 +306,44 @@ const DataBookingLegacy = () => {
                                 <div
                                     key={item.id}
                                     onClick={() => setDetailModalData(item)}
-                                    className="p-4 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-[#FAFAFA] cursor-pointer transition-colors"
+                                    className="p-4 flex flex-col gap-3 border-b md:border-b-0 border-[#E5E5E5] md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-[#FAFAFA] cursor-pointer transition-colors"
                                 >
-                                    <div className="col-span-1 mb-2 md:mb-0">
+                                    <div className="flex justify-between items-start md:col-span-1 md:block">
                                         <span className="inline-block bg-[#E60012]/10 text-[#E60012] px-2 py-1 rounded text-xs font-bold">
                                             {item.jam}
                                         </span>
+                                        <div className="md:hidden flex flex-col items-end gap-1">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>
+                                                {item.status || 'REQUEST'}
+                                            </span>
+                                            {item.time && (
+                                                <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
+                                                    {getTimeAgo(item.time)}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="col-span-2 mb-2 md:mb-0 font-mono text-sm font-bold text-[#111111]">
-                                        {item.nopol}
+                                    
+                                    <div className="md:col-span-2 md:block">
+                                        <div className="font-mono text-sm font-bold text-[#111111]">{item.nopol}</div>
                                     </div>
-                                    <div className="col-span-3 mb-2 md:mb-0 text-sm">
-                                        {item.nama}
+
+                                    <div className="md:col-span-3 text-sm">
+                                        <span className="text-xs font-medium text-gray-400 md:hidden block mb-0.5">Nama</span>
+                                        <div className="font-medium text-[#111111]">{item.nama}</div>
                                     </div>
-                                    <div className="col-span-3 mb-2 md:mb-0 text-xs text-gray-600">
-                                        {item.kendaraan}
+
+                                    <div className="md:col-span-3 text-xs text-gray-600 bg-gray-50 p-2 md:p-0 md:bg-transparent rounded border border-[#E5E5E5] md:border-none">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider md:hidden block mb-1">Kendaraan</span>
+                                        <div className="font-bold text-[#111111]">{item.kendaraan}</div>
                                     </div>
-                                    <div className="col-span-2 mb-2 md:mb-0 text-xs text-gray-600">
-                                        {item.jenis}
+
+                                    <div className="md:col-span-2 text-xs text-gray-600 bg-gray-50 p-2 md:p-0 md:bg-transparent rounded border border-[#E5E5E5] md:border-none">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider md:hidden block mb-1">Service</span>
+                                        <span className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded text-[10px] font-bold tracking-wide">{item.jenis}</span>
                                     </div>
-                                    <div className="col-span-1 flex flex-col gap-1 items-start justify-center md:justify-start">
+
+                                    <div className="hidden md:flex md:col-span-1 flex-col gap-1 items-start">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>
                                             {item.status || 'REQUEST'}
                                         </span>

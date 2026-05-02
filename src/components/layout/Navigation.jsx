@@ -25,7 +25,7 @@ const Navigation = () => {
     }, []);
 
     return (
-        <nav className={`fixed top-0 left-0 w-full z-40 transition-all duration-300 ${scrolled || mobileMenuOpen ? 'bg-[#111111]/95 backdrop-blur-md py-2' : 'bg-[#111111] py-4'} border-b border-white/5`}>
+        <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled || mobileMenuOpen ? 'bg-[#111111]/95 backdrop-blur-md py-2' : 'bg-[#111111] py-4'} border-b border-white/5`}>
             <div className="max-w-[1400px] mx-auto px-6 lg:px-12 flex justify-between items-center">
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-4 group">
