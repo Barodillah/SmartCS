@@ -1035,6 +1035,7 @@ Jika customer menyampaikan keluhan terkait **AC tidak dingin, AC bau, AC berbuny
 - Jika di dalam data yang kamu baca terdapat informasi \`[GAMBAR: url_gambar]\`, kamu DAPAT menampilkannya menggunakan format markdown image: \`![Nama Item](url_gambar)\`.
 - **HANYA tampilkan gambar JIKA customer bertanya secara SPESIFIK tentang SATU tipe mobil atau SATU jenis aksesoris/paket tertentu** (misalnya "Tolong jelaskan Paket Platinum Xforce").
 - **JANGAN tampilkan gambar jika kamu sedang memberikan daftar panjang** (misalnya daftar semua aksesoris Exterior Xpander). Menampilkan banyak gambar sekaligus akan memotong batas maksimal teks (terpotong). Cukup tampilkan teks/list harganya, lalu tawarkan "Apakah Bapak/Ibu ingin melihat detail dan gambar untuk salah satu paket/aksesoris di atas?".
+- **JANGAN TAMPILKAN GAMBAR JIKA SEDANG MEMBERIKAN GAMBAR!!!** KARENA AKAN TERPOTONG!!! PENTING DAN HARUS DIINGAT!!!
 
 ## Format Jawaban
 - Gunakan **markdown formatting** (bold, italic, list, dll).
@@ -1778,8 +1779,8 @@ const VirtualCS = () => {
                         { role: 'system', content: buildSystemPrompt(nopolContext.current, slotContext.current) },
                         ...conversationHistory.current
                     ],
-                    temperature: 0.7,
-                    max_tokens: 800
+                    temperature: 0.8,
+                    max_tokens: 1500
                 })
             });
 

@@ -72,7 +72,7 @@
                     "img": "/media/aksesoris/Destinator/Aero-Plus-Package.png",
                     "include": [
                         "Engine Hood Emblem",
-                        "Tailgate Spoiler",
+                        "Tailgate Spoiler Set",
                         "Front Corner Extension Set",
                         "Rear Corner Extension Set",
                         "Scuff Plate with Illumination Light",
@@ -95,7 +95,7 @@
                     "img": "/media/aksesoris/Destinator/Platinum-Plus-Package.png",
                     "include": [
                         "Engine Hood Emblem",
-                        "Tailgate Spoiler",
+                        "Tailgate Spoiler Set",
                         "Front Corner Extension Set",
                         "Rear Corner Extension Set",
                         "Scuff Plate with Illumination Light",
@@ -119,7 +119,7 @@
                     "img": "/media/aksesoris/Destinator/Platinum-Package-Set.png",
                     "include": [
                         "Engine Hood Emblem",
-                        "Tailgate Spoiler",
+                        "Tailgate Spoiler Set",
                         "Front Corner Extension Set",
                         "Rear Corner Extension Set",
                         "Scuff Plate with Illumination Light",
@@ -185,7 +185,7 @@
                 {
                     "item": "Dashcam Blackvue 1 Channel (Parking Mode)",
                     "price": 4520000,
-                    "img": "/media/aksesoris/Xpander/Dashcam-Blackvue-1-Channel-(Parking Mode).jpg"
+                    "img": "/media/aksesoris/Xpander/Dashcam-Blackvue-1-Channel-Parking-Mode.jpg"
                 }
             ],
             "paket_aksesoris": [
@@ -268,7 +268,7 @@
                 {
                     "item": "Dashcam Blackvue 1 Channel (Parking Mode)",
                     "price": 4520000,
-                    "img": "/media/aksesoris/Xpander-Cross/Dashcam-Blackvue-1-Channel-(Parking Mode).jpg"
+                    "img": "/media/aksesoris/Xpander-Cross/Dashcam-Blackvue-1-Channel-Parking-Mode.jpg"
                 }
             ],
             "paket_aksesoris": [
@@ -427,7 +427,7 @@
                 {
                     "item": "Dashcam Blackvue 1 Channel (Parking Mode)",
                     "price": 4520000,
-                    "img": "/media/aksesoris/Xforce/Dashcam-Blackvue-1-Channel-(Parking Mode).jpg"
+                    "img": "/media/aksesoris/Xforce/Dashcam-Blackvue-1-Channel-Parking-Mode.jpg"
                 },
                 {
                     "item": "Console Box Multitray Storage",
