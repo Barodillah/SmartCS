@@ -10,21 +10,31 @@ const API_BASE = 'https://csdwindo.com/api/panel/wa_followup.php';
 // =================== HELPERS ===================
 
 const getHariIndonesia = (dateStr) => {
+    let ds = dateStr;
+    if (ds && ds.length === 10) ds += 'T00:00:00+07:00';
+    else if (ds && !ds.includes('T')) ds = ds.replace(' ', 'T') + '+07:00';
+
     const map = { Sun: 'MINGGU', Mon: 'SENIN', Tue: 'SELASA', Wed: 'RABU', Thu: 'KAMIS', Fri: "JUM'AT", Sat: 'SABTU' };
-    const day = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
+    const day = new Date(ds).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'Asia/Jakarta' });
     return map[day] || 'Tidak diketahui';
 };
 
 const formatTanggal = (dateStr) => {
-    const d = new Date(dateStr);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
+    let ds = dateStr;
+    if (ds && ds.length === 10) ds += 'T00:00:00+07:00';
+    else if (ds && !ds.includes('T')) ds = ds.replace(' ', 'T') + '+07:00';
+
+    const d = new Date(ds);
+    const dateJakarta = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    const dd = String(dateJakarta.getDate()).padStart(2, '0');
+    const mm = String(dateJakarta.getMonth() + 1).padStart(2, '0');
+    const yyyy = dateJakarta.getFullYear();
     return `${dd}-${mm}-${yyyy}`;
 };
 
 const getSalam = () => {
-    const jam = new Date().getHours();
+    const nowJakarta = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    const jam = nowJakarta.getHours();
     if (jam < 11) return 'Selamat Pagi';
     if (jam < 15) return 'Selamat Siang';
     if (jam < 18) return 'Selamat Sore';
@@ -42,8 +52,8 @@ const formatPhone = (telp) => {
 const getTimeAgo = (timestamp) => {
     if (!timestamp) return '';
     let ts = timestamp;
-    if (ts.includes(' ') && !ts.endsWith('Z')) {
-        ts = ts.replace(' ', 'T') + 'Z';
+    if (ts.includes(' ') && !ts.endsWith('Z') && !ts.includes('+')) {
+        ts = ts.replace(' ', 'T') + '+07:00'; // Assume Jakarta time
     }
     const date = new Date(ts);
     if (isNaN(date.getTime())) return '';
@@ -273,21 +283,25 @@ const getBadgeColor = (status) => {
 // =================== Time Check Helpers ===================
 const isJamPassed = (jamStr) => {
     if (!jamStr) return true;
-    const now = new Date();
+    const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+    const nowJakarta = new Date(nowStr);
+    
     const [h, m] = jamStr.split(':').map(Number);
-    const jamDate = new Date();
+    const jamDate = new Date(nowStr);
     jamDate.setHours(h, m, 0, 0);
-    return now > jamDate;
+    return nowJakarta > jamDate;
 };
 
 const isTooEarlyForH30 = (jamStr) => {
     if (!jamStr) return false;
-    const now = new Date();
+    const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+    const nowJakarta = new Date(nowStr);
+    
     const [h, m] = jamStr.split(':').map(Number);
-    const jamDate = new Date();
+    const jamDate = new Date(nowStr);
     jamDate.setHours(h, m, 0, 0);
     const oneHourBefore = new Date(jamDate.getTime() - (60 * 60 * 1000));
-    return now < oneHourBefore;
+    return nowJakarta < oneHourBefore;
 };
 
 // =================== COMPONENT ===================
@@ -386,7 +400,7 @@ const PanelWhatsapp = () => {
                 body: JSON.stringify({
                     id: item.id,
                     status: 'BOOKING',
-                    user: user.nama || 'STAFF',
+                    user: user.name || user.nama || 'STAFF',
                     action: 'Whatsapp Konfirmasi'
                 })
             });
@@ -408,8 +422,8 @@ const PanelWhatsapp = () => {
 
     // H-1: kirim WA saja
     const handleH1 = async (item) => {
-        const now = new Date();
-        const hours = now.getHours();
+        const nowJakarta = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+        const hours = nowJakarta.getHours();
 
         if (hours < 15) {
             const timeOfDay = hours < 11 ? 'pagi' : 'siang';
@@ -497,7 +511,7 @@ const PanelWhatsapp = () => {
                 body: JSON.stringify({
                     id: item.id,
                     action: 'WA STNK',
-                    user: user.nama || 'ADMIN'
+                    user: user.name || user.nama || 'ADMIN'
                 })
             });
             const data = await res.json();
@@ -532,7 +546,7 @@ const PanelWhatsapp = () => {
                 body: JSON.stringify({
                     id: item.id,
                     action: 'WA BPKB',
-                    user: user.nama || 'ADMIN'
+                    user: user.name || user.nama || 'ADMIN'
                 })
             });
             const data = await res.json();
@@ -750,7 +764,8 @@ const PanelWhatsapp = () => {
                                 const passed = activeTab === 'H-30 Menit' && isJamPassed(item.jam);
                                 const tooEarly = activeTab === 'H-30 Menit' && isTooEarlyForH30(item.jam);
                                 const isUpdating = updatingIds.has(item.id);
-                                const isEarly = activeTab === 'H-1' && new Date().getHours() < 15;
+                                const nowJakartaRender = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+                                const isEarly = activeTab === 'H-1' && nowJakartaRender.getHours() < 15;
                                 const isPktTab = activeTab === 'H+2 PKT';
                                 const isStnkTab = activeTab === 'Pajak STNK';
                                 const isBpkbTab = activeTab === 'BPKB Ready';

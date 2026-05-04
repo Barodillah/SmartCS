@@ -303,7 +303,7 @@ const buildFiturContext = () => {
 };
 
 // --- Build System Prompt with Data Context ---
-const buildSystemPrompt = (nopolContext = '', slotContext = '') => {
+const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext = '') => {
     // Build price list context
     const buildPassengerPriceContext = () => {
         const cars = priceListData.passenger_car;
@@ -739,6 +739,7 @@ Setelah dapat nopol, sistem akan mencari data kendaraan.
 **Jika data kendaraan DITEMUKAN:**
 - Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-). Contoh: jika telp asli 082168077050, tampilkan **xxxx-xxxx-7050**.
 - Tunjukkan riwayat booking service terakhir (maksimal 3 terbaru).
+- **PENTING — CEK BOOKING MENDATANG:** Jika di bagian data kendaraan terdapat tanda ⛔ "BOOKING MENDATANG TERDETEKSI", kamu WAJIB memberitahu customer bahwa kendaraannya sudah memiliki booking service mendatang. Sebutkan tanggal, jam, dan jenis servicenya. Tanyakan apakah customer ingin tetap membuat booking baru di tanggal lain atau mengubah jadwal yang sudah ada. Ini TIDAK BOLEH diabaikan.
 - Minta customer **konfirmasi** apakah data tersebut benar.
 
 **Jika data kendaraan TIDAK DITEMUKAN (Kosong):**
@@ -801,6 +802,7 @@ ${bookingDatesText}
 - Jika tanggal yang dipilih customer ternyata **hari libur nasional**, informasikan ke customer bahwa tanggal tersebut libur beserta keterangannya, dan sarankan tanggal lain.
 
 ${slotContext ? `### Data Ketersediaan Slot Saat Ini (dari sistem)\n${slotContext}\n` : ''}
+${duplicateContext ? `### ⛔ PERINGATAN DUPLIKAT BOOKING (PRIORITAS TERTINGGI)\n${duplicateContext}\n\n**INSTRUKSI KERAS:** Kamu WAJIB memberitahu customer tentang duplikat ini SEBELUM melanjutkan. JANGAN tawarkan slot jam. JANGAN lanjut ke langkah 5. Sampaikan informasi duplikat lalu sarankan tanggal lain.\n` : ''}
 Presentasikan saran tanggal terdekat dan jam yang tersedia dengan jelas, namun selalu persilakan customer memilih tanggal lain jika mereka menginginkan. Setelah customer memilih, konfirmasi jadwalnya.
 
 ### LANGKAH 5: Verifikasi No Telp & Konfirmasi Selesai
@@ -1127,6 +1129,10 @@ const VirtualCS = () => {
         'Lokasi Dealer'
     ]);
     const [isSimulasiOpen, setIsSimulasiOpen] = useState(false);
+    const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+    const [questionFormData, setQuestionFormData] = useState({ name: '', phone: '', question: '' });
+    const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
+    const [isChatReady, setIsChatReady] = useState(false);
     const [leadSavedAlert, setLeadSavedAlert] = useState({ show: false, label: '' });
     const [sessionId, setSessionId] = useState(null);
     const sessionIdRef = useRef(null);
@@ -1135,9 +1141,11 @@ const VirtualCS = () => {
     const conversationHistory = useRef([]);
     const nopolContext = useRef('');
     const slotContext = useRef('');
+    const duplicateContext = useRef('');
     const verifiedPhone = useRef(null);
     const verificationAttempts = useRef(0);
     const pendingMessage = useRef(null);
+    const detectedNopolRef = useRef(null);
 
     // Fetch dynamic price list on mount
     useEffect(() => {
@@ -1211,7 +1219,7 @@ const VirtualCS = () => {
                                 type: msg.sender_type === 'cs' ? 'bot' : msg.sender_type,
                                 text: finalText,
                                 showLocationButton: isEmergency,
-                                showWhatsAppButton: showWhatsApp,
+                                showQuestionButton: showWhatsApp,
                                 showSimulasiKreditButton,
                                 articles: articleMatches
                             });
@@ -1285,7 +1293,9 @@ const VirtualCS = () => {
     // Initialize session on first chat open
     useEffect(() => {
         if (isOpen && !sessionId) {
-            initSession();
+            initSession().finally(() => setIsChatReady(true));
+        } else if (isOpen) {
+            setIsChatReady(true);
         }
     }, [isOpen]);
 
@@ -1318,8 +1328,10 @@ const VirtualCS = () => {
         conversationHistory.current = [];
         nopolContext.current = '';
         slotContext.current = '';
+        duplicateContext.current = '';
         verifiedPhone.current = null;
         verificationAttempts.current = 0;
+        detectedNopolRef.current = null;
         localStorage.removeItem('dina_active_session');
         setSessionId(null);
         sessionIdRef.current = null;
@@ -1374,15 +1386,15 @@ const VirtualCS = () => {
         return () => window.removeEventListener('openDinaChat', handler);
     }, []);
 
-    // Send pending message once chat is open
+    // Send pending message once chat is open and ready
     useEffect(() => {
-        if (isOpen && pendingMsgState) {
+        if (isOpen && isChatReady && pendingMsgState) {
             const msg = pendingMsgState;
             setPendingMsgState(null);
             // Small delay to let chat render first
             setTimeout(() => handleSend(msg), 300);
         }
-    }, [isOpen, pendingMsgState]);
+    }, [isOpen, isChatReady, pendingMsgState]);
 
     // Prevent body scroll when chat is fullscreen (either explicit on desktop or implicit on mobile)
     useEffect(() => {
@@ -1413,6 +1425,54 @@ const VirtualCS = () => {
             cleanText: cleanedLines.join('\n').trim(),
             questions: questions.length > 0 ? questions : quickQuestions
         };
+    };
+
+    // Handle Question Form Submit
+    const handleQuestionSubmit = async (e) => {
+        e.preventDefault();
+        if (!questionFormData.name || !questionFormData.phone || !questionFormData.question) return;
+        setIsSubmittingQuestion(true);
+        try {
+            const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
+
+            // Directly save lead to DB
+            if (sid) {
+                await chatAPI.saveLead({
+                    session_id: sid,
+                    label: 'question',
+                    customer_name: questionFormData.name,
+                    customer_phone: normalizePhone(questionFormData.phone),
+                    data: {
+                        question: questionFormData.question
+                    }
+                });
+                setLeadSavedAlert({ show: true, label: 'question' });
+                setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
+            }
+
+            // Instead of asking the AI, provide a fixed local response
+            const userMsgText = `Saya memiliki pertanyaan lanjutan:\n\nNama: ${questionFormData.name}\nTelp: ${questionFormData.phone}\nPertanyaan: ${questionFormData.question}`;
+            const botResponse = `Terima kasih, dan akan DINA sampaikan!`;
+
+            // 1. Add user message to UI and Backend
+            setMessages(prev => [...prev, { id: Date.now(), type: 'user', text: userMsgText }]);
+            saveMessageToBackend('user', userMsgText);
+            conversationHistory.current.push({ role: 'user', content: userMsgText });
+
+            // 2. Add bot response to UI and Backend
+            setTimeout(() => {
+                setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', text: botResponse }]);
+                saveMessageToBackend('bot', botResponse);
+                conversationHistory.current.push({ role: 'assistant', content: botResponse });
+            }, 500);
+
+            setIsQuestionModalOpen(false);
+            setQuestionFormData({ name: '', phone: '', question: '' });
+        } catch (err) {
+            console.error('Failed to submit question:', err);
+        } finally {
+            setIsSubmittingQuestion(false);
+        }
     };
 
     // Extract nopol pattern from user text. Returns cleaned nopol string or null.
@@ -1503,6 +1563,24 @@ const VirtualCS = () => {
             d.riwayat.slice(0, 3).forEach((r, i) => {
                 ctx += `${i + 1}. Tanggal: ${r.tanggal} ${r.jam} | Jenis: ${r.jenis}${r.keluhan ? ` | Keluhan: ${r.keluhan}` : ''}\n`;
             });
+
+            // Detect upcoming/future bookings (tanggal >= hari ini)
+            const todayIso = getCurrentJakartaTime().isoDate;
+            const upcomingBookings = d.riwayat.filter(r => r.tanggal >= todayIso);
+            if (upcomingBookings.length > 0) {
+                ctx += `\n⛔⛔⛔ **BOOKING MENDATANG TERDETEKSI — WAJIB DIINFORMASIKAN KE CUSTOMER** ⛔⛔⛔\n`;
+                ctx += `Kendaraan ini SUDAH memiliki booking service yang belum selesai/mendatang:\n`;
+                upcomingBookings.forEach((r, i) => {
+                    const bookDate = new Date(r.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    ctx += `${i + 1}. 📅 Tanggal: **${bookDate}** | ⏰ Jam: **${r.jam} WIB** | 🔧 Jenis: ${r.jenis}${r.keluhan ? ` | Keluhan: ${r.keluhan}` : ''}\n`;
+                });
+                ctx += `\n**INSTRUKSI KERAS (TIDAK BOLEH DIABAIKAN):**\n`;
+                ctx += `1. SETELAH menampilkan data konfirmasi kendaraan, WAJIB BERITAHU customer bahwa kendaraan ini sudah memiliki booking service mendatang (sebutkan tanggal, jam, dan jenis service-nya).\n`;
+                ctx += `2. Tanyakan kepada customer: "Apakah Bapak/Ibu ingin tetap membuat booking baru di tanggal lain, atau apakah ingin mengubah jadwal booking yang sudah ada?"\n`;
+                ctx += `3. Jika customer ingin booking di tanggal yang SAMA dengan booking mendatang, TOLAK dan sampaikan bahwa tanggal tersebut sudah ada bookingnya. Sarankan tanggal lain.\n`;
+                ctx += `4. Jika customer tetap ingin booking baru di tanggal BERBEDA, lanjutkan proses booking seperti biasa.\n`;
+                ctx += `5. Jika customer ingin mengubah jadwal booking yang sudah ada, arahkan untuk menghubungi CS melalui WhatsApp. Sertakan tag [WHATSAPP].\n`;
+            }
         }
 
         ctx += `\nINSTRUKSI: Tampilkan data ini ke customer untuk konfirmasi. Untuk nomor telepon, tampilkan versi MASKED saja (xxxx-xxxx-${d.telp.slice(-4)}). JANGAN tampilkan nomor telepon lengkap.`;
@@ -1709,18 +1787,27 @@ const VirtualCS = () => {
                         content: `[SISTEM] Customer meminta CEK STATUS BOOKING. Berikut data booking untuk nopol ${detectedNopol}:\n${bookingCtx}`
                     });
                 } else {
-                    // Normal booking flow
+                    // Normal booking flow — store nopol for later duplicate check
+                    detectedNopolRef.current = detectedNopol;
                     if (nopolData.status && nopolData.data) {
                         nopolContext.current = buildNopolContext(nopolData);
                         // Store verified phone for code-level booking verification
                         if (nopolData.data.telp) {
                             verifiedPhone.current = normalizePhone(nopolData.data.telp);
                         }
+                        // Check for upcoming bookings to reinforce in system message
+                        const todayIso = getCurrentJakartaTime().isoDate;
+                        const upcomingBookings = (nopolData.data.riwayat || []).filter(r => r.tanggal >= todayIso);
+                        let systemMsg = `[SISTEM] Data nopol berhasil ditemukan. Berikut datanya:\n${nopolContext.current}`;
+                        if (upcomingBookings.length > 0) {
+                            systemMsg += `\n\n⛔ PERHATIAN: Customer ini SUDAH PUNYA BOOKING MENDATANG. Kamu WAJIB memberitahu customer tentang booking yang sudah ada ini saat menampilkan data konfirmasi. JANGAN ABAIKAN.`;
+                        }
                         conversationHistory.current.push({
                             role: 'system',
-                            content: `[SISTEM] Data nopol berhasil ditemukan. Berikut datanya:\n${nopolContext.current}`
+                            content: systemMsg
                         });
                     } else {
+                        detectedNopolRef.current = detectedNopol;
                         conversationHistory.current.push({
                             role: 'system',
                             content: `[SISTEM] Data nopol TIDAK ditemukan di sistem. PENTING (DILARANG KERAS): JANGAN katakan "Nomor polisi belum terdaftar" atau "Data tidak ditemukan". Cukup terima nopol tersebut secara natural (contoh: "Baik, dengan nopol ${detectedNopol} ya?"), lalu lanjutkan dengan meminta kelengkapan data secara sopan (Nama Lengkap, Model Kendaraan, dan Nomor HP).`
@@ -1737,6 +1824,33 @@ const VirtualCS = () => {
         if (isBookingContext() && !isTestDriveContext()) {
             const detectedDate = extractDateFromText(text);
             if (detectedDate) {
+                // --- Check for duplicate booking on this date ---
+                const nopolForCheck = detectedNopolRef.current || extractNopol(conversationHistory.current.filter(m => m.role === 'user').map(m => m.content).join(' '));
+                if (nopolForCheck) {
+                    try {
+                        const dupRes = await fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${detectedDate}`);
+                        const dupResult = await dupRes.json();
+                        if (dupResult.status && dupResult.data) {
+                            const cleanNopol = nopolForCheck.replace(/\s/g, '').toUpperCase();
+                            const dupMatch = dupResult.data.find(b => b.nopol.replace(/\s/g, '').toUpperCase() === cleanNopol);
+                            if (dupMatch) {
+                                const dupDateFormatted = new Date(detectedDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                                // Store in duplicateContext ref so it persists in system prompt
+                                duplicateContext.current = `⛔ DUPLIKAT TERDETEKSI: Nopol **${dupMatch.nopol}** sudah terdaftar booking pada **${dupDateFormatted}** jam **${dupMatch.jam} WIB** atas nama **${dupMatch.nama}**.\nKamu HARUS memberitahu customer bahwa nopol tersebut sudah punya booking di tanggal itu. JANGAN tawarkan jam. JANGAN lanjutkan booking. Sarankan pilih tanggal lain atau hubungi CS untuk mengubah jadwal.`;
+                                conversationHistory.current.push({
+                                    role: 'system',
+                                    content: `[SISTEM] ⛔⛔⛔ DUPLIKAT BOOKING TERDETEKSI — PRIORITAS TERTINGGI ⛔⛔⛔\n\nNopol ${dupMatch.nopol} SUDAH TERDAFTAR booking pada tanggal ${dupDateFormatted} jam ${dupMatch.jam} WIB atas nama ${dupMatch.nama}.\n\nINSTRUKSI WAJIB (TIDAK BOLEH DIABAIKAN):\n1. BERITAHU customer bahwa nopol ${dupMatch.nopol} sudah memiliki booking service pada tanggal ${dupDateFormatted} jam ${dupMatch.jam} WIB.\n2. JANGAN tawarkan slot jam untuk tanggal ini.\n3. JANGAN lanjutkan ke langkah 5 (verifikasi telepon).\n4. Sarankan customer memilih tanggal LAIN.\n5. DILARANG KERAS menggunakan tag [SAVE_LEAD:booking] untuk tanggal ini.`
+                                });
+                            } else {
+                                // No duplicate — clear any previous duplicate context
+                                duplicateContext.current = '';
+                            }
+                        }
+                    } catch (dupErr) {
+                        console.error('Duplicate booking check error:', dupErr);
+                    }
+                }
+
                 try {
                     const slotData = await fetchSlotJam(detectedDate);
                     if (slotData.status) {
@@ -1776,7 +1890,7 @@ const VirtualCS = () => {
                 body: JSON.stringify({
                     model: import.meta.env.VITE_OPENROUTER_MODEL,
                     messages: [
-                        { role: 'system', content: buildSystemPrompt(nopolContext.current, slotContext.current) },
+                        { role: 'system', content: buildSystemPrompt(nopolContext.current, slotContext.current, duplicateContext.current) },
                         ...conversationHistory.current
                     ],
                     temperature: 0.8,
@@ -1944,7 +2058,7 @@ const VirtualCS = () => {
                         type: 'bot',
                         text: finalText,
                         showLocationButton: isEmergency,
-                        showWhatsAppButton: showWhatsApp,
+                        showQuestionButton: showWhatsApp,
                         showSimulasiKreditButton: showSimulasiKreditButton,
                         articles: articleMatches
                     }]);
@@ -2190,7 +2304,19 @@ const VirtualCS = () => {
                                             </button>
                                         )}
 
-                                        {/* WhatsApp CS Button */}
+                                        {/* CS Question Button */}
+                                        {msg.showQuestionButton && (
+                                            <button
+                                                onClick={() => setIsQuestionModalOpen(true)}
+                                                className="mt-2 flex items-center gap-2 px-4 py-2 bg-[#E60012] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#B5000F] transition-colors"
+                                                style={{ clipPath: ANGULAR_CLIP }}
+                                            >
+                                                <MessageSquare size={14} />
+                                                Tanya CS
+                                            </button>
+                                        )}
+
+                                        {/* WhatsApp CS Button (for API Error only) */}
                                         {msg.showWhatsAppButton && (
                                             <a
                                                 href="https://wa.me/6287782788383?text=Halo%20Dwindo%2C%20saya%20butuh%20bantuan"
@@ -2362,6 +2488,85 @@ const VirtualCS = () => {
 
             {/* Simulasi Kredit Modal rendering outside the chat window bounds */}
             <SimulasiKreditModal isOpen={isSimulasiOpen} onClose={() => setIsSimulasiOpen(false)} />
+
+            {/* Question Modal */}
+            <AnimatePresence>
+                {isQuestionModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setIsQuestionModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-sm overflow-hidden flex flex-col max-h-[80vh] shadow-2xl relative"
+                            onClick={e => e.stopPropagation()}
+                            style={{ borderRadius: '16px' }}
+                        >
+                            <div className="bg-[#111111] p-4 text-white flex justify-between items-center shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <MessageSquare size={18} className="text-[#E60012]" />
+                                    <h3 className="font-display font-bold uppercase tracking-wider text-sm">Tanya CS</h3>
+                                </div>
+                                <button onClick={() => setIsQuestionModalOpen(false)} className="text-gray-400 hover:text-white">
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="p-4 overflow-y-auto">
+                                <form onSubmit={handleQuestionSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={questionFormData.name}
+                                            onChange={e => setQuestionFormData(prev => ({ ...prev, name: e.target.value.toUpperCase() }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012]"
+                                            placeholder="Masukkan nama..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nomor WhatsApp</label>
+                                        <input
+                                            type="tel"
+                                            required
+                                            value={questionFormData.phone}
+                                            inputMode="numeric"
+                                            onChange={e => setQuestionFormData(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012]"
+                                            placeholder="08..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Detail Pertanyaan Lanjutan</label>
+                                        <textarea
+                                            required
+                                            value={questionFormData.question}
+                                            onChange={e => setQuestionFormData(prev => ({ ...prev, question: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012] h-24 resize-none"
+                                            placeholder="Ketik pertanyaan Anda di sini..."
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingQuestion}
+                                        className="w-full py-3 mt-2 bg-[#E60012] hover:bg-[#B5000F] text-white font-display font-bold uppercase tracking-widest text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                        style={{ clipPath: ANGULAR_CLIP }}
+                                    >
+                                        {isSubmittingQuestion ? <Loader2 size={16} className="animate-spin" /> : <MessageSquare size={16} />}
+                                        Tanyakan!
+                                    </button>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

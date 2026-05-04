@@ -99,8 +99,8 @@ if ($method === 'GET') {
     if (mysqli_query($conn, $query)) {
         $id = mysqli_insert_id($conn);
         $recordInfo = "$tanggal - $jam - $kendaraan - $nopol - $nama - $telp - $jenis - $keluhan";
-        mysqli_query($conn, "INSERT INTO booking_record (id_booking, id_konsumen, user, status, before_record, after_record) 
-                             VALUES ($id, NULL, '$user', '$status', '', 'New Booking: $recordInfo')");
+        mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
+                             VALUES ($id, '$user', '$status', '', 'New Booking: $recordInfo')");
                              
         echo json_encode(['status' => true, 'message' => 'Booking berhasil ditambahkan']);
     } else {
@@ -148,11 +148,11 @@ if ($method === 'GET') {
               WHERE id = $id";
               
     if (mysqli_query($conn, $query)) {
-        $beforeRecord = "{$oldData['user']} - {$oldData['tanggal']} - {$oldData['jam']} - {$oldData['kendaraan']} - {$oldData['nopol']} - {$oldData['nama']} - {$oldData['telp']} - {$oldData['jenis']} - {$oldData['keluhan']}";
-        $afterRecord = "$user - $tanggal - $jam - $kendaraan - $nopol - $nama - $telp - $jenis - $keluhan";
+        $beforeRecord = "{$oldData['user']} - {$oldData['tanggal']} - {$oldData['jam']} - {$oldData['kendaraan']} - {$oldData['nopol']} - {$oldData['nama']} - {$oldData['telp']} - {$oldData['jenis']} - {$oldData['keluhan']} - {$oldData['status']}";
+        $afterRecord = "$user - $tanggal - $jam - $kendaraan - $nopol - $nama - $telp - $jenis - $keluhan - $newStatus";
         
-        mysqli_query($conn, "INSERT INTO booking_record (id_booking, id_konsumen, user, status, before_record, after_record) 
-                             VALUES ($id, NULL, '$user', '$newStatus', '$beforeRecord', '$afterRecord')");
+        mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
+                             VALUES ($id, '$user', '$newStatus', '$beforeRecord', '$afterRecord')");
                              
         echo json_encode(['status' => true, 'message' => 'Booking berhasil diubah']);
     } else {
@@ -161,12 +161,21 @@ if ($method === 'GET') {
     }
 } elseif ($method === 'DELETE') {
     $id = (int)($_GET['id'] ?? 0);
+    $user = mysqli_real_escape_string($conn, $_GET['user'] ?? 'ADMIN');
     
-    if (mysqli_query($conn, "DELETE FROM booking WHERE id = $id")) {
+    // Fetch old data before delete
+    $oldQuery = mysqli_query($conn, "SELECT * FROM booking WHERE id = $id");
+    $oldData = mysqli_fetch_assoc($oldQuery);
+    
+    if ($oldData && mysqli_query($conn, "DELETE FROM booking WHERE id = $id")) {
+        $beforeRecord = "{$oldData['user']} - {$oldData['tanggal']} - {$oldData['jam']} - {$oldData['kendaraan']} - {$oldData['nopol']} - {$oldData['nama']} - {$oldData['telp']} - {$oldData['jenis']} - {$oldData['keluhan']} - {$oldData['status']}";
+        mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
+                             VALUES ($id, '$user', 'DELETE', '$beforeRecord', 'Booking Deleted')");
+                             
         echo json_encode(['status' => true, 'message' => 'Booking berhasil dihapus']);
     } else {
         http_response_code(500);
-        echo json_encode(['status' => false, 'message' => 'Gagal menghapus booking']);
+        echo json_encode(['status' => false, 'message' => 'Gagal menghapus booking atau data tidak ditemukan']);
     }
 }
 

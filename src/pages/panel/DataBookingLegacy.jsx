@@ -146,7 +146,9 @@ const DataBookingLegacy = () => {
         setIsDeleting(true);
         
         try {
-            const res = await fetch(`https://csdwindo.com/api/panel/data_booking.php?id=${deleteConfirmId}`, {
+            const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+            const userName = encodeURIComponent(user.name || user.nama || 'STAFF');
+            const res = await fetch(`https://csdwindo.com/api/panel/data_booking.php?id=${deleteConfirmId}&user=${userName}`, {
                 method: 'DELETE'
             });
             const data = await res.json();
@@ -179,7 +181,7 @@ const DataBookingLegacy = () => {
         const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
         const payload = { 
             ...bookingToCancel, 
-            user: user.nama || 'STAFF',
+            user: user.name || user.nama || 'STAFF',
             forceStatus: 'CANCEL'
         };
 
@@ -216,7 +218,7 @@ const DataBookingLegacy = () => {
         const { ubahStatus, ...cleanFormData } = formData;
         const payload = { 
             ...cleanFormData, 
-            user: user.nama || 'STAFF',
+            user: user.name || user.nama || 'STAFF',
             ...(formData.id ? { forceStatus: ubahStatus ? 'UBAH' : 'BOOKING' } : {})
         };
 

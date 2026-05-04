@@ -21,7 +21,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Menu,
-    BrainCircuit
+    BrainCircuit,
+    BarChart3
 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
@@ -107,7 +108,9 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'Sparepart', label: 'sparepart', path: '/panel/sparepart', icon: <Wrench size={18} />, roles: ['admin'], division: 'service' },
         { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} />, roles: ['admin'], division: 'service' },
         { name: 'Complaint', label: 'complaint', path: '/panel/complaint', icon: <ShieldAlert size={18} /> },
+        { name: 'Question', label: 'question', path: '/panel/question', icon: <MessageSquare size={18} /> },
         { name: 'Sales Survey', label: 'sales_survey', path: '/panel/sales-survey', icon: <FileText size={18} />, roles: ['admin'], division: 'sales' },
+        { name: 'NPS Report', path: '/panel/nps-report', icon: <BarChart3 size={18} />, roles: ['admin'] },
         { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} />, roles: ['admin'] },
         { name: 'Panel Whatsapp', label: 'whatsapp', path: '/panel/whatsapp', icon: <WhatsappIcon size={18} /> },
         { name: 'AI Churn Analysis', path: '/panel/churn-prediction', icon: <BrainCircuit size={18} />, roles: ['admin'] },

@@ -93,24 +93,43 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
                             </select>
                         </div>
                         {['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'KOMPLEN'].includes(status) && (
-                            <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg flex gap-3 items-start cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => setPkt(pkt === 'Yes' ? 'No' : 'Yes')}>
-                                <input
-                                    type="checkbox"
-                                    id="pktCheck"
-                                    className="mt-0.5 w-4 h-4 text-[#E60012] bg-white border-gray-300 rounded focus:ring-[#E60012] focus:ring-2 cursor-pointer"
-                                    checked={pkt === 'Yes'}
-                                    onChange={(e) => { e.stopPropagation(); setPkt(e.target.checked ? 'Yes' : 'No'); }}
-                                />
-                                <label htmlFor="pktCheck" className="text-sm font-bold text-gray-700 cursor-pointer select-none leading-tight flex-1" onClick={(e) => e.preventDefault()}>
-                                    Apakah sales mengikuti proses penyerahan kendaraan?
-                                </label>
-                            </div>
+                            <>
+                                <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg flex gap-3 items-start cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => setPkt(pkt === 'Yes' ? 'No' : 'Yes')}>
+                                    <input
+                                        type="checkbox"
+                                        id="pktCheck"
+                                        className="mt-0.5 w-4 h-4 text-[#E60012] bg-white border-gray-300 rounded focus:ring-[#E60012] focus:ring-2 cursor-pointer"
+                                        checked={pkt === 'Yes'}
+                                        onChange={(e) => { e.stopPropagation(); setPkt(e.target.checked ? 'Yes' : 'No'); }}
+                                    />
+                                    <label htmlFor="pktCheck" className="text-sm font-bold text-gray-700 cursor-pointer select-none leading-tight flex-1" onClick={(e) => e.preventDefault()}>
+                                        Apakah sales mengikuti proses penyerahan kendaraan?
+                                    </label>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Estimasi Nilai (1-10)</label>
+                                    <div className="flex gap-1 sm:gap-2">
+                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+                                            const isSelected = est === String(num);
+                                            return (
+                                                <button
+                                                    key={num}
+                                                    type="button"
+                                                    onClick={() => setEst(isSelected ? '' : String(num))}
+                                                    className={`flex-1 h-8 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold transition-all border ${
+                                                        isSelected 
+                                                        ? 'bg-[#E60012] text-white border-[#E60012] shadow-md scale-105' 
+                                                        : 'bg-white text-gray-600 border-gray-300 hover:border-[#E60012] hover:text-[#E60012]'
+                                                    }`}
+                                                >
+                                                    {num}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </>
                         )}
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Estimasi Nilai (1-10)</label>
-                            <input type="text" value={est} onChange={(e) => setEst(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#E60012] text-sm" placeholder="Estimasi nilai..." />
-                        </div>
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Catatan</label>
                             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}

@@ -92,9 +92,14 @@ $bookingError = mysqli_stmt_error($stmt);
 $bookingId = mysqli_stmt_insert_id($stmt);
 mysqli_stmt_close($stmt);
 
-mysqli_close($conn);
-
 if ($bookingInserted) {
+    // Add record log
+    $recordInfo = "$tanggal - $jam - $kendaraan - $nopol - $nama - $telp - $jenis - $keluhan";
+    $recordUser = mysqli_real_escape_string($conn, $body['user'] ?? 'CHATBOT');
+    mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
+                         VALUES ($bookingId, '$recordUser', 'REQUEST', '', 'New Booking: $recordInfo')");
+
+    mysqli_close($conn);
     echo json_encode([
         'status' => true,
         'message' => 'Booking berhasil disimpan ke database legacy',

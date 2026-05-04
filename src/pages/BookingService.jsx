@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare } from 'lucide-react';
 import CustomDatePicker from '../components/ui/CustomDatePicker';
 
 const steps = [
@@ -174,6 +174,7 @@ export default function BookingService() {
     const [availableSlots, setAvailableSlots] = useState([]);
     const [isSlotLoading, setIsSlotLoading] = useState(false);
     const [showCustomDate, setShowCustomDate] = useState(false);
+    const [duplicateNopol, setDuplicateNopol] = useState(null);
 
     // Scroll to top when step changes
     useEffect(() => {
@@ -292,6 +293,32 @@ export default function BookingService() {
         setCurrentStep(3);
     };
 
+    const checkDuplicateNopol = async (tanggal) => {
+        if (!formData.nopol || !tanggal) return;
+        try {
+            const res = await fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${tanggal}`);
+            const result = await res.json();
+            if (result.status && result.data) {
+                const cleanNopol = formData.nopol.replace(/\s/g, '').toUpperCase();
+                const match = result.data.find(b => b.nopol.replace(/\s/g, '').toUpperCase() === cleanNopol);
+                if (match) {
+                    const dateFormatted = new Date(tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    setDuplicateNopol({
+                        nopol: match.nopol,
+                        tanggal: dateFormatted,
+                        nama: match.nama,
+                        jam: match.jam
+                    });
+                    return;
+                }
+            }
+            setDuplicateNopol(null);
+        } catch (err) {
+            console.error('Duplicate check error:', err);
+            setDuplicateNopol(null);
+        }
+    };
+
     const fetchSlots = async (tanggal) => {
         setIsSlotLoading(true);
         try {
@@ -307,22 +334,22 @@ export default function BookingService() {
                 baseSlots.push('13:00'); // Jam 13:00 only for minor service and not Sunday
             }
 
-            let parsedData = [];
-            if (data.status && Array.isArray(data.data)) {
-                parsedData = data.data;
+            let jamData = {};
+            if (data.status && data.jam) {
+                jamData = data.jam;
             }
 
             // Map and calculate remaining
             const processedSlots = baseSlots.map(jam => {
-                const existing = parsedData.find(d => d.jam === jam) || { total_booking: 0 };
-                const max = (jam === '13:00' || isSunday) ? 3 : 6;
-                const remaining = max - parseInt(existing.total_booking);
+                const totalBooking = jamData[jam] !== undefined ? parseInt(jamData[jam]) : 0;
+                const max = 6; // Maksimal 6 sesuai request
+                const remaining = max - totalBooking;
                 return {
                     jam,
                     remaining: remaining > 0 ? remaining : 0,
                     isFull: remaining <= 0
                 };
-            });
+            }).filter(slot => !slot.isFull);
 
             setAvailableSlots(processedSlots);
         } catch (error) {
@@ -336,6 +363,8 @@ export default function BookingService() {
         handleInputChange('tanggal', isoDate);
         handleInputChange('jam', '');
         setShowCustomDate(false);
+        setDuplicateNopol(null);
+        checkDuplicateNopol(isoDate);
         fetchSlots(isoDate);
     };
 
@@ -343,7 +372,9 @@ export default function BookingService() {
         handleInputChange('tanggal', isoDate);
         handleInputChange('jam', '');
         setShowCustomDate(false);
+        setDuplicateNopol(null);
         if (isoDate) {
+            checkDuplicateNopol(isoDate);
             fetchSlots(isoDate);
         }
     };
@@ -382,7 +413,8 @@ export default function BookingService() {
             nama: formData.nama,
             telp: normalizePhone(formData.verifyPhone),
             jenis: `${((parseInt(formData.km) / 10000) % 2 !== 0) ? 'Service Kecil' : 'Service Besar'} ${formData.km} KM`,
-            keluhan: formData.keluhan + (formData.acCare ? ' (Tambah AC Care)' : '')
+            keluhan: formData.keluhan + (formData.acCare ? ' (Tambah AC Care)' : ''),
+            user: 'CUSTOMER'
         };
 
         try {
@@ -742,6 +774,44 @@ export default function BookingService() {
                             </div>
 
                             {formData.tanggal && (
+                                duplicateNopol ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-white rounded-2xl p-5 shadow-sm border-2 border-orange-300"
+                                    >
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mb-3 border-2 border-orange-200">
+                                                <AlertCircle className="w-7 h-7" />
+                                            </div>
+                                            <h3 className="font-bold text-gray-900 text-lg mb-1">Booking Sudah Ada</h3>
+                                            <p className="text-sm text-gray-500 mb-4">Nopol kendaraan Anda sudah terdaftar pada tanggal ini.</p>
+                                        </div>
+
+                                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-2.5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Nopol</span>
+                                                <span className="text-sm font-bold text-gray-900 font-mono bg-white px-2.5 py-0.5 rounded-lg border border-orange-200">{duplicateNopol.nopol}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Tanggal</span>
+                                                <span className="text-sm font-medium text-gray-900">{duplicateNopol.tanggal}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Atas Nama</span>
+                                                <span className="text-sm font-medium text-gray-900">{duplicateNopol.nama}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Jam</span>
+                                                <span className="text-sm font-bold text-red-600">{duplicateNopol.jam} WIB</span>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-xs text-gray-400 mt-4 text-center leading-relaxed">
+                                            Silakan pilih tanggal lain atau hubungi dealer untuk bantuan lebih lanjut.
+                                        </p>
+                                    </motion.div>
+                                ) : (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -757,37 +827,42 @@ export default function BookingService() {
                                             <div className="w-6 h-6 border-2 border-red-200 border-t-red-600 rounded-full animate-spin"></div>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {availableSlots.map((slot, idx) => {
-                                                const isSelected = formData.jam === slot.jam;
-                                                return (
-                                                    <button
-                                                        key={idx}
-                                                        disabled={slot.isFull}
-                                                        onClick={() => handleInputChange('jam', slot.jam)}
-                                                        className={`relative p-3 rounded-xl border-2 text-left transition-all ${slot.isFull
-                                                            ? 'bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed'
-                                                            : isSelected
-                                                                ? 'bg-red-50 border-red-500 shadow-sm'
-                                                                : 'bg-white border-gray-100 hover:border-gray-200'
-                                                            }`}
-                                                    >
-                                                        <span className={`block font-bold text-lg mb-1 ${slot.isFull ? 'text-gray-400' : isSelected ? 'text-red-700' : 'text-gray-900'}`}>
-                                                            {slot.jam} WIB
-                                                        </span>
-                                                        <span className={`text-xs font-medium ${slot.isFull ? 'text-red-500' : isSelected ? 'text-red-600' : 'text-emerald-600'}`}>
-                                                            {slot.isFull ? 'Penuh' : `Sisa ${slot.remaining} Slot`}
-                                                        </span>
+                                        <>
+                                            {availableSlots.length > 0 ? (
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {availableSlots.map((slot, idx) => {
+                                                        const isSelected = formData.jam === slot.jam;
+                                                        return (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() => handleInputChange('jam', slot.jam)}
+                                                                className={`relative p-3 rounded-xl border-2 text-left transition-all ${isSelected
+                                                                        ? 'bg-red-50 border-red-500 shadow-sm'
+                                                                        : 'bg-white border-gray-100 hover:border-gray-200'
+                                                                    }`}
+                                                            >
+                                                                <span className={`block font-bold text-lg mb-1 ${isSelected ? 'text-red-700' : 'text-gray-900'}`}>
+                                                                    {slot.jam} WIB
+                                                                </span>
+                                                                <span className={`text-xs font-medium ${isSelected ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                                    {`Sisa ${slot.remaining} Slot`}
+                                                                </span>
 
-                                                        {isSelected && (
-                                                            <div className="absolute top-3 right-3 text-red-600">
-                                                                <CheckCircle className="w-5 h-5 fill-current text-white" />
-                                                            </div>
-                                                        )}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
+                                                                {isSelected && (
+                                                                    <div className="absolute top-3 right-3 text-red-600">
+                                                                        <CheckCircle className="w-5 h-5 fill-current text-white" />
+                                                                    </div>
+                                                                )}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="py-6 px-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-center text-sm font-medium">
+                                                    Maaf, semua slot waktu pada tanggal ini sudah penuh. Silakan pilih tanggal lain.
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* Info Minor/Major rule */}
@@ -798,6 +873,7 @@ export default function BookingService() {
                                         </p>
                                     )}
                                 </motion.div>
+                                )
                             )}
 
                             {errorMsg && (
@@ -808,7 +884,7 @@ export default function BookingService() {
 
                             <button
                                 onClick={handleNextToStep4}
-                                disabled={!formData.tanggal || !formData.jam}
+                                disabled={!formData.tanggal || !formData.jam || !!duplicateNopol}
                                 className="w-full bg-gray-900 hover:bg-black text-white font-medium py-3.5 rounded-xl transition-all flex justify-center items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Lanjut Ringkasan <ChevronRight className="w-4 h-4" />
@@ -925,6 +1001,18 @@ export default function BookingService() {
                                     <span className="font-semibold text-gray-900">Dwindo Bintaro</span>
                                 </div>
                             </div>
+
+                            <button
+                                onClick={() => {
+                                    const event = new CustomEvent('openDinaChat', {
+                                        detail: { message: `cek Booking Service Untuk Nopol ${formData.nopol}` }
+                                    });
+                                    window.dispatchEvent(event);
+                                }}
+                                className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 border border-red-200 mb-3 shadow-sm"
+                            >
+                                <MessageSquare className="w-5 h-5" /> Tanya DINA
+                            </button>
 
                             <button
                                 onClick={() => {

@@ -28,6 +28,8 @@ import Users from './pages/panel/Users';
 import PanelPriceList from './pages/panel/PanelPriceList';
 import DataBookingLegacy from './pages/panel/DataBookingLegacy';
 import SalesSurvey from './pages/panel/SalesSurvey';
+import NPSReport from './pages/panel/NPSReport';
+import NPSUpload from './pages/panel/NPSUpload';
 import WarrantyMMKSI from './pages/panel/WarrantyMMKSI';
 import WarrantyKTB from './pages/panel/WarrantyKTB';
 import DataPDIMMKSI from './pages/panel/DataPDIMMKSI';
@@ -73,7 +75,12 @@ function App() {
                     <Route path="sparepart" element={<LeadManager label="sparepart" title="Sparepart Requests" desc="Permintaan ketersediaan dan harga suku cadang." icon="Wrench" />} />
                     <Route path="aksesoris" element={<LeadManager label="aksesoris" title="Aksesoris Requests" desc="Permintaan aksesoris kendaraan." icon="Package" />} />
                     <Route path="complaint" element={<LeadManager label="complaint" title="Customer Complaint" desc="Kelola keluhan dan masukan dari pelanggan." icon="ShieldAlert" />} />
+                    <Route path="question" element={<LeadManager label="question" title="CS Question" desc="Pertanyaan lanjutan customer ke CS." icon="MessageSquare" />} />
                     <Route path="sales-survey" element={<SalesSurvey />} />
+                    <Route path="nps-report">
+                        <Route index element={<NPSReport />} />
+                        <Route path="upload" element={<NPSUpload />} />
+                    </Route>
                     <Route path="warranty/mmksi" element={<WarrantyMMKSI />} />
                     <Route path="warranty/ktb" element={<WarrantyKTB />} />
                     <Route path="data-pdi/mmksi" element={<DataPDIMMKSI />} />

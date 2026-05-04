@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, CarFront, Users, AlertTriangle, Wrench, ShieldAlert, Search, RefreshCw, X, MessageSquare, Phone, Copy, Check, ExternalLink, Package, Trash2 } from 'lucide-react';
+import { CalendarCheck, CarFront, Users, AlertTriangle, Wrench, ShieldAlert, Search, RefreshCw, X, MessageSquare, Phone, Copy, Check, ExternalLink, Package, Trash2, Bot, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,7 +12,8 @@ const iconMap = {
     AlertTriangle: <AlertTriangle size={24} />,
     Wrench: <Wrench size={24} />,
     ShieldAlert: <ShieldAlert size={24} />,
-    Package: <Package size={24} />
+    Package: <Package size={24} />,
+    MessageSquare: <MessageSquare size={24} />
 };
 
 const STATUS_COLORS = {
@@ -52,6 +53,13 @@ const LeadManager = ({ label, title, desc, icon }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeletingLead, setIsDeletingLead] = useState(false);
     const [user, setUser] = useState(null);
+
+    // AI Generation & Chat Modal State
+    const [showAiModal, setShowAiModal] = useState(false);
+    const [aiModalStep, setAiModalStep] = useState(1); // 1: Context Input, 2: Generated Result
+    const [aiContextInput, setAiContextInput] = useState('');
+    const [aiGenerating, setAiGenerating] = useState(false);
+    const [aiGeneratedText, setAiGeneratedText] = useState('');
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('admin_user');
@@ -236,11 +244,73 @@ const LeadManager = ({ label, title, desc, icon }) => {
                 if (d.sales_name) text += `Nama Sales: ${d.sales_name}\n`;
                 text += `Detail: ${d.complaint_detail || '-'}\n`;
                 break;
+            case 'question':
+                text += `Pertanyaan: ${d.question || '-'}\n`;
+                break;
         }
 
         text += `\nDiperoleh pada: ${formatDate(lead.created_at)}\n`;
         text += `Status Sistem: ${STATUS_LABELS[lead.status] || lead.status}`;
         return text;
+    };
+
+    const generateAiResponse = async () => {
+        if (!selectedLead) return;
+        setAiGenerating(true);
+        setAiModalStep(2);
+        setAiGeneratedText('');
+        
+        try {
+            const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+            const leadContext = formatWhatsAppText(selectedLead);
+            const recentMessages = selectedLead.recent_messages && selectedLead.recent_messages.length > 0
+                ? selectedLead.recent_messages.map(m => `${m.sender_type === 'user' ? 'Konsumen' : 'DINA (Bot)'}: ${m.message}`).join('\n')
+                : 'Tidak ada riwayat chat.';
+            
+            const systemPrompt = `Kamu adalah Customer Service Assistant untuk dealer mobil Mitsubishi.
+Tugasmu adalah membuat draft balasan WhatsApp (text siap kirim) untuk merespon konsumen (Lead) ini.
+Gunakan bahasa Indonesia yang sopan, formal, to the point, tapi tetap friendly.
+SELALU akhiri pesan dengan memberikan pertanyaan lanjutan untuk memancing interaksi (misal menanyakan kapan ada waktu, dsb).
+Jangan gunakan markdown bintang (**) berlebihan. Jangan tambahkan placeholder seperti [Nama Anda]. Langsung isi saja "Salam, Tim CS Mitsubishi Dwindo".
+
+Catatan Khusus / Konteks Tambahan dari CS:
+${aiContextInput || 'Tidak ada catatan khusus.'}
+
+Konteks Lead:
+${leadContext}
+
+Riwayat Percakapan Konsumen dengan Bot sebelumnya:
+${recentMessages}
+
+Buatkan draft balasan pesannya sekarang:`;
+
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'google/gemini-2.0-flash-lite-001',
+                    messages: [
+                        { role: 'user', content: systemPrompt }
+                    ],
+                    temperature: 0.7
+                })
+            });
+            
+            const data = await res.json();
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                setAiGeneratedText(data.choices[0].message.content);
+            } else {
+                setAiGeneratedText('Maaf, AI gagal merespon.');
+            }
+        } catch (err) {
+            console.error('AI Error:', err);
+            setAiGeneratedText('Terjadi kesalahan koneksi AI.');
+        } finally {
+            setAiGenerating(false);
+        }
     };
 
     const copyToClipboard = (text) => {
@@ -250,12 +320,20 @@ const LeadManager = ({ label, title, desc, icon }) => {
         });
     };
 
-    const directWhatsApp = (phone) => {
+    const directWhatsApp = (phone, customText = null) => {
         if (!phone) return;
         let cleanPhone = phone.replace(/\D/g, '');
         if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
-        const text = encodeURIComponent(`Halo Bpk/Ibu ${selectedLead?.customer_name || ''}, kami dari Mitsubishi Dwindo Bintaro...`);
+        const defaultText = `Halo Bpk/Ibu ${selectedLead?.customer_name || ''}, kami dari Mitsubishi Dwindo Bintaro...`;
+        const text = encodeURIComponent(customText || defaultText);
         window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
+    };
+
+    const openChatFlow = () => {
+        setAiContextInput('');
+        setAiGeneratedText('');
+        setAiModalStep(1);
+        setShowAiModal(true);
     };
 
     return (
@@ -343,6 +421,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                         {label === 'booking' && lead.data?.booking_date}
                                         {label === 'emergency' && lead.data?.keluhan}
                                         {label === 'complaint' && lead.data?.complaint_category}
+                                        {label === 'question' && lead.data?.question}
                                     </div>
                                     <div className="col-span-2">
                                         <span className={`inline-flex items-center px-2 py-1 rounded text-[10px] font-bold tracking-wider uppercase ${STATUS_COLORS[lead.status] || 'bg-gray-100 text-gray-500'}`}>
@@ -508,7 +587,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                                             </button>
 
                                             <button
-                                                onClick={() => directWhatsApp(selectedLead.customer_phone)}
+                                                onClick={openChatFlow}
                                                 className="w-full flex items-center gap-2 p-3 text-sm bg-green-50 text-green-700 border border-green-200 rounded hover:bg-green-100 transition-colors text-left"
                                             >
                                                 <Phone size={16} />
@@ -614,6 +693,107 @@ const LeadManager = ({ label, title, desc, icon }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {/* AI Generated Text Modal */}
+            <AnimatePresence>
+                {showAiModal && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]"
+                        >
+                            <div className="bg-[#111] p-4 flex justify-between items-center text-white shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <Bot size={18} className="text-[#E60012]" />
+                                    <h3 className="font-display font-bold uppercase tracking-wider text-sm">
+                                        {aiModalStep === 1 ? 'Konteks Balasan AI' : 'Draft Balasan AI'}
+                                    </h3>
+                                </div>
+                                <button onClick={() => setShowAiModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="p-4 flex-1 overflow-y-auto">
+                                {aiModalStep === 1 ? (
+                                    <>
+                                        <p className="text-sm text-gray-600 mb-3">Berikan konteks atau poin utama yang ingin Anda sampaikan ke konsumen. AI akan merangkainya menjadi bahasa yang formal dan sopan.</p>
+                                        <textarea 
+                                            value={aiContextInput}
+                                            onChange={(e) => setAiContextInput(e.target.value)}
+                                            className="w-full h-32 p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
+                                            placeholder="Contoh: Tolong tanyakan apakah besok pagi jam 10 bisa ditelpon..."
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-xs text-gray-500 mb-2">Draft balasan ini dibuat berdasarkan konteks lead dan riwayat chat. Silakan edit jika diperlukan sebelum menyalin atau mengirim.</p>
+                                        
+                                        {aiGenerating ? (
+                                            <div className="flex flex-col items-center justify-center py-10 text-gray-400 space-y-4">
+                                                <Loader2 size={32} className="animate-spin text-blue-500" />
+                                                <p className="text-sm">Menyusun jawaban...</p>
+                                            </div>
+                                        ) : (
+                                            <textarea 
+                                                value={aiGeneratedText}
+                                                onChange={(e) => setAiGeneratedText(e.target.value)}
+                                                className="w-full h-48 p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none font-mono"
+                                                placeholder="Teks balasan AI akan muncul di sini..."
+                                            />
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end gap-3 shrink-0">
+                                {aiModalStep === 1 ? (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                setShowAiModal(false);
+                                                directWhatsApp(selectedLead.customer_phone);
+                                            }}
+                                            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded transition-colors border border-gray-300"
+                                        >
+                                            Langsung Buka WA
+                                        </button>
+                                        <button
+                                            onClick={generateAiResponse}
+                                            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors flex items-center gap-2"
+                                        >
+                                            <Bot size={16} />
+                                            Generate via AI
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => setAiModalStep(1)}
+                                            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                                        >
+                                            Kembali
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowAiModal(false);
+                                                directWhatsApp(selectedLead.customer_phone, aiGeneratedText);
+                                            }}
+                                            disabled={aiGenerating || !aiGeneratedText}
+                                            className="px-4 py-2 text-sm font-medium bg-[#25D366] text-white hover:bg-[#128C7E] rounded transition-colors flex items-center gap-2 disabled:opacity-50"
+                                        >
+                                            <Phone size={16} />
+                                            Kirim ke WhatsApp
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
         </div>
     );
 };

@@ -57,7 +57,7 @@ function createLead()
     }
 
     // Validate label
-    $validLabels = ['booking', 'test_drive', 'prospect', 'emergency', 'sparepart', 'complaint', 'aksesoris'];
+    $validLabels = ['booking', 'test_drive', 'prospect', 'emergency', 'sparepart', 'complaint', 'aksesoris', 'question'];
     if (!in_array($label, $validLabels)) {
         jsonResponse(false, 'Invalid label. Valid labels: ' . implode(', ', $validLabels), null, 400);
     }
@@ -391,7 +391,8 @@ function countNewLeads()
         'emergency'  => 0,
         'sparepart'  => 0,
         'complaint'  => 0,
-        'aksesoris'  => 0
+        'aksesoris'  => 0,
+        'question'   => 0
     ];
 
     foreach ($rows as $row) {
