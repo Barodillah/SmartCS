@@ -22,7 +22,8 @@ import {
     ChevronRight,
     Menu,
     BrainCircuit,
-    BarChart3
+    BarChart3,
+    TrendingUp
 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
@@ -104,6 +105,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'Chat History', path: '/panel/chat', icon: <MessageSquare size={18} /> },
         { name: 'Booking Service', label: 'booking', path: '/panel/booking', icon: <CalendarCheck size={18} /> },
         { name: 'Data Booking', label: 'data_booking', path: '/panel/data-booking', icon: <Database size={18} /> },
+        { name: 'Potensi Booking', path: '/panel/potensi-booking', icon: <TrendingUp size={18} />, roles: ['admin'], division: 'service' },
         { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} />, roles: ['admin'], division: 'sales' },
         { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} />, roles: ['admin'], division: 'sales' },
         { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} />, roles: ['admin'], division: 'service' },

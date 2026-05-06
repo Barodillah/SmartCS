@@ -39,6 +39,7 @@ import DataPDIMMKSI from './pages/panel/DataPDIMMKSI';
 import DataPDIKTB from './pages/panel/DataPDIKTB';
 import PDIUpload from './pages/panel/PDIUpload';
 import ChurnPrediction from './pages/panel/ChurnPrediction';
+import PotensiBooking from './pages/panel/PotensiBooking';
 
 function App() {
     // Detect if we are on specific subdomains
@@ -99,6 +100,7 @@ function App() {
                     <Route path="artikel/komentar/:id" element={<CommentManager />} />
                     <Route path="users" element={<Users />} />
                     <Route path="churn-prediction" element={<ChurnPrediction />} />
+                    <Route path="potensi-booking" element={<PotensiBooking />} />
 
                     {/* Knowledge base sub-routes */}
                     <Route path="knowledge/price-list" element={<PanelPriceList />} />
