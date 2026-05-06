@@ -1,38 +1,55 @@
-import React, { useState, useRef } from 'react';
-import { ArrowLeft, Upload, FileDown, Check, ShieldAlert, FileText, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Upload, FileDown, Check, ShieldAlert, FileText, X, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
+import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 
-const NPSUpload = () => {
+const PDIUpload = () => {
     const navigate = useNavigate();
-    const [bulan, setBulan] = useState(new Date().toISOString().slice(0, 7));
-    const [cabang, setCabang] = useState('');
-    const [divisi, setDivisi] = useState('');
+    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [file, setFile] = useState(null);
     const [previewData, setPreviewData] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const fileInputRef = useRef(null);
+    const monthPickerRef = useRef(null);
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (monthPickerRef.current && !monthPickerRef.current.contains(event.target)) {
+                setShowMonthPicker(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const getMonthLabel = () => {
+        if (!month) return 'Pilih Bulan RS';
+        const d = new Date(month + '-01');
+        return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    };
+
     const handleDownloadFormat = () => {
-        const headers = ["Nama", "Rangka", "Kendaraan", "Score", "Note"];
+        const headers = ["Rangka", "Nama", "Note"];
         const dummyData = [
-            ["Budi Santoso", "MHM1234567890", "Xpander Ultimate", 10, "Pelayanan sangat baik"],
-            ["Siti Aminah", "MHM0987654321", "Pajero Sport", 8, ""],
-            ["Agus Setiawan", "MHM5555555555", "Xforce", 5, "Kurang responsif"]
+            ["MHM1234567890", "Budi Santoso", "Catatan pertama"],
+            ["MHM0987654321", "Siti Aminah", ""],
+            ["MHM5555555555", "Agus Setiawan", "Harap diproses segera"]
         ];
 
         const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dummyData]);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Format_NPS");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Format_RS");
 
-        XLSX.writeFile(workbook, "Format_Upload_NPS.xlsx");
+        XLSX.writeFile(workbook, "Format_Upload_RS.xlsx");
     };
 
     const handleFileUpload = (e) => {
@@ -53,33 +70,36 @@ const NPSUpload = () => {
                 if (data.length > 0) {
                     // Extract headers and find indexes
                     const headers = data[0].map(h => String(h).trim().toLowerCase());
-                    const nameIdx = headers.findIndex(h => h === 'nama');
                     const rangkaIdx = headers.findIndex(h => h === 'rangka');
-                    const kendaraanIdx = headers.findIndex(h => h === 'kendaraan');
-                    const scoreIdx = headers.findIndex(h => h === 'score');
+                    const nameIdx = headers.findIndex(h => h === 'nama');
                     const noteIdx = headers.findIndex(h => h === 'note');
 
-                    if (nameIdx === -1 && rangkaIdx === -1 && scoreIdx === -1) {
+                    if (rangkaIdx === -1 && nameIdx === -1) {
                         showToast("Format Excel tidak sesuai. Gunakan format yang di-download.", 'error');
                         setPreviewData([]);
                         return;
                     }
 
                     const parsedData = [];
+                    // Using Set to handle duplicate rangka in the uploaded file itself
+                    const seenRangka = new Set();
+                    
                     for (let i = 1; i < data.length; i++) {
                         const row = data[i];
                         if (!row || row.length === 0) continue;
 
                         // Check if row is completely empty
-                        if (!row[nameIdx] && !row[rangkaIdx] && !row[scoreIdx]) continue;
+                        if (!row[nameIdx] && !row[rangkaIdx]) continue;
 
-                        parsedData.push({
-                            Nama: row[nameIdx] || '',
-                            Rangka: row[rangkaIdx] || '',
-                            Kendaraan: row[kendaraanIdx] || '',
-                            Score: row[scoreIdx] !== undefined ? row[scoreIdx] : '',
-                            Note: row[noteIdx] || ''
-                        });
+                        const rangkaVal = String(row[rangkaIdx] || '').trim();
+                        if (rangkaVal && !seenRangka.has(rangkaVal)) {
+                            seenRangka.add(rangkaVal);
+                            parsedData.push({
+                                Rangka: rangkaVal,
+                                Nama: row[nameIdx] || '',
+                                Note: row[noteIdx] || ''
+                            });
+                        }
                     }
 
                     setPreviewData(parsedData);
@@ -95,8 +115,8 @@ const NPSUpload = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!bulan || !cabang || !divisi) {
-            showToast("Bulan, Cabang, dan Divisi wajib diisi!", "error");
+        if (!month) {
+            showToast("Bulan RS wajib diisi!", "error");
             return;
         }
 
@@ -107,16 +127,13 @@ const NPSUpload = () => {
 
         setIsUploading(true);
         try {
-            // Kita gunakan endpoint sesuai struktur project.
-            const response = await fetch('https://csdwindo.com/api/panel/nps_upload.php', {
+            const response = await fetch('https://csdwindo.com/api/panel/pdi_upload.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    bulan,
-                    cabang,
-                    divisi,
+                    month,
                     rows: previewData
                 })
             });
@@ -124,26 +141,26 @@ const NPSUpload = () => {
             const resData = await response.json();
 
             if (resData.status) {
-                showToast(resData.message, 'success');
+                showToast(`Berhasil upload: ${resData.inserted} baris. Terlewat (double): ${resData.skipped} baris.`, 'success');
                 setTimeout(() => {
-                    navigate('/panel/nps-report');
-                }, 1500);
+                    navigate('/panel/data-pdi/ktb');
+                }, 2000);
             } else {
                 showToast(resData.message || 'Gagal menyimpan data', 'error');
             }
         } catch (err) {
             console.error(err);
-            // Fallback for local testing if https://csdwindo.com CORS blocks it
+            // Fallback for local testing
             try {
-                const responseLocal = await fetch('/api/panel/nps_upload.php', {
+                const responseLocal = await fetch('/api/panel/pdi_upload.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ bulan, cabang, divisi, rows: previewData })
+                    body: JSON.stringify({ month, rows: previewData })
                 });
                 const resDataLocal = await responseLocal.json();
                 if (resDataLocal.status) {
-                    showToast(resDataLocal.message, 'success');
-                    setTimeout(() => navigate('/panel/nps-report'), 1500);
+                    showToast(`Berhasil upload: ${resDataLocal.inserted} baris. Terlewat (double): ${resDataLocal.skipped} baris.`, 'success');
+                    setTimeout(() => navigate('/panel/data-pdi/ktb'), 2000);
                 } else {
                     showToast(resDataLocal.message || 'Gagal menyimpan data', 'error');
                 }
@@ -160,15 +177,15 @@ const NPSUpload = () => {
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => navigate('/panel/nps-report')}
+                        onClick={() => navigate('/panel/data-pdi/ktb')}
                         className="p-3 bg-white border border-[#E5E5E5] rounded-lg text-gray-500 hover:text-[#111111] hover:bg-gray-50 transition-colors"
                         title="Kembali"
                     >
                         <ArrowLeft size={24} />
                     </button>
                     <div>
-                        <h1 className="font-display font-bold text-[24px] text-[#111111] uppercase tracking-wide">Upload Data NPS</h1>
-                        <p className="text-gray-500 text-sm mt-1">Import data Net Promoter Score dari file Excel.</p>
+                        <h1 className="font-display font-bold text-[24px] text-[#111111] uppercase tracking-wide">Upload Data RS</h1>
+                        <p className="text-gray-500 text-sm mt-1">Import data RS PDI KTB dari file Excel.</p>
                     </div>
                 </div>
 
@@ -183,43 +200,25 @@ const NPSUpload = () => {
 
             <div className="flex-1 overflow-hidden flex flex-col gap-6">
                 <form onSubmit={handleSubmit} className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm shrink-0">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Bulan <span className="text-red-500">*</span></label>
-                            <input
-                                type="month"
-                                required
-                                value={bulan}
-                                onChange={(e) => setBulan(e.target.value)}
-                                className="w-full px-4 py-2 border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#E60012] text-sm font-medium"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Cabang <span className="text-red-500">*</span></label>
-                            <select
-                                required
-                                value={cabang}
-                                onChange={(e) => setCabang(e.target.value)}
-                                className="w-full px-4 py-2 border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#E60012] text-sm font-medium appearance-none bg-white"
-                            >
-                                <option value="" disabled>Pilih Cabang</option>
-                                <option value="Bintaro">Bintaro</option>
-                                <option value="Radin Inten">Radin Inten</option>
-                                <option value="Cakung">Cakung</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Divisi <span className="text-red-500">*</span></label>
-                            <select
-                                required
-                                value={divisi}
-                                onChange={(e) => setDivisi(e.target.value)}
-                                className="w-full px-4 py-2 border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#E60012] text-sm font-medium appearance-none bg-white"
-                            >
-                                <option value="" disabled>Pilih Divisi</option>
-                                <option value="Sales">Sales</option>
-                                <option value="Service">Service</option>
-                            </select>
+                    <div className="mb-6 flex flex-col items-center">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Bulan RS <span className="text-red-500">*</span></label>
+                        <div className="relative w-fit" ref={monthPickerRef}>
+                            <div className="flex items-center justify-between px-4 py-2 gap-3 border border-[#E5E5E5] rounded-lg cursor-pointer hover:border-[#E60012] transition-colors bg-white text-sm font-bold text-[#111111]"
+                                onClick={() => setShowMonthPicker(!showMonthPicker)}>
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={16} className="text-[#E60012]" />
+                                    {getMonthLabel()}
+                                </div>
+                            </div>
+                            <AnimatePresence>
+                                {showMonthPicker && (
+                                    <CustomMonthPicker
+                                        currentMonth={month}
+                                        onSelect={(m) => { setMonth(m); setShowMonthPicker(false); }}
+                                        onClose={() => setShowMonthPicker(false)}
+                                    />
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 
@@ -266,40 +265,29 @@ const NPSUpload = () => {
                 </form>
 
                 {previewData.length > 0 && (
-                    <div className="bg-white border border-[#E5E5E5] rounded-xl shadow-sm flex-1 flex flex-col overflow-hidden">
-                        <div className="p-4 border-b border-[#E5E5E5] bg-gray-50 shrink-0">
-                            <h2 className="font-bold text-[#111111] flex items-center gap-2">
-                                <FileText size={18} className="text-[#E60012]" /> Preview Data
-                            </h2>
+                    <div className="bg-white border border-[#E5E5E5] rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-[#E5E5E5] bg-[#FAFAFA] flex items-center gap-2 shrink-0">
+                            <FileText size={18} className="text-gray-400" />
+                            <h2 className="font-bold text-gray-700">Preview Data Excel</h2>
+                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-bold ml-2">{previewData.length} Baris</span>
                         </div>
-                        <div className="flex-1 overflow-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-gray-500 uppercase bg-gray-50 sticky top-0">
-                                    <tr>
-                                        <th className="px-6 py-3 font-bold">No</th>
-                                        <th className="px-6 py-3 font-bold">Nama</th>
+                        <div className="overflow-x-auto flex-1">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b border-[#E5E5E5] text-xs uppercase tracking-wider text-gray-500">
+                                        <th className="px-6 py-3 font-bold w-12 text-center">No</th>
                                         <th className="px-6 py-3 font-bold">Rangka</th>
-                                        <th className="px-6 py-3 font-bold">Kendaraan</th>
-                                        <th className="px-6 py-3 font-bold">Score</th>
+                                        <th className="px-6 py-3 font-bold">Nama</th>
                                         <th className="px-6 py-3 font-bold">Note</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-[#E5E5E5] text-sm">
                                     {previewData.map((row, idx) => (
-                                        <tr key={idx} className="border-b border-[#E5E5E5] hover:bg-gray-50">
-                                            <td className="px-6 py-3 text-gray-500">{idx + 1}</td>
-                                            <td className="px-6 py-3 font-medium text-gray-900">{row.Nama}</td>
-                                            <td className="px-6 py-3 font-mono text-gray-500">{row.Rangka}</td>
-                                            <td className="px-6 py-3 text-gray-700">{row.Kendaraan}</td>
-                                            <td className="px-6 py-3">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${row.Score >= 9 ? 'bg-green-100 text-green-700' :
-                                                    row.Score >= 7 ? 'bg-yellow-100 text-yellow-700' :
-                                                        row.Score !== '' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
-                                                    }`}>
-                                                    {row.Score !== '' ? row.Score : '-'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-3 text-gray-600 max-w-[200px] truncate" title={row.Note}>{row.Note}</td>
+                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-3 text-center text-gray-400">{idx + 1}</td>
+                                            <td className="px-6 py-3 font-mono text-gray-700 font-medium">{row.Rangka}</td>
+                                            <td className="px-6 py-3 font-bold text-gray-800">{row.Nama}</td>
+                                            <td className="px-6 py-3 text-gray-500">{row.Note || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -311,9 +299,14 @@ const NPSUpload = () => {
 
             <AnimatePresence>
                 {toast.show && (
-                    <motion.div initial={{ opacity: 0, y: 50, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, y: 50, x: '-50%' }}
-                        className={`fixed bottom-6 left-1/2 z-[200] px-6 py-3 rounded-full shadow-xl font-bold text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}>
-                        {toast.type === 'error' ? <ShieldAlert size={16} /> : <Check size={16} />}{toast.message}
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 50, x: '-50%' }}
+                        className={`fixed bottom-6 left-1/2 z-[200] px-6 py-3 rounded-full shadow-xl font-bold text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}
+                    >
+                        {toast.type === 'error' ? <ShieldAlert size={16} /> : <Check size={16} />}
+                        {toast.message}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -321,4 +314,4 @@ const NPSUpload = () => {
     );
 };
 
-export default NPSUpload;
+export default PDIUpload;

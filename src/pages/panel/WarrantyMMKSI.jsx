@@ -78,8 +78,12 @@ const WarrantyModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
     );
 };
 
-const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
+const DetailKonsumenModal = ({ isOpen, data, onClose, setWarrantyData, onNext }) => {
     const [copied, setCopied] = useState(false);
+
+    const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+    const isPkl = adminUser.role === 'pkl';
+
     if (!isOpen || !data) return null;
 
     const ageInfo = calculateAge(data.pdi_date || data.tgl_pdi);
@@ -102,10 +106,12 @@ const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
                 <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1">
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col">
-                                <span className="text-gray-500 text-xs">ID</span>
-                                <span className="font-mono font-bold text-base">{data.id}</span>
-                            </div>
+                            {!isPkl && (
+                                <div className="flex flex-col">
+                                    <span className="text-gray-500 text-xs">ID</span>
+                                    <span className="font-mono font-bold text-base">{data.id}</span>
+                                </div>
+                            )}
                             <div className="flex flex-col">
                                 <span className="text-gray-500 text-xs">Umur (dari PDI)</span>
                                 <span className={`font-bold text-base ${getUmurColor(ageInfo.days)}`}>{ageInfo.text}</span>
@@ -116,10 +122,12 @@ const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
                             <span className="text-gray-500 text-xs">Nama Konsumen</span>
                             <span className="font-bold text-base">{data.nama}</span>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-gray-500 text-xs">No. Telp / WhatsApp</span>
-                            <span className="font-medium">0{data.telp}</span>
-                        </div>
+                        {!isPkl && (
+                            <div className="flex flex-col">
+                                <span className="text-gray-500 text-xs">No. Telp / WhatsApp</span>
+                                <span className="font-medium">0{data.telp}</span>
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col"><span className="text-gray-500 text-xs">Kendaraan</span><span className="font-medium">{data.kendaraan}</span></div>
                             <div className="flex flex-col">
@@ -142,6 +150,19 @@ const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
                                 <div><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase mt-1 ${getBadgeColor(data.status)}`}>{data.status}</span></div>
                             </div>
                         </div>
+
+                        {!isPkl && (
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                                <div className="flex flex-col">
+                                    <span className="text-gray-500 text-xs">No. Polisi (STNK)</span>
+                                    <span className="font-bold text-base uppercase">{data.stnk || '-'}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-gray-500 text-xs">Status BPKB</span>
+                                    <span className="font-bold text-base uppercase">{data.bpkb || '-'}</span>
+                                </div>
+                            </div>
+                        )}
                         {(data.est || data.note) && (
                             <div className="mt-4 pt-4 border-t border-gray-200">
                                 <div className="flex flex-col mb-2"><span className="text-gray-500 text-xs">Estimasi Nilai</span><span className="font-medium">{data.est || '-'}</span></div>
@@ -150,8 +171,25 @@ const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
                         )}
                     </div>
                 </div>
-                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white items-center">
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-between shrink-0 bg-white items-center">
                     <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Tutup</button>
+                    <div className="flex gap-3 items-center">
+                        <button
+                            onClick={() => { onClose(); setWarrantyData(data); }}
+                            disabled={data.status === 'PKT'}
+                            className={`px-4 py-2 text-sm font-bold rounded flex items-center gap-2 transition-colors ${data.status === 'PKT' ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#111111] hover:bg-gray-800 text-white'}`}
+                        >
+                            Warranty
+                        </button>
+                        {onNext && (
+                            <button
+                                onClick={onNext}
+                                className="px-4 py-2 text-sm font-bold rounded flex items-center gap-1 bg-[#E60012] hover:bg-red-700 text-white transition-colors"
+                            >
+                                Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                        )}
+                    </div>
                 </div>
             </motion.div>
         </motion.div>
@@ -301,6 +339,9 @@ const calculateAge = (pdiDate) => {
 };
 
 const WarrantyMMKSI = () => {
+    const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+    const isPkl = adminUser.role === 'pkl';
+
     const [surveys, setSurveys] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -444,7 +485,7 @@ const WarrantyMMKSI = () => {
                                             <div>
                                                 <span className="text-xs font-medium text-gray-400 md:hidden block mb-0.5">Nama Konsumen</span>
                                                 <div className="font-bold text-sm text-[#111111]">{item.nama}</div>
-                                                <div className="font-mono text-xs text-gray-500 mt-0.5">0{item.telp}</div>
+                                                <div className="font-mono text-xs text-gray-500 mt-0.5">{!isPkl ? `0${item.telp}` : '-'}</div>
                                             </div>
                                             <div className="md:hidden flex flex-col items-end gap-1">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>{item.status}</span>
@@ -487,7 +528,12 @@ const WarrantyMMKSI = () => {
             </div>
 
             <AnimatePresence>
-                {detailData && <DetailKonsumenModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)} />}
+                {detailData && <DetailKonsumenModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)} setWarrantyData={setWarrantyData}
+                    onNext={() => {
+                        const idx = surveys.findIndex(s => s.id === detailData.id);
+                        if (idx >= 0 && idx < surveys.length - 1) setDetailData(surveys[idx + 1]);
+                    }}
+                />}
             </AnimatePresence>
             <AnimatePresence>
                 {warrantyData && <WarrantyModal isOpen={!!warrantyData} data={warrantyData} onClose={() => setWarrantyData(null)} onSave={handleSave} isLoading={isSaving} />}

@@ -56,6 +56,9 @@ const getBadgeColor = (status) => {
 };
 
 const DataBookingLegacy = () => {
+    const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+    const isPkl = adminUser.role === 'pkl';
+
     const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(false);

@@ -149,7 +149,7 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
     );
 };
 
-const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
+const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, onEdit }) => {
     const [logs, setLogs] = useState([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
 
@@ -240,6 +240,9 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                     </div>
                 </div>
                 <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white items-center">
+                    {adminUser?.role === 'admin' && (
+                        <button onClick={() => onEdit(data)} className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm mr-auto transition-colors">Edit</button>
+                    )}
                     <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Tutup</button>
                     {!['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'NOMOR SALAH', 'SALAH SAMBUNG'].includes(data.status) && (
                         <button onClick={() => onFollowUp(data)}
@@ -253,7 +256,125 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
     );
 };
 
+const EditSurveyModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
+    const [formData, setFormData] = useState({});
+
+    useEffect(() => {
+        if (data) {
+            setFormData(data);
+        }
+    }, [data]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    if (!isOpen || !data) return null;
+
+    return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-[140] backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#111111] px-6 py-4 flex items-center justify-between text-white shrink-0">
+                    <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Edit Data Survey</h2>
+                    <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
+                </div>
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
+                            <select name="status" value={formData.status || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none">
+                                <option value="PDI">PDI</option>
+                                <option value="PERLU FOLLOW UP">PERLU FOLLOW UP</option>
+                                <option value="TIDAK DIANGKAT">TIDAK DIANGKAT</option>
+                                <option value="NOMOR SALAH">NOMOR SALAH</option>
+                                <option value="SALAH SAMBUNG">SALAH SAMBUNG</option>
+                                <option value="PASSIVER">PASSIVER</option>
+                                <option value="PERJANJIAN">PERJANJIAN</option>
+                                <option value="DITOLAK/REJECT">DITOLAK/REJECT</option>
+                                <option value="PUAS">PUAS</option>
+                                <option value="BIASA SAJA">BIASA SAJA</option>
+                                <option value="TIDAK PUAS">TIDAK PUAS</option>
+                                <option value="KOMPLEN">KOMPLEN</option>
+                                <option value="PROMOTOR">PROMOTOR</option>
+                                <option value="SARAN">SARAN</option>
+                                <option value="DETRACTOR">DETRACTOR</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Nama</label>
+                            <input type="text" name="nama" value={formData.nama || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Telepon</label>
+                            <input type="text" name="telp" value={formData.telp || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">No Rangka</label>
+                            <input type="text" name="rangka" value={formData.rangka || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Kendaraan</label>
+                            <input type="text" name="kendaraan" value={formData.kendaraan || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Sales</label>
+                            <input type="text" name="sales" value={formData.sales || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">SPV</label>
+                            <input type="text" name="spv" value={formData.spv || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Tanggal PDI</label>
+                            <input type="date" name="pdi_date" value={formData.pdi_date || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">WA Date</label>
+                            <input type="date" name="wa_date" value={formData.wa_date || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Estimasi Nilai (Est)</label>
+                            <input type="text" name="est" value={formData.est || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">BPKB</label>
+                            <input type="text" name="bpkb" value={formData.bpkb || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">STNK</label>
+                            <input type="text" name="stnk" value={formData.stnk || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">FS 1</label>
+                            <input type="text" name="fs1" value={formData.fs1 || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">FS 2</label>
+                            <input type="text" name="fs2" value={formData.fs2 || ''} onChange={handleChange} className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none" />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Catatan</label>
+                            <textarea name="note" value={formData.note || ''} onChange={handleChange} rows="3" className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E60012] focus:outline-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Batal</button>
+                    <button onClick={() => onSave(formData)} disabled={isLoading}
+                        className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50">
+                        {isLoading ? <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>Menyimpan...</> : 'Simpan'}
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
 const SalesSurvey = () => {
+    const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
     const [surveys, setSurveys] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -263,6 +384,7 @@ const SalesSurvey = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [detailData, setDetailData] = useState(null);
     const [followUpData, setFollowUpData] = useState(null);
+    const [editingData, setEditingData] = useState(null);
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -377,6 +499,34 @@ const SalesSurvey = () => {
                 showToast(data.message);
                 setFollowUpData(null);
                 fetchSurveys();
+            } else {
+                showToast(data.message || 'Gagal menyimpan', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleEditSave = async (updatedData) => {
+        setIsSaving(true);
+        try {
+            const res = await fetch(API_BASE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update',
+                    ...updatedData
+                })
+            });
+            const data = await res.json();
+            if (data.status) {
+                showToast(data.message || 'Data berhasil diupdate');
+                setEditingData(null);
+                setDetailData(updatedData);
+                setSurveys(prev => prev.map(s => s.id === updatedData.id ? updatedData : s));
             } else {
                 showToast(data.message || 'Gagal menyimpan', 'error');
             }
@@ -509,7 +659,10 @@ const SalesSurvey = () => {
 
             <AnimatePresence>
                 {detailData && <SalesSurveyDetailModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)}
-                    onFollowUp={(d) => { setDetailData(null); setFollowUpData(d); }} />}
+                    onFollowUp={(d) => { setDetailData(null); setFollowUpData(d); }} adminUser={adminUser} onEdit={(d) => { setDetailData(null); setEditingData(d); }} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {editingData && <EditSurveyModal isOpen={!!editingData} data={editingData} onClose={() => setEditingData(null)} onSave={handleEditSave} isLoading={isSaving} />}
             </AnimatePresence>
             <AnimatePresence>
                 {followUpData && <SalesSurveyFollowUpModal isOpen={!!followUpData} data={followUpData} onClose={() => setFollowUpData(null)}

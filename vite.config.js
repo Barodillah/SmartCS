@@ -8,4 +8,15 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  css: {
+    transformer: 'lightningcss',
+    lightningcss: {
+      targets: {
+        chrome: 90 << 16 // Targets Chrome 90+
+      }
+    }
+  },
+  build: {
+    cssMinify: 'lightningcss'
+  }
 })

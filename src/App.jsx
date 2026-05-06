@@ -28,12 +28,16 @@ import Users from './pages/panel/Users';
 import PanelPriceList from './pages/panel/PanelPriceList';
 import DataBookingLegacy from './pages/panel/DataBookingLegacy';
 import SalesSurvey from './pages/panel/SalesSurvey';
+import SalesSurveyKTB from './pages/panel/SalesSurveyKTB';
 import NPSReport from './pages/panel/NPSReport';
 import NPSUpload from './pages/panel/NPSUpload';
+import NPSDetail from './pages/panel/NPSDetail';
+import NPSAnalysis from './pages/panel/NPSAnalysis';
 import WarrantyMMKSI from './pages/panel/WarrantyMMKSI';
 import WarrantyKTB from './pages/panel/WarrantyKTB';
 import DataPDIMMKSI from './pages/panel/DataPDIMMKSI';
 import DataPDIKTB from './pages/panel/DataPDIKTB';
+import PDIUpload from './pages/panel/PDIUpload';
 import ChurnPrediction from './pages/panel/ChurnPrediction';
 
 function App() {
@@ -76,15 +80,19 @@ function App() {
                     <Route path="aksesoris" element={<LeadManager label="aksesoris" title="Aksesoris Requests" desc="Permintaan aksesoris kendaraan." icon="Package" />} />
                     <Route path="complaint" element={<LeadManager label="complaint" title="Customer Complaint" desc="Kelola keluhan dan masukan dari pelanggan." icon="ShieldAlert" />} />
                     <Route path="question" element={<LeadManager label="question" title="CS Question" desc="Pertanyaan lanjutan customer ke CS." icon="MessageSquare" />} />
-                    <Route path="sales-survey" element={<SalesSurvey />} />
+                    <Route path="sales-survey/mmksi" element={<SalesSurvey />} />
+                    <Route path="sales-survey/ktb" element={<SalesSurveyKTB />} />
                     <Route path="nps-report">
                         <Route index element={<NPSReport />} />
                         <Route path="upload" element={<NPSUpload />} />
                     </Route>
+                    <Route path="nps-detail" element={<NPSDetail />} />
+                    <Route path="nps-analysis" element={<NPSAnalysis />} />
                     <Route path="warranty/mmksi" element={<WarrantyMMKSI />} />
                     <Route path="warranty/ktb" element={<WarrantyKTB />} />
                     <Route path="data-pdi/mmksi" element={<DataPDIMMKSI />} />
                     <Route path="data-pdi/ktb" element={<DataPDIKTB />} />
+                    <Route path="data-pdi/ktb/upload" element={<PDIUpload />} />
                     <Route path="artikel" element={<ArticleManager />} />
                     <Route path="artikel/create" element={<ArticleEditor />} />
                     <Route path="artikel/edit/:id" element={<ArticleEditor />} />

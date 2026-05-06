@@ -68,9 +68,16 @@ const CustomSelect = ({ value, onChange, options, placeholder, allowCustom = fal
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-full bg-white border ${isOpen ? 'border-red-500 ring-1 ring-red-500' : 'border-[#E5E5E5] hover:border-gray-300'} rounded p-2.5 text-left text-sm transition-all flex justify-between items-center`}
             >
-                <span className={displayLabel ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-                    {displayLabel || placeholder}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className={displayLabel ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                        {displayLabel || placeholder}
+                    </span>
+                    {selectedOption?.sublabel && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selectedOption.disabled ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {selectedOption.sublabel}
+                        </span>
+                    )}
+                </div>
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -88,13 +95,22 @@ const CustomSelect = ({ value, onChange, options, placeholder, allowCustom = fal
                                 <button
                                     key={opt.value}
                                     type="button"
+                                    disabled={opt.disabled}
                                     onClick={() => {
+                                        if (opt.disabled) return;
                                         onChange(opt.value);
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full text-left px-4 py-3 text-sm hover:bg-red-50 transition-colors border-b border-gray-50 last:border-0 ${String(value) === String(opt.value) ? 'bg-red-50 text-red-700 font-semibold' : 'text-gray-700'}`}
+                                    className={`w-full text-left px-4 py-3 text-sm transition-colors border-b border-gray-50 last:border-0 ${opt.disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : 'hover:bg-red-50'} ${String(value) === String(opt.value) ? 'bg-red-50 text-red-700 font-semibold' : opt.disabled ? '' : 'text-gray-700'}`}
                                 >
-                                    {opt.label}
+                                    <div className="flex items-center justify-between">
+                                        <span>{opt.label}</span>
+                                        {opt.sublabel && (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${opt.disabled ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                {opt.sublabel}
+                                            </span>
+                                        )}
+                                    </div>
                                 </button>
                             ))}
                             {allowCustom && (
@@ -279,7 +295,7 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
                                                                     {log.status}
                                                                 </span>
                                                                 <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                                                                    <Clock size={10} /> {new Date(log.time).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                    <Clock size={10} /> {new Date(new Date(log.time).getTime() + 7 * 60 * 60 * 1000).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                                 </span>
                                                             </div>
 
@@ -350,6 +366,8 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
     const [errors, setErrors] = useState({});
     const [duplicateAlert, setDuplicateAlert] = useState(null);
     const duplicateCheckRef = useRef(null);
+    const [slotData, setSlotData] = useState({});
+    const [isSlotLoading, setIsSlotLoading] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -430,6 +448,34 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
             if (duplicateCheckRef.current) clearTimeout(duplicateCheckRef.current);
         };
     }, [formData.tanggal, formData.nopol, initialData]);
+
+    // Fetch slot availability when tanggal changes
+    useEffect(() => {
+        if (!formData.tanggal) {
+            setSlotData({});
+            return;
+        }
+
+        const fetchSlots = async () => {
+            setIsSlotLoading(true);
+            try {
+                const response = await fetch(`https://csdwindo.com/api-book/slot-jam/?tanggal=${formData.tanggal}`);
+                const data = await response.json();
+                if (data.status && data.jam) {
+                    setSlotData(data.jam);
+                } else {
+                    setSlotData({});
+                }
+            } catch (err) {
+                console.error('Failed to fetch slots:', err);
+                setSlotData({});
+            } finally {
+                setIsSlotLoading(false);
+            }
+        };
+
+        fetchSlots();
+    }, [formData.tanggal]);
 
     useEffect(() => {
         if (initialData) {
@@ -606,7 +652,19 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                                                 });
                                             }
                                         }}
-                                        options={LEGACY_TIME_SLOTS.map(t => ({ label: t, value: t }))}
+                                        options={LEGACY_TIME_SLOTS.map(t => {
+                                            const SPECIAL_SLOTS = ['08:30', '09:30', '10:30'];
+                                            const maxSlot = SPECIAL_SLOTS.includes(t) ? 2 : 8;
+                                            const booked = slotData[t] !== undefined ? parseInt(slotData[t]) : 0;
+                                            const remaining = Math.max(0, maxSlot - booked);
+                                            const isFull = remaining <= 0;
+                                            return {
+                                                label: t,
+                                                value: t,
+                                                sublabel: isSlotLoading ? '...' : (isFull ? 'Penuh' : `Sisa ${remaining}`),
+                                                disabled: isFull && !isSlotLoading
+                                            };
+                                        })}
                                         placeholder="- Pilih Jam -"
                                         error={errors.jam}
                                     />

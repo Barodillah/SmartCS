@@ -79,7 +79,7 @@ const WarrantyModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
     );
 };
 
-const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
+const DetailKonsumenModal = ({ isOpen, data, onClose, setWarrantyData, onNext }) => {
     const [copied, setCopied] = useState(false);
     if (!isOpen || !data) return null;
 
@@ -151,8 +151,25 @@ const DetailKonsumenModal = ({ isOpen, data, onClose }) => {
                         )}
                     </div>
                 </div>
-                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white items-center">
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-between shrink-0 bg-white items-center">
                     <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Tutup</button>
+                    <div className="flex gap-3 items-center">
+                        <button
+                            onClick={() => { onClose(); setWarrantyData(data); }}
+                            disabled={data.status === 'PKT'}
+                            className={`px-4 py-2 text-sm font-bold rounded flex items-center gap-2 transition-colors ${data.status === 'PKT' ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#111111] hover:bg-gray-800 text-white'}`}
+                        >
+                            Catat PKT
+                        </button>
+                        {onNext && (
+                            <button
+                                onClick={onNext}
+                                className="px-4 py-2 text-sm font-bold rounded flex items-center gap-1 bg-[#E60012] hover:bg-red-700 text-white transition-colors"
+                            >
+                                Next <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                        )}
+                    </div>
                 </div>
             </motion.div>
         </motion.div>
@@ -525,7 +542,12 @@ const WarrantyKTB = () => {
             </div>
 
             <AnimatePresence>
-                {detailData && <DetailKonsumenModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)} />}
+                {detailData && <DetailKonsumenModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)} setWarrantyData={setWarrantyData}
+                    onNext={() => {
+                        const idx = surveys.findIndex(s => s.id === detailData.id);
+                        if (idx >= 0 && idx < surveys.length - 1) setDetailData(surveys[idx + 1]);
+                    }}
+                />}
             </AnimatePresence>
             <AnimatePresence>
                 {warrantyData && <WarrantyModal isOpen={!!warrantyData} data={warrantyData} onClose={() => setWarrantyData(null)} onSave={handleSave} isLoading={isSaving} />}

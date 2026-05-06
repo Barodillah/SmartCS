@@ -36,6 +36,8 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
     const [knowledgeOpen, setKnowledgeOpen] = useState(false);
     const [warrantyOpen, setWarrantyOpen] = useState(false);
     const [pdiOpen, setPdiOpen] = useState(false);
+    const [salesSurveyOpen, setSalesSurveyOpen] = useState(false);
+    const [npsOpen, setNpsOpen] = useState(false);
     const [badgeCounts, setBadgeCounts] = useState({});
     const [user, setUser] = useState(null);
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
@@ -109,8 +111,6 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} />, roles: ['admin'], division: 'service' },
         { name: 'Complaint', label: 'complaint', path: '/panel/complaint', icon: <ShieldAlert size={18} /> },
         { name: 'Question', label: 'question', path: '/panel/question', icon: <MessageSquare size={18} /> },
-        { name: 'Sales Survey', label: 'sales_survey', path: '/panel/sales-survey', icon: <FileText size={18} />, roles: ['admin'], division: 'sales' },
-        { name: 'NPS Report', path: '/panel/nps-report', icon: <BarChart3 size={18} />, roles: ['admin'] },
         { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} />, roles: ['admin'] },
         { name: 'Panel Whatsapp', label: 'whatsapp', path: '/panel/whatsapp', icon: <WhatsappIcon size={18} /> },
         { name: 'AI Churn Analysis', path: '/panel/churn-prediction', icon: <BrainCircuit size={18} />, roles: ['admin'] },
@@ -153,6 +153,17 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
     const pdiSubMenu = [
         { name: 'MMKSI', path: '/panel/data-pdi/mmksi' },
         { name: 'KTB', path: '/panel/data-pdi/ktb' },
+    ];
+
+    const salesSurveySubMenu = [
+        { name: 'MMKSI', path: '/panel/sales-survey/mmksi' },
+        { name: 'KTB', path: '/panel/sales-survey/ktb' },
+    ];
+
+    const npsSubMenu = [
+        { name: 'Info Grafik', path: '/panel/nps-report' },
+        { name: 'Data Detail', path: '/panel/nps-detail' },
+        { name: 'AI Analysis', path: '/panel/nps-analysis' },
     ];
 
     const effectiveIsMinimized = isMinimized && !isMobile;
@@ -221,6 +232,50 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                             )}
                         </NavLink>
                     ))}
+
+                    {/* Dropdown Sales Survey */}
+                    {(user?.role === 'admin' || (user?.role === 'staff' && user?.divisi === 'sales')) && (
+                        <div>
+                            <button
+                                onClick={() => setSalesSurveyOpen(!salesSurveyOpen)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group relative"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="min-w-[18px] flex items-center justify-center">
+                                        <FileText size={18} />
+                                    </div>
+                                    {!effectiveIsMinimized && <span className="whitespace-nowrap transition-all duration-300">Sales Survey</span>}
+                                </div>
+                                {!effectiveIsMinimized && <ChevronDown size={14} className={`transition-transform duration-200 ${salesSurveyOpen ? 'rotate-180' : ''}`} />}
+                                {/* Tooltip */}
+                                {effectiveIsMinimized && (
+                                    <div className="absolute left-full ml-2 px-3 py-2 bg-[#222222] text-white text-sm whitespace-nowrap rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[999] shadow-xl border border-white/10 flex items-center shadow-black/50">
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#222222] border-b border-l border-white/10 transform rotate-45"></div>
+                                        <span className="font-bold tracking-wide">Sales Survey</span>
+                                    </div>
+                                )}
+                            </button>
+                            {salesSurveyOpen && !effectiveIsMinimized && (
+                                <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
+                                    {salesSurveySubMenu.map((sub) => (
+                                        <NavLink
+                                            key={sub.name}
+                                            to={sub.path}
+                                            onClick={() => setIsOpen(false)}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                                    ? 'text-[#E60012] bg-[#E60012]/10'
+                                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                }`
+                                            }
+                                        >
+                                            {sub.name}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Dropdown Cek Warranty */}
                     {(user?.role === 'admin' || user?.role === 'pkl' || (user?.role === 'staff' && user?.divisi === 'sales')) && (
@@ -335,6 +390,50 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                             {knowledgeOpen && !effectiveIsMinimized && (
                                 <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
                                     {knowledgeSubMenu.map((sub) => (
+                                        <NavLink
+                                            key={sub.name}
+                                            to={sub.path}
+                                            onClick={() => setIsOpen(false)}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                                    ? 'text-[#E60012] bg-[#E60012]/10'
+                                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                }`
+                                            }
+                                        >
+                                            {sub.name}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Dropdown NPS Report */}
+                    {user?.role === 'admin' && (
+                        <div>
+                            <button
+                                onClick={() => setNpsOpen(!npsOpen)}
+                                className="w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group relative"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="min-w-[18px] flex items-center justify-center">
+                                        <BarChart3 size={18} />
+                                    </div>
+                                    {!effectiveIsMinimized && <span className="whitespace-nowrap transition-all duration-300">NPS Report</span>}
+                                </div>
+                                {!effectiveIsMinimized && <ChevronDown size={14} className={`transition-transform duration-200 ${npsOpen ? 'rotate-180' : ''}`} />}
+                                {/* Tooltip */}
+                                {effectiveIsMinimized && (
+                                    <div className="absolute left-full ml-2 px-3 py-2 bg-[#222222] text-white text-sm whitespace-nowrap rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[999] shadow-xl border border-white/10 flex items-center shadow-black/50">
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#222222] border-b border-l border-white/10 transform rotate-45"></div>
+                                        <span className="font-bold tracking-wide">NPS Report</span>
+                                    </div>
+                                )}
+                            </button>
+                            {npsOpen && !effectiveIsMinimized && (
+                                <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
+                                    {npsSubMenu.map((sub) => (
                                         <NavLink
                                             key={sub.name}
                                             to={sub.path}

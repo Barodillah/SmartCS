@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+:root {
+  --font-display: "MMC", sans-serif;
+  --font-body: "MMC Office", sans-serif;
+  --color-brand-red: #E60012;
+  --color-brand-red-dark: #B5000F;
+  --color-dark: #111111;
+  --color-dark2: #1A1A1A;
+  --color-gray700: #444444;
+  --color-gray500: #777777;
+  --color-gray100: #E5E5E5;
+  --color-white: #FFFFFF;
+}
+
 @font-face {
   font-family: 'MMC';
   src: url('/font/MMC-Regular.otf') format('opentype');
@@ -51,24 +64,20 @@
   --color-white: #FFFFFF;
 }
 
-@layer base {
-  .font-display { font-family: var(--font-display); }
-  .font-body { font-family: var(--font-body); }
-}
+.font-display { font-family: var(--font-display); }
+.font-body { font-family: var(--font-body); }
 
-@layer utilities {
-  @keyframes blink {
-    0%, 100% { border-color: transparent }
-    50% { border-color: #E60012 }
-  }
-  .animate-blink {
-    animation: blink 0.8s step-end infinite;
-  }
-  @keyframes shimmer {
-    0% { transform: translateX(-100%) skewX(-15deg); }
-    100% { transform: translateX(200%) skewX(-15deg); }
-  }
-  .animate-shimmer {
-    animation: shimmer 3s infinite;
-  }
+@keyframes blink {
+  0%, 100% { border-color: transparent }
+  50% { border-color: #E60012 }
+}
+.animate-blink {
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+.animate-shimmer {
+  animation: shimmer 3s infinite;
 }

@@ -6,7 +6,7 @@ import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 
 const NPSReport = () => {
     const navigate = useNavigate();
-    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [month, setMonth] = useState('2026-04');
     const [cabang, setCabang] = useState('All');
     const [divisi, setDivisi] = useState('Sales');
     const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -25,10 +25,10 @@ const NPSReport = () => {
         if (!monthStr) return null;
         const m = parseInt(monthStr.split('-')[1]);
         const y = monthStr.split('-')[0];
-        if (m <= 3) return { label: 'Q1', months: [`${y}-01`, `${y}-02`, `${y}-03`], range: 'Jan - Mar' };
-        if (m <= 6) return { label: 'Q2', months: [`${y}-04`, `${y}-05`, `${y}-06`], range: 'Apr - Jun' };
-        if (m <= 9) return { label: 'Q3', months: [`${y}-07`, `${y}-08`, `${y}-09`], range: 'Jul - Sep' };
-        return { label: 'Q4', months: [`${y}-10`, `${y}-11`, `${y}-12`], range: 'Oct - Dec' };
+        if (m >= 4 && m <= 6) return { label: 'Q1', months: [`${y}-04`, `${y}-05`, `${y}-06`], range: 'Apr - Jun' };
+        if (m >= 7 && m <= 9) return { label: 'Q2', months: [`${y}-07`, `${y}-08`, `${y}-09`], range: 'Jul - Sep' };
+        if (m >= 10 && m <= 12) return { label: 'Q3', months: [`${y}-10`, `${y}-11`, `${y}-12`], range: 'Oct - Dec' };
+        return { label: 'Q4', months: [`${y}-01`, `${y}-02`, `${y}-03`], range: 'Jan - Mar' };
     };
 
     const getPrevQuarterInfo = (monthStr) => {
@@ -117,7 +117,7 @@ const NPSReport = () => {
                     }));
 
                     if (cabang === 'All') {
-                        const order = ['Bintaro', 'Raden Inten', 'Cakung', 'Dwindo'];
+                        const order = ['Bintaro', 'Radin Inten', 'Cakung', 'Dwindo'];
                         rows.sort((a, b) => {
                             const indexA = order.indexOf(a.label);
                             const indexB = order.indexOf(b.label);
@@ -156,7 +156,7 @@ const NPSReport = () => {
                         detractors: r.detractors
                     }));
                     if (cabang === 'All') {
-                        const order = ['Bintaro', 'Raden Inten', 'Cakung', 'Dwindo'];
+                        const order = ['Bintaro', 'Radin Inten', 'Cakung', 'Dwindo'];
                         qRows.sort((a, b) => {
                             const indexA = order.indexOf(a.label);
                             const indexB = order.indexOf(b.label);
@@ -249,7 +249,7 @@ const NPSReport = () => {
                         {[
                             { id: 'All', label: 'Dwindo' },
                             { id: 'Bintaro', label: 'Bintaro' },
-                            { id: 'Raden Inten', label: 'Raden Inten' },
+                            { id: 'Radin Inten', label: 'Radin Inten' },
                             { id: 'Cakung', label: 'Cakung' }
                         ].map((c) => (
                             <button
@@ -313,60 +313,51 @@ const NPSReport = () => {
 
             <div className="flex-1 space-y-6 pb-6">
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Net Promoter Score</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
+                    <div className="bg-white rounded-xl p-4 border border-[#E5E5E5] shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-[#E60012]/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                        <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total NPS</div>
                         <div className="flex items-end gap-2">
-                            <span className="text-4xl font-black text-[#111111]">{summary.nps}</span>
-                            <span className="text-sm text-gray-400 mb-1">Score</span>
-                        </div>
-                        <div className="mt-4 h-2 w-full bg-gray-100 rounded-full overflow-hidden flex">
-                            <div className="h-full bg-red-500" style={{ width: `${(summary.detractors / summary.total) * 100}%` }}></div>
-                            <div className="h-full bg-orange-500" style={{ width: `${(summary.passives / summary.total) * 100}%` }}></div>
-                            <div className="h-full bg-green-500" style={{ width: `${(summary.promoters / summary.total) * 100}%` }}></div>
+                            <div className={`text-3xl font-black ${summary.nps > 0 ? 'text-green-600' : summary.nps < 0 ? 'text-red-600' : 'text-gray-700'}`}>{summary.nps}%</div>
+                            <div className="text-sm text-gray-400 font-medium pb-1">dari {summary.total}</div>
                         </div>
                     </div>
-
-                    <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500"></div> Promoters
-                        </h3>
+                    <div className="bg-white rounded-xl p-4 border border-green-200 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                        <div className="text-green-600 text-xs font-bold uppercase tracking-wider mb-1">Promoters (9-10)</div>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-bold text-[#111111]">{summary.promoters}</span>
-                            <span className="text-sm text-gray-400 mb-1">org ({summary.total ? Math.round((summary.promoters / summary.total) * 100) : 0}%)</span>
+                            <div className="text-3xl font-black text-green-700">{summary.promoters}</div>
+                            <div className="text-sm text-green-600 font-medium pb-1 bg-green-100 px-1.5 rounded">{summary.total > 0 ? Math.round((summary.promoters / summary.total) * 100) : 0}%</div>
                         </div>
                     </div>
-
-                    <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-orange-500"></div> Passives
-                        </h3>
+                    <div className="bg-white rounded-xl p-4 border border-amber-200 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                        <div className="text-amber-600 text-xs font-bold uppercase tracking-wider mb-1">Passives (7-8)</div>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-bold text-[#111111]">{summary.passives}</span>
-                            <span className="text-sm text-gray-400 mb-1">org ({summary.total ? Math.round((summary.passives / summary.total) * 100) : 0}%)</span>
+                            <div className="text-3xl font-black text-amber-700">{summary.passives}</div>
+                            <div className="text-sm text-amber-600 font-medium pb-1 bg-amber-100 px-1.5 rounded">{summary.total > 0 ? Math.round((summary.passives / summary.total) * 100) : 0}%</div>
                         </div>
                     </div>
-
-                    <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500"></div> Detractors
-                        </h3>
+                    <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-red-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                        <div className="text-red-600 text-xs font-bold uppercase tracking-wider mb-1">Detractors (0-6)</div>
                         <div className="flex items-end gap-2">
-                            <span className="text-3xl font-bold text-[#111111]">{summary.detractors}</span>
-                            <span className="text-sm text-gray-400 mb-1">org ({summary.total ? Math.round((summary.detractors / summary.total) * 100) : 0}%)</span>
+                            <div className="text-3xl font-black text-red-700">{summary.detractors}</div>
+                            <div className="text-sm text-red-600 font-medium pb-1 bg-red-100 px-1.5 rounded">{summary.total > 0 ? Math.round((summary.detractors / summary.total) * 100) : 0}%</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Monthly Chart */}
                 <NPSBenchmarkCard
-                    title="NPS Benchmark (Monthly)"
-                    subtitle={`Tingkat kepuasan pelanggan bulan ${getMonthLabel()}.`}
+                    title="NPS (Monthly)"
+                    subtitle={`Bulan ${getMonthLabel()}.`}
                     data={chartData}
                     cabang={cabang}
                     prevData={prevChartData}
                     handleCopy={handleCopy}
                     copiedLabel={copiedLabel}
+                    divisi={divisi}
                 />
                 {/* Quarterly Chart */}
                 {(() => {
@@ -374,14 +365,15 @@ const NPSReport = () => {
                     const prevQInfo = getPrevQuarterInfo(month);
                     return (
                         <NPSBenchmarkCard
-                            title={`NPS Benchmark (${qInfo?.label || 'Quarterly'})`}
-                            subtitle={`Akumulasi tingkat kepuasan pelanggan periode ${qInfo?.range || ''} ${month.split('-')[0]}. Komparasi vs ${prevQInfo?.label} ${prevQInfo?.months[0].split('-')[0]}.`}
+                            title={`NPS (${qInfo?.label || 'Quarterly'} FY ${getCurrentFY(month)})`}
+                            subtitle={`${qInfo?.range || ''} ${month.split('-')[0]}. vs ${prevQInfo?.label} ${getCurrentFY(prevQInfo?.months[0])}.`}
                             data={quarterData}
                             cabang={cabang}
                             prevData={prevQuarterData}
                             handleCopy={handleCopy}
                             copiedLabel={copiedLabel}
                             isQuarterly={true}
+                            divisi={divisi}
                         />
                     );
                 })()}
@@ -400,7 +392,7 @@ const NPSReport = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="text-[11px] font-black uppercase tracking-wider">
+                                <tr className="text-base font-black uppercase tracking-wider">
                                     <th className="p-4 bg-gray-50 border-b border-gray-200">Dealer Name</th>
                                     <th className="p-4 bg-gray-50 border-b border-gray-200 text-center">Total Sampling</th>
                                     <th className="p-4 bg-green-500 text-white border-b border-gray-200 text-center">Promotor</th>
@@ -412,9 +404,9 @@ const NPSReport = () => {
                                     <th className="p-4 bg-gray-50 border-b border-gray-200 text-center border-l">FY{String(getCurrentFY(month) - 1).slice(-2)} VS FY{String(getCurrentFY(month)).slice(-2)}</th>
                                 </tr>
                             </thead>
-                            <tbody className="text-sm">
+                            <tbody className="text-xl">
                                 {(() => {
-                                    const branches = cabang === 'All' ? ['Bintaro', 'Raden Inten', 'Cakung', 'Dwindo'] : [cabang];
+                                    const branches = cabang === 'All' ? ['Bintaro', 'Radin Inten', 'Cakung', 'Dwindo'] : [cabang];
                                     return branches.map((bName, idx) => {
                                         const curMonth = chartData.find(d => d.label === bName) || { promoters: 0, passives: 0, detractors: 0 };
                                         const curTotal = curMonth.promoters + curMonth.passives + curMonth.detractors;
@@ -431,19 +423,19 @@ const NPSReport = () => {
 
                                         return (
                                             <tr key={bName} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-red-50/30 transition-colors ${isDwindo ? 'font-black border-t-2 border-gray-200 bg-blue-50/30' : ''}`}>
-                                                <td className="p-4 uppercase text-xs font-bold">{isDwindo ? 'DWINDO GROUP' : bName}</td>
+                                                <td className="p-4 uppercase text-base font-bold">{isDwindo ? 'DWINDO GROUP' : bName}</td>
                                                 <td className="p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleCopy(curTotal, bName + '-total')}>{curTotal}</td>
                                                 <td className="p-4 text-center cursor-pointer hover:bg-green-50 transition-colors text-green-600" onClick={() => handleCopy(curMonth.promoters, bName + '-p')}>{curMonth.promoters}</td>
                                                 <td className="p-4 text-center cursor-pointer hover:bg-amber-50 transition-colors text-amber-600" onClick={() => handleCopy(curMonth.passives, bName + '-a')}>{curMonth.passives}</td>
                                                 <td className="p-4 text-center cursor-pointer hover:bg-red-50 transition-colors text-red-600" onClick={() => handleCopy(curMonth.detractors, bName + '-d')}>{curMonth.detractors}</td>
-                                                <td className="p-4 text-center border-l-2 border-gray-100 font-black text-[#E60012] cursor-pointer" onClick={() => handleCopy(curNps + '%', bName + '-nps')}>
-                                                    {copiedLabel === bName + '-nps' ? <span className="text-[10px] animate-pulse">COPIED</span> : `${curNps}%`}
+                                                <td className={`p-4 text-center border-l-2 border-gray-100 font-black cursor-pointer ${curNps >= (divisi === 'Sales' ? 84 : 82) ? 'text-green-600' : 'text-[#111111]'}`} onClick={() => handleCopy(curNps + '%', bName + '-nps')}>
+                                                    {copiedLabel === bName + '-nps' ? <span className="text-sm animate-pulse">COPIED</span> : `${curNps}%`}
                                                 </td>
                                                 <td className="p-4 text-center border-l border-gray-100 cursor-pointer" onClick={() => handleCopy(fPrevNps + '%', bName + '-fyprev')}>{fPrevNps}%</td>
                                                 <td className="p-4 text-center cursor-pointer" onClick={() => handleCopy(fCurNps + '%', bName + '-fycur')}>{fCurNps}%</td>
                                                 <td className="p-4 text-center border-l border-gray-100">
                                                     <div className="flex items-center justify-center gap-1 cursor-pointer" onClick={() => handleCopy((diff > 0 ? '+' : '') + diff + '%', bName + '-fydiff')}>
-                                                        {diff > 0 ? <ArrowUp size={12} className="text-green-500" /> : diff < 0 ? <ArrowDown size={12} className="text-red-500" /> : null}
+                                                        {diff > 0 ? <ArrowUp size={18} className="text-green-500" /> : diff < 0 ? <ArrowDown size={18} className="text-red-500" /> : null}
                                                         <span className={diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'}>
                                                             {Math.abs(diff)}%
                                                         </span>
@@ -462,35 +454,45 @@ const NPSReport = () => {
     );
 };
 
-const NPSBenchmarkCard = ({ title, subtitle, data, cabang, prevData, handleCopy, copiedLabel, isQuarterly = false }) => {
+const NPSBenchmarkCard = ({ title, subtitle, data, cabang, prevData, handleCopy, copiedLabel, isQuarterly = false, divisi }) => {
+    const targetNPS = divisi === 'Sales' ? 84 : 82;
     return (
         <div className="bg-white border border-[#E5E5E5] rounded-xl p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center justify-between mb-0">
                 <div>
                     <h2 className="font-bold text-xl text-[#111111]">{title}</h2>
                     <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
                 </div>
                 <div className="flex gap-6 text-xs font-bold bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-green-500"></div> Promoters</div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-amber-400"></div> Passives</div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-red-500"></div> Detractors</div>
-                    <div className="flex items-center gap-2"><div className="w-4 h-0.5 border-t-2 border-dashed border-black"></div> NPS Score</div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-0.5 border-t-2 border-dashed border-red-500"></div> Target Nasional ({targetNPS})</div>
                 </div>
             </div>
 
-            <div className="relative h-96 flex items-end pb-16">
-                {/* Y-axis labels */}
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-28 pt-10">
-                    {[100, 75, 50, 25, 0].map((val) => (
-                        <div key={val} className="flex items-center w-full">
-                            <span className="text-[10px] text-gray-400 w-10 text-right pr-3 font-bold">{val}%</span>
-                            <div className="flex-1 border-b border-gray-100 border-dashed"></div>
-                        </div>
-                    ))}
-                </div>
-
+            <div className="relative h-[500px] flex items-end pb-16">
                 {/* Chart Area */}
-                <div className="flex-1 flex items-end justify-around pl-10 h-full pb-28 pt-10 relative">
+                <div className="flex-1 flex items-end justify-around h-full pb-10 pt-10 relative">
+                    {/* Y-axis labels */}
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-10 pt-10">
+                        {[100, 75, 50, 25, 0].map((val) => (
+                            <div key={val} className="flex items-center w-full">
+                                <div className="flex-1 border-b border-gray-100 border-dashed"></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Target Nasional Line */}
+                    <div className="absolute inset-0 pointer-events-none pb-10 pt-10 z-40">
+                        <div className="relative w-full h-full">
+                            <div
+                                className="absolute left-0 right-0 border-t-2 border-dashed border-red-500 flex items-center justify-end"
+                                style={{ bottom: `${targetNPS}%` }}
+                            >
+                                <span className="text-[11px] font-black text-red-500 bg-white px-2 py-0.5 rounded shadow-sm absolute right-0 translate-x-4 -translate-y-1/2">
+                                    Target {targetNPS}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                     {data.map((item, idx) => {
                         const total = item.promoters + item.passives + item.detractors;
                         const pPct = total > 0 ? Math.round((item.promoters / total) * 100) : 0;
@@ -507,29 +509,29 @@ const NPSBenchmarkCard = ({ title, subtitle, data, cabang, prevData, handleCopy,
 
                                 {/* 100% Stacked Bar */}
                                 <div className="w-full max-w-[80px] h-full flex flex-col-reverse rounded overflow-hidden shadow-md border border-white relative z-10 transition-transform duration-300 group-hover:scale-[1.02]">
-                                    <div className="w-full bg-red-500 flex items-center justify-center text-[10px] text-white font-black overflow-hidden" style={{ height: `${dPct}%` }}>
+                                    <div className="w-full bg-red-500 flex items-center justify-center text-sm text-white font-black overflow-hidden" style={{ height: `${dPct}%` }}>
                                         {dPct > 3 && `${dPct}%`}
                                     </div>
-                                    <div className="w-full bg-amber-400 flex items-center justify-center text-[10px] text-white font-black overflow-hidden" style={{ height: `${aPct}%` }}>
+                                    <div className="w-full bg-amber-400 flex items-center justify-center text-sm text-white font-black overflow-hidden" style={{ height: `${aPct}%` }}>
                                         {aPct > 3 && `${aPct}%`}
                                     </div>
-                                    <div className="w-full bg-green-500 flex items-center justify-center text-[10px] text-white font-black overflow-hidden" style={{ height: `${pPct}%` }}>
+                                    <div className="w-full bg-green-500 flex items-center justify-center text-sm text-white font-black overflow-hidden" style={{ height: `${pPct}%` }}>
                                         {pPct > 3 && `${pPct}%`}
                                     </div>
                                 </div>
 
                                 {/* NPS Value Point */}
                                 <div
-                                    className="absolute left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-black rounded-full border-2 border-white shadow-lg z-30"
-                                    style={{ bottom: `calc(${npsScore}% - 5px)` }}
+                                    className="absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-black rounded-full border-2 border-white shadow-lg z-30"
+                                    style={{ bottom: `calc(${npsScore}% - 8px)` }}
                                 >
-                                    <div className="absolute -right-2 -top-6 bg-black text-white text-[10px] px-1.5 py-0.5 rounded font-black whitespace-nowrap shadow-xl">
+                                    <div className="absolute left-1/2 -translate-x-1/2 -top-11 bg-black text-white text-lg px-2 py-1 rounded font-black whitespace-nowrap shadow-xl">
                                         {npsScore}%
                                     </div>
                                 </div>
 
                                 {/* Label Cabang */}
-                                <div className="absolute -bottom-10 text-[11px] text-gray-700 font-black uppercase tracking-wider text-center px-1">
+                                <div className="absolute -bottom-10 text-sm text-gray-700 font-black uppercase tracking-wider text-center px-1">
                                     {item.label === 'Dwindo' ? 'DWINDO GROUP' : item.label}
                                 </div>
 
@@ -546,15 +548,15 @@ const NPSBenchmarkCard = ({ title, subtitle, data, cabang, prevData, handleCopy,
                                         title="Click to copy diff"
                                     >
                                         {copiedLabel === item.label ? (
-                                            <span className="text-[10px] font-black text-[#E60012] animate-bounce">Copied!</span>
+                                            <span className="text-xs font-black text-[#E60012] animate-bounce">Copied!</span>
                                         ) : (
                                             (() => {
                                                 const prevItem = prevData.find(p => p.label === item.label);
                                                 const prevNps = prevItem ? prevItem.nps : 0;
                                                 const diff = npsScore - prevNps;
-                                                if (diff > 0) return <><ArrowUp size={14} className="text-green-500" strokeWidth={3} /><span className="text-[11px] font-black text-green-600">{diff}%</span></>;
-                                                if (diff < 0) return <><ArrowDown size={14} className="text-red-500" strokeWidth={3} /><span className="text-[11px] font-black text-red-600">{Math.abs(diff)}%</span></>;
-                                                return <span className="text-[11px] font-black text-gray-400">0%</span>;
+                                                if (diff > 0) return <><ArrowUp size={16} className="text-green-500" strokeWidth={3} /><span className="text-sm font-black text-green-600">{diff}%</span></>;
+                                                if (diff < 0) return <><ArrowDown size={16} className="text-red-500" strokeWidth={3} /><span className="text-sm font-black text-red-600">{Math.abs(diff)}%</span></>;
+                                                return <span className="text-sm font-black text-gray-400">0%</span>;
                                             })()
                                         )}
                                     </div>

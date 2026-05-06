@@ -18,6 +18,14 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
     $action = $_POST['action'] ?? '';
+    
+    // Fallback to json input if action is not in POST
+    $raw  = file_get_contents('php://input');
+    $body = json_decode($raw, true) ?? [];
+    if (empty($action)) {
+        $action = $body['action'] ?? ($_GET['action'] ?? '');
+    }
+
     if ($action === 'upload_pdi_mmksi') {
         $json_data = $_POST['data'] ?? '[]';
         $rows = json_decode($json_data, true);
@@ -65,6 +73,62 @@ if ($method === 'POST') {
             'status' => true,
             'message' => "Berhasil mengupload. Masuk: $inserted, Dilewati: $skipped (Duplikat)"
         ]);
+        exit;
+    } elseif ($action === 'update') {
+        $id = isset($body['id']) ? intval($body['id']) : (isset($_POST['id']) ? intval($_POST['id']) : 0);
+        
+        // If body wasn't populated from POST, try input stream
+        if ($id === 0) {
+            $raw  = file_get_contents('php://input');
+            $body = json_decode($raw, true) ?? [];
+            $id = isset($body['id']) ? intval($body['id']) : 0;
+        }
+
+        if ($id <= 0) {
+            echo json_encode(['status' => false, 'message' => 'ID tidak valid.']);
+            exit;
+        }
+
+        $status = isset($body['status']) ? mysqli_real_escape_string($conn, $body['status']) : '';
+        $nama = isset($body['nama']) ? mysqli_real_escape_string($conn, $body['nama']) : '';
+        $telp = isset($body['telp']) ? mysqli_real_escape_string($conn, $body['telp']) : '';
+        $rangka = isset($body['rangka']) ? mysqli_real_escape_string($conn, $body['rangka']) : '';
+        $kendaraan = isset($body['kendaraan']) ? mysqli_real_escape_string($conn, $body['kendaraan']) : '';
+        $spv = isset($body['spv']) ? mysqli_real_escape_string($conn, $body['spv']) : '';
+        $sales = isset($body['sales']) ? mysqli_real_escape_string($conn, $body['sales']) : '';
+        
+        $pdi_date = empty($body['pdi_date']) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $body['pdi_date']) . "'";
+        $wa_date = empty($body['wa_date']) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $body['wa_date']) . "'";
+        $est = isset($body['est']) ? mysqli_real_escape_string($conn, $body['est']) : '';
+        $note = isset($body['note']) ? mysqli_real_escape_string($conn, $body['note']) : '';
+        $bpkb = isset($body['bpkb']) ? mysqli_real_escape_string($conn, $body['bpkb']) : '';
+        $stnk = isset($body['stnk']) ? mysqli_real_escape_string($conn, $body['stnk']) : '';
+        $fs1 = isset($body['fs1']) ? mysqli_real_escape_string($conn, $body['fs1']) : '';
+        $fs2 = isset($body['fs2']) ? mysqli_real_escape_string($conn, $body['fs2']) : '';
+
+        $query = "UPDATE surveyupdate SET 
+            status = '$status',
+            nama = '$nama',
+            telp = '$telp',
+            rangka = '$rangka',
+            kendaraan = '$kendaraan',
+            spv = '$spv',
+            sales = '$sales',
+            pdi_date = $pdi_date,
+            wa_date = $wa_date,
+            est = '$est',
+            note = '$note',
+            bpkb = '$bpkb',
+            stnk = '$stnk',
+            fs1 = '$fs1',
+            fs2 = '$fs2'
+            WHERE id = $id";
+
+        if (mysqli_query($conn, $query)) {
+            echo json_encode(['status' => true, 'message' => 'Data berhasil diupdate.']);
+        } else {
+            echo json_encode(['status' => false, 'message' => 'Gagal update data: ' . mysqli_error($conn)]);
+        }
         exit;
     }
 }
