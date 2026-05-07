@@ -39,6 +39,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
     const [pdiOpen, setPdiOpen] = useState(false);
     const [salesSurveyOpen, setSalesSurveyOpen] = useState(false);
     const [npsOpen, setNpsOpen] = useState(false);
+    const [leadManagerOpen, setLeadManagerOpen] = useState(false);
     const [badgeCounts, setBadgeCounts] = useState({});
     const [user, setUser] = useState(null);
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
@@ -82,12 +83,28 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                 const waRes = await fetch('https://csdwindo.com/api/panel/wa_followup.php?tab=konfirmasi');
                 const waData = await waRes.json();
 
+                // Fetch Chat History sessions
+                const chatRes = await fetch('https://csdwindo.com/api/chat/session.php?action=admin_list');
+                const chatData = await chatRes.json();
+
                 let newCounts = {};
                 if (data.status) {
                     newCounts = { ...data.data };
                 }
                 if (waData.status) {
                     newCounts['whatsapp'] = waData.data ? waData.data.length : 0;
+                }
+
+                if (chatData.status && chatData.data) {
+                    const totalSessions = chatData.data.length;
+                    const lastCount = parseInt(localStorage.getItem('last_chat_history_count') || '0');
+                    
+                    if (location.pathname === '/panel/chat') {
+                        localStorage.setItem('last_chat_history_count', totalSessions.toString());
+                        newCounts['chat_history'] = 0;
+                    } else {
+                        newCounts['chat_history'] = Math.max(0, totalSessions - lastCount);
+                    }
                 }
                 
                 setBadgeCounts(newCounts);
@@ -98,33 +115,38 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         fetchCounts();
         const interval = setInterval(fetchCounts, 60000); // refresh every minute
         return () => clearInterval(interval);
-    }, []);
+    }, [location.pathname]);
 
     const navigations = [
         { name: 'Dashboard', path: '/panel', icon: <LayoutDashboard size={18} />, exact: true },
-        { name: 'Chat History', path: '/panel/chat', icon: <MessageSquare size={18} /> },
-        { name: 'Booking Service', label: 'booking', path: '/panel/booking', icon: <CalendarCheck size={18} /> },
+        { name: 'Chat History', label: 'chat_history', path: '/panel/chat', icon: <MessageSquare size={18} /> },
+        { name: 'Booking Service', label: 'booking', path: '/panel/booking', icon: <CalendarCheck size={18} />, group: 'lead' },
         { name: 'Data Booking', label: 'data_booking', path: '/panel/data-booking', icon: <Database size={18} /> },
+        { name: 'Konsumen Booking', path: '/panel/konsumen-booking', icon: <Users size={18} /> },
         { name: 'Potensi Booking', path: '/panel/potensi-booking', icon: <TrendingUp size={18} />, roles: ['admin'], division: 'service' },
-        { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} />, roles: ['admin'], division: 'sales' },
-        { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} />, roles: ['admin'], division: 'sales' },
-        { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} />, roles: ['admin'], division: 'service' },
-        { name: 'Sparepart', label: 'sparepart', path: '/panel/sparepart', icon: <Wrench size={18} />, roles: ['admin'], division: 'service' },
-        { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} />, roles: ['admin'], division: 'service' },
-        { name: 'Complaint', label: 'complaint', path: '/panel/complaint', icon: <ShieldAlert size={18} /> },
-        { name: 'Question', label: 'question', path: '/panel/question', icon: <MessageSquare size={18} /> },
+        { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} />, roles: ['admin'], division: 'sales', group: 'lead' },
+        { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} />, roles: ['admin'], division: 'sales', group: 'lead' },
+        { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} />, roles: ['admin'], division: 'service', group: 'lead' },
+        { name: 'Sparepart', label: 'sparepart', path: '/panel/sparepart', icon: <Wrench size={18} />, roles: ['admin'], division: 'service', group: 'lead' },
+        { name: 'Aksesoris', label: 'aksesoris', path: '/panel/aksesoris', icon: <Package size={18} />, roles: ['admin'], division: 'service', group: 'lead' },
+        { name: 'Complaint', label: 'complaint', path: '/panel/complaint', icon: <ShieldAlert size={18} />, group: 'lead' },
+        { name: 'Question', label: 'question', path: '/panel/question', icon: <MessageSquare size={18} />, group: 'lead' },
         { name: 'Artikel', path: '/panel/artikel', icon: <FileText size={18} />, roles: ['admin'] },
         { name: 'Panel Whatsapp', label: 'whatsapp', path: '/panel/whatsapp', icon: <WhatsappIcon size={18} /> },
         { name: 'AI Churn Analysis', path: '/panel/churn-prediction', icon: <BrainCircuit size={18} />, roles: ['admin'] },
         { name: 'Users', path: '/panel/users', icon: <UserCog size={18} />, roles: ['admin'] },
     ];
 
+    // For admin: extract lead manager items for dropdown
+    const leadManagerItems = navigations.filter(item => item.group === 'lead');
+    const leadManagerTotalBadge = leadManagerItems.reduce((sum, item) => sum + (badgeCounts[item.label] || 0), 0);
+
     const filteredNavigations = navigations.filter(item => {
         if (!user) return false;
         if (user.role === 'admin') return true;
 
         if (user.role === 'pkl') {
-            return item.name === 'Dashboard' || item.name === 'Panel Whatsapp' || item.name === 'Data Booking';
+            return item.name === 'Dashboard' || item.name === 'Panel Whatsapp' || item.name === 'Data Booking' || item.name === 'Konsumen Booking';
         }
 
         // Cek jika item hanya untuk admin
@@ -200,7 +222,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
             {/* Sidebar Links */}
             <div className="h-[calc(100vh-4rem)] flex flex-col">
                 <div className={`py-6 px-4 flex-1 ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'} space-y-1`}>
-                    {filteredNavigations.map((item) => (
+                    {filteredNavigations.filter(item => !(user?.role === 'admin' && item.group === 'lead')).map((item) => (
                         <NavLink
                             key={item.name}
                             to={item.path}
@@ -234,6 +256,65 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                             )}
                         </NavLink>
                     ))}
+
+                    {/* Dropdown Lead Manager - Admin Only */}
+                    {user?.role === 'admin' && (
+                        <div>
+                            <button
+                                onClick={() => setLeadManagerOpen(!leadManagerOpen)}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-colors hover:bg-white/5 hover:text-white group relative ${leadManagerOpen || leadManagerItems.some(i => location.pathname === i.path) ? 'text-white' : ''}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="min-w-[18px] flex items-center justify-center">
+                                        <Users size={18} />
+                                    </div>
+                                    {!effectiveIsMinimized && <span className="whitespace-nowrap transition-all duration-300">Lead Manager</span>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {leadManagerTotalBadge > 0 && (
+                                        <span className={`bg-[#E60012] text-white text-[10px] font-bold px-2 py-0.5 rounded-full ${effectiveIsMinimized ? 'absolute top-1 right-1 px-1.5' : ''}`}>
+                                            {!effectiveIsMinimized ? leadManagerTotalBadge : leadManagerTotalBadge > 9 ? '9+' : leadManagerTotalBadge}
+                                        </span>
+                                    )}
+                                    {!effectiveIsMinimized && <ChevronDown size={14} className={`transition-transform duration-200 ${leadManagerOpen ? 'rotate-180' : ''}`} />}
+                                </div>
+                                {/* Tooltip */}
+                                {effectiveIsMinimized && (
+                                    <div className="absolute left-full ml-2 px-3 py-2 bg-[#222222] text-white text-sm whitespace-nowrap rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[999] shadow-xl border border-white/10 flex items-center shadow-black/50">
+                                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#222222] border-b border-l border-white/10 transform rotate-45"></div>
+                                        <span className="font-bold tracking-wide">Lead Manager</span>
+                                    </div>
+                                )}
+                            </button>
+                            {leadManagerOpen && !effectiveIsMinimized && (
+                                <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-1">
+                                    {leadManagerItems.map((sub) => (
+                                        <NavLink
+                                            key={sub.name}
+                                            to={sub.path}
+                                            onClick={() => setIsOpen(false)}
+                                            className={({ isActive }) =>
+                                                `flex items-center justify-between gap-3 px-4 py-2 rounded text-[13px] font-medium transition-colors ${isActive
+                                                    ? 'text-[#E60012] bg-[#E60012]/10'
+                                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                }`
+                                            }
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <div className="min-w-[16px] flex items-center justify-center">{sub.icon}</div>
+                                                <span>{sub.name}</span>
+                                            </div>
+                                            {sub.label && badgeCounts[sub.label] > 0 && (
+                                                <span className="bg-[#E60012] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                                    {badgeCounts[sub.label]}
+                                                </span>
+                                            )}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Dropdown Sales Survey */}
                     {(user?.role === 'admin' || (user?.role === 'staff' && user?.divisi === 'sales')) && (

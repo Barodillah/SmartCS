@@ -326,12 +326,19 @@ export default function BookingService() {
             const data = await response.json();
 
             // Logic slot
-            const isMinor = (parseInt(formData.km) / 10000) % 2 !== 0; // Ganjil = Minor
+            const kmValue = parseInt(formData.km) || 0;
+            const isMinor = kmValue === 1000 || (kmValue > 0 && (kmValue / 10000) % 2 !== 0); // Ganjil = Minor
+            const isKelipatan20k = kmValue > 0 && kmValue % 20000 === 0; // 20k, 40k, 60k, 80k, 100k
             const isSunday = new Date(tanggal).getDay() === 0;
 
-            const baseSlots = ['08:00', '09:00', '10:00', '11:00'];
-            if (!isSunday && isMinor) {
-                baseSlots.push('13:00'); // Jam 13:00 only for minor service and not Sunday
+            // Sunday: only up to 11:00
+            const baseSlots = isSunday
+                ? ['08:00', '09:00', '10:00', '11:00']
+                : ['08:00', '09:00', '10:00', '11:00'];
+
+            // Jam 13:00: only if NOT Sunday AND is minor service AND NOT kelipatan 20.000 KM
+            if (!isSunday && isMinor && !isKelipatan20k) {
+                baseSlots.push('13:00');
             }
 
             let jamData = {};
@@ -342,7 +349,8 @@ export default function BookingService() {
             // Map and calculate remaining
             const processedSlots = baseSlots.map(jam => {
                 const totalBooking = jamData[jam] !== undefined ? parseInt(jamData[jam]) : 0;
-                const max = 6; // Maksimal 6 sesuai request
+                // Sunday: max 3 for all slots. Jam 13:00: max 3. Others: max 6.
+                const max = isSunday ? 3 : (jam === '13:00' ? 3 : 6);
                 const remaining = max - totalBooking;
                 return {
                     jam,
@@ -358,6 +366,7 @@ export default function BookingService() {
             setIsSlotLoading(false);
         }
     };
+
 
     const handleSelectDate = (isoDate) => {
         handleInputChange('tanggal', isoDate);
@@ -866,12 +875,27 @@ export default function BookingService() {
                                     )}
 
                                     {/* Info Minor/Major rule */}
-                                    {((parseInt(formData.km) / 10000) % 2 === 0) && (
-                                        <p className="text-xs text-amber-600 mt-4 bg-amber-50 p-3 rounded-lg flex items-start gap-2">
-                                            <Info className="w-4 h-4 shrink-0" />
-                                            Karena kendaraan Anda akan melakukan Service Besar, jam operasional penerimaan maksimal adalah jam 11:00 WIB.
-                                        </p>
-                                    )}
+                                    {(() => {
+                                        const kmVal = parseInt(formData.km) || 0;
+                                        const isBesar = kmVal > 0 && (kmVal / 10000) % 2 === 0 && kmVal !== 1000;
+                                        const isSun = formData.tanggal && new Date(formData.tanggal).getDay() === 0;
+                                        return (
+                                            <>
+                                                {isBesar && (
+                                                    <p className="text-xs text-amber-600 mt-4 bg-amber-50 p-3 rounded-lg flex items-start gap-2">
+                                                        <Info className="w-4 h-4 shrink-0" />
+                                                        Karena kendaraan Anda akan melakukan Service Besar, jam operasional penerimaan maksimal adalah jam 11:00 WIB.
+                                                    </p>
+                                                )}
+                                                {isSun && (
+                                                    <p className="text-xs text-amber-600 mt-3 bg-amber-50 p-3 rounded-lg flex items-start gap-2">
+                                                        <Info className="w-4 h-4 shrink-0" />
+                                                        Hari Minggu memiliki kapasitas terbatas (maks. 3 unit per jam) dan hanya melayani hingga jam 11:00 WIB.
+                                                    </p>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </motion.div>
                                 )
                             )}

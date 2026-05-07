@@ -40,6 +40,8 @@ import DataPDIKTB from './pages/panel/DataPDIKTB';
 import PDIUpload from './pages/panel/PDIUpload';
 import ChurnPrediction from './pages/panel/ChurnPrediction';
 import PotensiBooking from './pages/panel/PotensiBooking';
+import KonsumenBooking from './pages/panel/KonsumenBooking';
+import SA from './pages/SA';
 
 function App() {
     // Detect if we are on specific subdomains
@@ -67,6 +69,9 @@ function App() {
                     <Route path="/booking" element={<BookingService />} />
                 </Route>
 
+                {/* Standalone Route for SA */}
+                <Route path="/sa" element={<SA />} />
+
                 {/* Admin/CS Panel Routes */}
                 <Route path="/panel" element={<PanelLayout />}>
                     <Route index element={<Dashboard />} />
@@ -74,6 +79,7 @@ function App() {
                     <Route path="whatsapp" element={<PanelWhatsapp />} />
                     <Route path="booking" element={<LeadManager label="booking" title="Booking Service" desc="Kelola permohonan booking service dari client." icon="CalendarCheck" />} />
                     <Route path="data-booking" element={<DataBookingLegacy />} />
+                    <Route path="konsumen-booking" element={<KonsumenBooking />} />
                     <Route path="test-drive" element={<LeadManager label="test_drive" title="Test Drive" desc="Kelola permohonan penjadwalan test drive kendaraan." icon="CarFront" />} />
                     <Route path="prospect" element={<LeadManager label="prospect" title="Prospect Leads" desc="Data potensi prospek pembelian kendaraan dari chatbot." icon="Users" />} />
                     <Route path="emergency" element={<LeadManager label="emergency" title="Emergency Center" desc="Daftar laporan layanan darurat (Mogok / Kecelakaan)." icon="AlertTriangle" />} />

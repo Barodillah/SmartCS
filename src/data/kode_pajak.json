@@ -1,0 +1,353 @@
+{
+    "prefix_codes": [
+        {
+            "kode": "A",
+            "wilayah": "Serang, Pandeglang, Cilegon, Lebak",
+            "provinsi": "Banten"
+        },
+        {
+            "kode": "B",
+            "wilayah": "Jakarta, Depok, Tangerang, Bekasi",
+            "provinsi": "DKI Jakarta/Jabar/Banten"
+        },
+        {
+            "kode": "D",
+            "wilayah": "Bandung, Cimahi",
+            "provinsi": "Jawa Barat"
+        },
+        {
+            "kode": "E",
+            "wilayah": "Cirebon, Indramayu, Majalengka, Kuningan",
+            "provinsi": "Jawa Barat"
+        },
+        {
+            "kode": "F",
+            "wilayah": "Bogor, Cianjur, Sukabumi",
+            "provinsi": "Jawa Barat"
+        },
+        {
+            "kode": "T",
+            "wilayah": "Purwakarta, Karawang, Subang",
+            "provinsi": "Jawa Barat"
+        },
+        {
+            "kode": "Z",
+            "wilayah": "Garut, Tasikmalaya, Sumedang, Ciamis",
+            "provinsi": "Jawa Barat"
+        },
+        {
+            "kode": "G",
+            "wilayah": "Pekalongan, Tegal, Brebes, Batang, Pemalang",
+            "provinsi": "Jawa Tengah"
+        },
+        {
+            "kode": "H",
+            "wilayah": "Semarang, Salatiga, Kendal, Demak",
+            "provinsi": "Jawa Tengah"
+        },
+        {
+            "kode": "K",
+            "wilayah": "Pati, Kudus, Jepara, Rembang, Blora, Grobogan",
+            "provinsi": "Jawa Tengah"
+        },
+        {
+            "kode": "R",
+            "wilayah": "Banyumas, Cilacap, Purbalingga, Banjarnegara",
+            "provinsi": "Jawa Tengah"
+        },
+        {
+            "kode": "AA",
+            "wilayah": "Kedu, Magelang, Purworejo, Kebumen, Temanggung, Wonosobo",
+            "provinsi": "Jawa Tengah"
+        },
+        {
+            "kode": "AD",
+            "wilayah": "Surakarta, Sukoharjo, Boyolali, Sragen, Karanganyar, Wonogiri, Klaten",
+            "provinsi": "Jawa Tengah"
+        },
+        {
+            "kode": "AB",
+            "wilayah": "Yogyakarta, Bantul, Gunung Kidul, Sleman, Kulon Progo",
+            "provinsi": "DI Yogyakarta"
+        },
+        {
+            "kode": "L",
+            "wilayah": "Surabaya",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "M",
+            "wilayah": "Madura",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "N",
+            "wilayah": "Malang, Pasuruan, Lumajang, Probolinggo, Batu",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "P",
+            "wilayah": "Besuki, Bondowoso, Situbondo, Jember, Banyuwangi",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "S",
+            "wilayah": "Bojonegoro, Mojokerto, Tuban, Lamongan, Jombang",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "AG",
+            "wilayah": "Kediri, Blitar, Tulungagung, Nganjuk, Trenggalek",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "AE",
+            "wilayah": "Madiun, Ngawi, Ponorogo, Magetan, Pacitan",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "W",
+            "wilayah": "Sidoarjo, Gresik",
+            "provinsi": "Jawa Timur"
+        },
+        {
+            "kode": "DK",
+            "wilayah": "Bali",
+            "provinsi": "Bali"
+        },
+        {
+            "kode": "BL",
+            "wilayah": "Aceh",
+            "provinsi": "Aceh"
+        },
+        {
+            "kode": "BK",
+            "wilayah": "Sumatera Utara (Medan, Deli Serdang, Tebing Tinggi)",
+            "provinsi": "Sumatera Utara"
+        },
+        {
+            "kode": "BB",
+            "wilayah": "Sumatera Utara (Tapanuli, Sibolga, Nias)",
+            "provinsi": "Sumatera Utara"
+        },
+        {
+            "kode": "BA",
+            "wilayah": "Sumatera Barat",
+            "provinsi": "Sumatera Barat"
+        },
+        {
+            "kode": "BM",
+            "wilayah": "Riau",
+            "provinsi": "Riau"
+        },
+        {
+            "kode": "BP",
+            "wilayah": "Kepulauan Riau",
+            "provinsi": "Kepulauan Riau"
+        },
+        {
+            "kode": "BH",
+            "wilayah": "Jambi",
+            "provinsi": "Jambi"
+        },
+        {
+            "kode": "BD",
+            "wilayah": "Bengkulu",
+            "provinsi": "Bengkulu"
+        },
+        {
+            "kode": "BE",
+            "wilayah": "Lampung",
+            "provinsi": "Lampung"
+        },
+        {
+            "kode": "BG",
+            "wilayah": "Sumatera Selatan",
+            "provinsi": "Sumatera Selatan"
+        },
+        {
+            "kode": "BN",
+            "wilayah": "Bangka Belitung",
+            "provinsi": "Bangka Belitung"
+        },
+        {
+            "kode": "DA",
+            "wilayah": "Kalimantan Selatan",
+            "provinsi": "Kalimantan Selatan"
+        },
+        {
+            "kode": "KB",
+            "wilayah": "Kalimantan Barat",
+            "provinsi": "Kalimantan Barat"
+        },
+        {
+            "kode": "KH",
+            "wilayah": "Kalimantan Tengah",
+            "provinsi": "Kalimantan Tengah"
+        },
+        {
+            "kode": "KT",
+            "wilayah": "Kalimantan Timur",
+            "provinsi": "Kalimantan Timur"
+        },
+        {
+            "kode": "KU",
+            "wilayah": "Kalimantan Utara",
+            "provinsi": "Kalimantan Utara"
+        },
+        {
+            "kode": "DB",
+            "wilayah": "Sulawesi Utara (Manado, Bitung, Tomohon)",
+            "provinsi": "Sulawesi Utara"
+        },
+        {
+            "kode": "DL",
+            "wilayah": "Sulawesi Utara (Sangihe, Talaud)",
+            "provinsi": "Sulawesi Utara"
+        },
+        {
+            "kode": "DM",
+            "wilayah": "Gorontalo",
+            "provinsi": "Gorontalo"
+        },
+        {
+            "kode": "DN",
+            "wilayah": "Sulawesi Tengah",
+            "provinsi": "Sulawesi Tengah"
+        },
+        {
+            "kode": "DT",
+            "wilayah": "Sulawesi Tenggara",
+            "provinsi": "Sulawesi Tenggara"
+        },
+        {
+            "kode": "DD",
+            "wilayah": "Sulawesi Selatan (Makassar, Gowa, Maros)",
+            "provinsi": "Sulawesi Selatan"
+        },
+        {
+            "kode": "DC",
+            "wilayah": "Sulawesi Barat",
+            "provinsi": "Sulawesi Barat"
+        },
+        {
+            "kode": "DR",
+            "wilayah": "Lombok",
+            "provinsi": "Nusa Tenggara Barat"
+        },
+        {
+            "kode": "EA",
+            "wilayah": "Sumbawa",
+            "provinsi": "Nusa Tenggara Barat"
+        },
+        {
+            "kode": "DH",
+            "wilayah": "Timor",
+            "provinsi": "Nusa Tenggara Timur"
+        },
+        {
+            "kode": "EB",
+            "wilayah": "Flores",
+            "provinsi": "Nusa Tenggara Timur"
+        },
+        {
+            "kode": "ED",
+            "wilayah": "Sumba",
+            "provinsi": "Nusa Tenggara Timur"
+        },
+        {
+            "kode": "DE",
+            "wilayah": "Maluku",
+            "provinsi": "Maluku"
+        },
+        {
+            "kode": "DG",
+            "wilayah": "Maluku Utara",
+            "provinsi": "Maluku Utara"
+        },
+        {
+            "kode": "PA",
+            "wilayah": "Papua",
+            "provinsi": "Papua"
+        },
+        {
+            "kode": "PB",
+            "wilayah": "Papua Barat",
+            "provinsi": "Papua Barat"
+        }
+    ],
+    "sub_codes": {
+        "B": {
+            "P": "Jakarta Pusat",
+            "B": "Jakarta Barat",
+            "S": "Jakarta Selatan",
+            "T": "Jakarta Timur",
+            "U": "Jakarta Utara",
+            "C": "Kota Tangerang",
+            "V": "Kota Tangerang",
+            "W": "Tangerang Selatan",
+            "G": "Kab. Tangerang (Tigaraksa)",
+            "N": "Kab. Tangerang (BSD)",
+            "E": "Depok",
+            "Z": "Depok",
+            "K": "Kota Bekasi",
+            "F": "Kab. Bekasi"
+        },
+        "A": {
+            "A": "Serang",
+            "B": "Serang",
+            "C": "Serang",
+            "D": "Serang",
+            "E": "Cilegon",
+            "F": "Cilegon",
+            "G": "Pandeglang",
+            "H": "Pandeglang",
+            "J": "Pandeglang",
+            "K": "Lebak",
+            "L": "Lebak",
+            "M": "Lebak"
+        }
+    },
+    "samsat_urls": [
+        {
+            "provinsi": "Banten",
+            "url": "https://infopkb.bantenprov.go.id/"
+        },
+        {
+            "provinsi": "DKI Jakarta",
+            "url": "https://samsat-pkb2.jakarta.go.id/"
+        },
+        {
+            "provinsi": "Jawa Barat",
+            "url": "https://bapenda.jabarprov.go.id/infopkb/"
+        },
+        {
+            "provinsi": "Jawa Tengah",
+            "url": "https://bapenda.jatengprov.go.id/info-pajak-kendaraan/"
+        },
+        {
+            "provinsi": "Jawa Timur",
+            "url": "https://bapenda.jatimprov.go.id/info/pkb"
+        },
+        {
+            "provinsi": "DI Yogyakarta",
+            "url": "https://samsatsleman.jogjaprov.go.id/cek/pajak"
+        },
+        {
+            "provinsi": "Bali",
+            "url": "https://portal.bpdbali.id/infosamsat/"
+        },
+        {
+            "provinsi": "Lampung",
+            "url": "http://pkb.bapenda.lampungprov.go.id/pkb/"
+        },
+        {
+            "provinsi": "Sumatera Selatan",
+            "url": "https://bapenda.sumselprov.go.id/cek_pajak/t_ulang"
+        },
+        {
+            "provinsi": "Lainnya",
+            "url": "https://samsat.info/cek-pajak-kendaraan-bermotor-online"
+        }
+    ]
+}

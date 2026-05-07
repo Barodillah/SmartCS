@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Clock, Car, Phone, User, Settings, AlertCircle, Loader2, Copy, Check, Hash, History, ShieldAlert, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Calendar, Clock, Car, Phone, User, Settings, AlertCircle, Loader2, Copy, Check, Hash, History, ShieldAlert, ChevronDown, ChevronRight, Bot, ExternalLink, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomDatePicker from '../../ui/CustomDatePicker';
 
@@ -18,7 +18,7 @@ const LEGACY_SERVICE_TYPES = [
     "KELUHAN", "SPAREPART", "PERBAIKAN", "SPOORING BALANCING", "GENERAL CHECK UP", "RUTIN"
 ];
 
-const CustomSelect = ({ value, onChange, options, placeholder, allowCustom = false, customPlaceholder = "Ketik manual..." }) => {
+export const CustomSelect = ({ value, onChange, options, placeholder, allowCustom = false, customPlaceholder = "Ketik manual..." }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isCustom, setIsCustom] = useState(false);
     const dropdownRef = useRef(null);
@@ -171,6 +171,13 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const [isLogExpanded, setIsLogExpanded] = useState(false);
 
+    // WhatsApp / AI Chat Modal State
+    const [showWaModal, setShowWaModal] = useState(false);
+    const [waModalStep, setWaModalStep] = useState(1); // 1: Context Input, 2: Generated Result
+    const [waContextInput, setWaContextInput] = useState('');
+    const [waGenerating, setWaGenerating] = useState(false);
+    const [waGeneratedText, setWaGeneratedText] = useState('');
+
     useEffect(() => {
         if (isOpen && data?.id) {
             fetchLogs();
@@ -194,6 +201,95 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
         } finally {
             setIsLoadingLogs(false);
         }
+    };
+
+    const formatBookingWhatsApp = (booking) => {
+        let fDate = booking.tanggal;
+        if (booking.tanggal) {
+            const dd = new Date(booking.tanggal);
+            if (!isNaN(dd.getTime())) {
+                fDate = dd.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            }
+        }
+        let text = `*DATA BOOKING SERVICE*\n\n`;
+        text += `Nama: ${booking.nama || '-'}\n`;
+        text += `No HP: ${booking.telp || '-'}\n`;
+        text += `Kendaraan: ${booking.kendaraan || '-'}\n`;
+        text += `Nopol: ${booking.nopol || '-'}\n`;
+        text += `Tanggal: ${fDate || '-'}\n`;
+        text += `Jam: ${booking.jam || '-'}\n`;
+        text += `Jenis Service: ${booking.jenis || '-'}\n`;
+        text += `Keluhan: ${booking.keluhan || '-'}\n`;
+        return text;
+    };
+
+    const generateAiResponse = async () => {
+        if (!data) return;
+        setWaGenerating(true);
+        setWaModalStep(2);
+        setWaGeneratedText('');
+
+        try {
+            const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+            const bookingContext = formatBookingWhatsApp(data);
+
+            const systemPrompt = `Kamu adalah Customer Service Assistant untuk dealer mobil Mitsubishi Dwindo.
+Tugasmu adalah membuat draft pesan WhatsApp (text siap kirim) kepada konsumen berdasarkan instruksi dari CS di bawah ini.
+Gunakan bahasa Indonesia yang sopan, formal, to the point, tapi tetap friendly.
+Jangan gunakan markdown bintang (**) berlebihan. Akhiri dengan "Salam, Tim CS Mitsubishi Dwindo".
+Gunakan data booking di bawah sebagai referensi jika relevan dengan pesan yang diminta.
+
+Instruksi / Pesan yang ingin disampaikan CS:
+${waContextInput || 'Sampaikan informasi umum terkait booking.'}
+
+Data Booking Konsumen (sebagai referensi):
+${bookingContext}
+
+Buatkan draft pesannya sekarang:`;
+
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'google/gemini-2.0-flash-lite-001',
+                    messages: [
+                        { role: 'user', content: systemPrompt }
+                    ],
+                    temperature: 0.7
+                })
+            });
+
+            const result = await res.json();
+            if (result.choices && result.choices[0] && result.choices[0].message) {
+                setWaGeneratedText(result.choices[0].message.content);
+            } else {
+                setWaGeneratedText('Maaf, AI gagal merespon.');
+            }
+        } catch (err) {
+            console.error('AI Error:', err);
+            setWaGeneratedText('Terjadi kesalahan koneksi AI.');
+        } finally {
+            setWaGenerating(false);
+        }
+    };
+
+    const directWhatsApp = (phone, customText = null) => {
+        if (!phone) return;
+        let cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
+        const defaultText = `Halo Bpk/Ibu ${data?.nama || ''}, kami dari Mitsubishi Dwindo Bintaro...`;
+        const text = encodeURIComponent(customText || defaultText);
+        window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
+    };
+
+    const openChatFlow = () => {
+        setWaContextInput('');
+        setWaGeneratedText('');
+        setWaModalStep(1);
+        setShowWaModal(true);
     };
 
     if (!isOpen || !data) return null;
@@ -330,16 +426,139 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
                     </div>
 
                     {!isPkl && (
-                        <div className="p-4 border-t border-[#E5E5E5] flex justify-end gap-2 bg-gray-50">
-                            <button onClick={() => onDelete(data.id)} className="px-4 py-2 text-sm font-bold text-[#E60012] hover:bg-red-50 rounded transition-colors border border-red-200">
-                                Hapus
+                        <div className="p-4 border-t border-[#E5E5E5] flex justify-between gap-2 bg-gray-50">
+                            <button
+                                onClick={openChatFlow}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-green-50 text-green-700 border border-green-200 rounded hover:bg-green-100 transition-colors"
+                            >
+                                <Phone size={14} />
+                                <span>WhatsApp</span>
+                                <ExternalLink size={10} className="opacity-50" />
                             </button>
-                            <button onClick={() => onEdit(data)} className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors">
-                                Ubah
-                            </button>
+                            <div className="flex gap-2">
+                                <button onClick={() => onDelete(data.id)} className="px-4 py-2 text-sm font-bold text-[#E60012] hover:bg-red-50 rounded transition-colors border border-red-200">
+                                    Hapus
+                                </button>
+                                <button onClick={() => onEdit(data)} className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors">
+                                    Ubah
+                                </button>
+                            </div>
                         </div>
                     )}
                 </motion.div>
+
+                {/* WhatsApp AI Chat Modal */}
+                <AnimatePresence>
+                    {showWaModal && (
+                        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowWaModal(false)}>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                <div className="bg-[#111] p-4 flex justify-between items-center text-white shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <Bot size={18} className="text-[#25D366]" />
+                                        <h3 className="font-display font-bold uppercase tracking-wider text-sm">
+                                            {waModalStep === 1 ? 'Konteks Pesan WhatsApp' : 'Draft Pesan WhatsApp'}
+                                        </h3>
+                                    </div>
+                                    <button onClick={() => setShowWaModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="p-4 flex-1 overflow-y-auto">
+                                    {waModalStep === 1 ? (
+                                        <>
+                                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-4">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Data Booking</p>
+                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                    <div><span className="text-gray-500">Nama:</span> <span className="font-bold">{data.nama}</span></div>
+                                                    <div><span className="text-gray-500">Telp:</span> <span className="font-bold">{data.telp}</span></div>
+                                                    <div><span className="text-gray-500">Kendaraan:</span> <span className="font-bold">{data.kendaraan}</span></div>
+                                                    <div><span className="text-gray-500">Nopol:</span> <span className="font-bold font-mono">{data.nopol}</span></div>
+                                                    <div><span className="text-gray-500">Tanggal:</span> <span className="font-bold">{formattedDate}</span></div>
+                                                    <div><span className="text-gray-500">Jam:</span> <span className="font-bold text-[#E60012]">{data.jam}</span></div>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-gray-600 mb-3">Tulis pesan atau instruksi yang ingin disampaikan ke konsumen. AI akan menyusunnya menjadi pesan WhatsApp yang sopan dan profesional.</p>
+                                            <textarea
+                                                value={waContextInput}
+                                                onChange={(e) => setWaContextInput(e.target.value)}
+                                                className="w-full h-28 p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 resize-none"
+                                                placeholder="Contoh: Tolong info estimasi biaya service berkala 20rb km, atau tanya kapan bisa datang..."
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-xs text-gray-500 mb-2">Draft pesan ini dibuat berdasarkan data booking. Silakan edit jika diperlukan sebelum mengirim.</p>
+
+                                            {waGenerating ? (
+                                                <div className="flex flex-col items-center justify-center py-10 text-gray-400 space-y-4">
+                                                    <Loader2 size={32} className="animate-spin text-green-500" />
+                                                    <p className="text-sm">Menyusun pesan...</p>
+                                                </div>
+                                            ) : (
+                                                <textarea
+                                                    value={waGeneratedText}
+                                                    onChange={(e) => setWaGeneratedText(e.target.value)}
+                                                    className="w-full h-48 p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 resize-none"
+                                                    placeholder="Teks pesan akan muncul di sini..."
+                                                />
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="p-4 bg-gray-50 border-t border-gray-100 flex flex-wrap justify-end gap-3 shrink-0">
+                                    {waModalStep === 1 ? (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    setShowWaModal(false);
+                                                    directWhatsApp(data.telp);
+                                                }}
+                                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded transition-colors border border-gray-300"
+                                            >
+                                                Langsung Buka WA
+                                            </button>
+                                            <button
+                                                onClick={generateAiResponse}
+                                                className="px-4 py-2 text-sm font-medium bg-green-600 text-white hover:bg-green-700 rounded transition-colors flex items-center gap-2"
+                                            >
+                                                <Bot size={16} />
+                                                Generate via AI
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => setWaModalStep(1)}
+                                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                                            >
+                                                Kembali
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowWaModal(false);
+                                                    directWhatsApp(data.telp, waGeneratedText);
+                                                }}
+                                                disabled={waGenerating || !waGeneratedText}
+                                                className="px-4 py-2 text-sm font-medium bg-[#25D366] text-white hover:bg-[#128C7E] rounded transition-colors flex items-center gap-2 disabled:opacity-50"
+                                            >
+                                                <Send size={16} />
+                                                Kirim ke WhatsApp
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
         </AnimatePresence>
     );

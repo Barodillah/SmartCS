@@ -122,6 +122,8 @@ const PanelChat = () => {
                 const data = await res.json();
                 if (data.status && data.data) {
                     setSessions(data.data);
+                    // Update localStorage so the sidebar badge disappears
+                    localStorage.setItem('last_chat_history_count', data.data.length.toString());
                 }
             } catch (err) {
                 console.error('Failed to fetch admin sessions:', err);
