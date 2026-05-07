@@ -69,9 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $vehicle = strtoupper($raw_kendaraan);
             }
 
-            // Update STNK in surveyupdate if empty
-            if (empty($surveyData['stnk'])) {
-                mysqli_query($conn, "UPDATE surveyupdate SET stnk = '$exnopol' WHERE rangka = '$exrangka'");
+            // Update STNK in surveyupdate (always update even if exists)
+            mysqli_query($conn, "UPDATE surveyupdate SET stnk = '$exnopol' WHERE rangka = '$exrangka'");
+            if (empty($surveyData['stnk']) || $surveyData['stnk'] !== $exnopol) {
                 $results['updated_survey']++;
             }
 
