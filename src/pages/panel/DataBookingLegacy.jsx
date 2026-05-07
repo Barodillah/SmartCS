@@ -239,6 +239,21 @@ const DataBookingLegacy = () => {
                 setIsFormModalOpen(false);
                 setFormModalData(null);
                 
+                try {
+                    if (!formData.id && formData.nopol) {
+                        await fetch('https://csdwindo.com/api/potensi_service.php', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                nopol: formData.nopol.replace(/\s/g, '').toUpperCase(),
+                                status: 'BOOKING'
+                            })
+                        });
+                    }
+                } catch (syncErr) {
+                    console.error("Failed to sync with potensi_service:", syncErr);
+                }
+
                 if (formData.tanggal !== currentDate) {
                     setCurrentDate(formData.tanggal);
                 } else {

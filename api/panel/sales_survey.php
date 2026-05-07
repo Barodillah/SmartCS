@@ -147,7 +147,7 @@ if ($method === 'GET') {
 
         if (!empty($search)) {
             $search = mysqli_real_escape_string($conn, $search);
-            $where = "WHERE (nama LIKE '%$search%' OR rangka LIKE '%$search%' OR spv LIKE '%$search%' OR kendaraan LIKE '%$search%' OR sales LIKE '%$search%')";
+            $where = "WHERE (nama LIKE '%$search%' OR rangka LIKE '%$search%' OR spv LIKE '%$search%' OR kendaraan LIKE '%$search%' OR sales LIKE '%$search%' OR stnk LIKE '%$search%')";
         } elseif ($filter === 'belum') {
             $where = "WHERE status IN ('PERLU FOLLOW UP', 'TIDAK DIANGKAT', 'DITOLAK/REJECT', 'PERJANJIAN')";
             if ($days > 0) {

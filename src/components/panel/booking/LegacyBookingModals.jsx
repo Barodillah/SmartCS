@@ -171,22 +171,55 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     const [isLogExpanded, setIsLogExpanded] = useState(false);
 
-    // WhatsApp / AI Chat Modal State
     const [showWaModal, setShowWaModal] = useState(false);
     const [waModalStep, setWaModalStep] = useState(1); // 1: Context Input, 2: Generated Result
     const [waContextInput, setWaContextInput] = useState('');
     const [waGenerating, setWaGenerating] = useState(false);
     const [waGeneratedText, setWaGeneratedText] = useState('');
 
+    const [stnkData, setStnkData] = useState(null);
+    const [isFetchingStnk, setIsFetchingStnk] = useState(false);
+
     useEffect(() => {
         if (isOpen && data?.id) {
             fetchLogs();
+            if (data?.nopol) {
+                fetchStnk(data.nopol);
+            }
         } else {
             setLogs([]);
+            setStnkData(null);
         }
         // Always collapse logs when modal is closed or data changes
         setIsLogExpanded(false);
-    }, [isOpen, data?.id]);
+    }, [isOpen, data?.id, data?.nopol]);
+
+    const fetchStnk = async (nopol) => {
+        setIsFetchingStnk(true);
+        try {
+            const cleanNopol = nopol.replace(/\s/g, '').toUpperCase();
+            const res = await fetch(`https://csdwindo.com/api/panel/sales_survey.php?action=list&search=${encodeURIComponent(cleanNopol)}`);
+            const json = await res.json();
+            if (json.status && json.data && json.data.length > 0) {
+                const match = json.data.find(item => 
+                    item.stnk?.replace(/\s/g, '').toUpperCase() === cleanNopol ||
+                    item.nopol?.replace(/\s/g, '').toUpperCase() === cleanNopol
+                );
+                if (match && match.rangka) {
+                    setStnkData(match.rangka);
+                } else {
+                    setStnkData(null);
+                }
+            } else {
+                setStnkData(null);
+            }
+        } catch (err) {
+            console.error('Failed to fetch STNK:', err);
+            setStnkData(null);
+        } finally {
+            setIsFetchingStnk(false);
+        }
+    };
 
     const fetchLogs = async () => {
         setIsLoadingLogs(true);
@@ -331,9 +364,21 @@ Buatkan draft pesannya sekarang:`;
                             <DetailItem icon={Calendar} label="Tanggal" value={data.tanggal} displayValue={formattedDate} fieldName="tanggal" />
                             <DetailItem icon={Clock} label="Jam" value={data.jam} fieldName="jam" />
 
-                            <div className="col-span-2">
-                                <DetailItem icon={Settings} label="Jenis Service" value={data.jenis} fieldName="jenis" />
-                            </div>
+                            {stnkData ? (
+                                <>
+                                    <div className="col-span-1">
+                                        <DetailItem icon={Settings} label="Jenis Service" value={data.jenis} fieldName="jenis" />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <DetailItem icon={Hash} label="No. Rangka" value={stnkData} fieldName="rangka" />
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="col-span-2">
+                                    <DetailItem icon={Settings} label="Jenis Service" value={data.jenis} fieldName="jenis" />
+                                </div>
+                            )}
+
                             <div className="col-span-2">
                                 <DetailItem icon={AlertCircle} label="Keluhan" value={data.keluhan} fieldName="keluhan" />
                             </div>
@@ -564,7 +609,7 @@ Buatkan draft pesannya sekarang:`;
     );
 };
 
-export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoading }) => {
+export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoading, isNewBooking = false }) => {
     const [formData, setFormData] = useState({
         tanggal: '',
         jam: '',
@@ -777,7 +822,7 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
     };
 
     const handleConfirmSave = () => {
-        onSave({ ...formData, ubahStatus: initialData ? ubahStatus : false });
+        onSave({ ...formData, ubahStatus: (initialData && !isNewBooking) ? ubahStatus : false });
         setShowConfirm(false);
     };
 
@@ -795,7 +840,7 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                 >
                     <div className="p-4 border-b border-[#E5E5E5] flex items-center justify-between bg-gray-50 shrink-0">
                         <h3 className="text-lg font-bold text-[#111111] font-display">
-                            {initialData ? 'Ubah Booking' : 'Tambah Booking'}
+                            {initialData && !isNewBooking ? 'Ubah Booking' : 'Tambah Booking'}
                         </h3>
                         <button onClick={onClose} className="text-gray-400 hover:text-[#E60012] transition-colors">
                             <X size={20} />
@@ -966,7 +1011,7 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                     </div>
 
                     <div className="p-4 border-t border-[#E5E5E5] flex items-center justify-between bg-gray-50 shrink-0">
-                        {initialData ? (
+                        {(initialData && !isNewBooking) ? (
                             <label className="flex items-center gap-2 cursor-pointer select-none group">
                                 <input
                                     type="checkbox"

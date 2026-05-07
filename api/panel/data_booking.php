@@ -29,6 +29,22 @@ if ($method === 'GET') {
         exit;
     }
 
+    if (isset($_GET['status'])) {
+        $status = mysqli_real_escape_string($conn, $_GET['status']);
+        $query = "SELECT * FROM booking WHERE status = '$status' ORDER BY time DESC LIMIT 50";
+        $result = mysqli_query($conn, $query);
+        
+        $data = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+        
+        echo json_encode(['status' => true, 'data' => $data]);
+        exit;
+    }
+
     if (isset($_GET['search'])) {
         $search = mysqli_real_escape_string($conn, $_GET['search']);
         $query = "SELECT * FROM booking WHERE nama LIKE '%$search%' OR nopol LIKE '%$search%' OR telp LIKE '%$search%' OR keluhan LIKE '%$search%' ORDER BY time DESC LIMIT 50";
@@ -90,7 +106,8 @@ if ($method === 'GET') {
         mysqli_query($conn, "UPDATE konsumen SET kendaraan = '$kendaraan', nama = '$nama', telp = '$telp' WHERE nopol = '$nopol'");
     }
     
-    $status = 'REQUEST';
+    $forceStatus = mysqli_real_escape_string($conn, $body['forceStatus'] ?? '');
+    $status = !empty($forceStatus) ? $forceStatus : 'REQUEST';
     $antrian = 0; // Or dummy logic
     
     $query = "INSERT INTO booking (user, tanggal, jam, kendaraan, nopol, nama, telp, jenis, keluhan, status, antrian) 

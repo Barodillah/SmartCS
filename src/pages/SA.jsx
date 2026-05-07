@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, Check, ArrowRight, User, Calendar, Phone, CarFront, Wrench, Search as SearchIcon, Bot, Send, Loader2 } from 'lucide-react';
+import { Search, X, Check, ArrowRight, User, Calendar, Phone, CarFront, Wrench, Search as SearchIcon, Bot, Send, Loader2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { ANGULAR_CLIP } from '../utils/constants';
 import AngularButton from '../components/ui/AngularButton';
 import { CustomSelect } from '../components/panel/booking/LegacyBookingModals';
@@ -14,21 +15,19 @@ const SA_OPTIONS = [
   { value: 'Ilham', label: 'Ilham' },
 ];
 
-// Mock Data
-const MOCK_POTENSI = [
-  { id: 1, nopol: 'BE 1234 XX', nama: 'Budi Santoso', telp: '081234567890', kendaraan: 'Xpander Cross', serviceTerakhir: '2023-11-05', potensiNextService: 'Service Berkala 20.000 KM', lastSA: 'Andi', statusFollowUp: 'BELUM' },
-  { id: 2, nopol: 'B 9999 ZZ', nama: 'Siti Aminah', telp: '089876543210', kendaraan: 'Pajero Sport', serviceTerakhir: '2023-10-15', potensiNextService: 'Ganti Oli Mesin', lastSA: 'Budi', statusFollowUp: 'SUDAH' },
-  { id: 3, nopol: 'BE 4321 AA', nama: 'Agus Pratama', telp: '085612345678', kendaraan: 'Triton', serviceTerakhir: '2023-12-01', potensiNextService: 'Cek Rem & Kaki-kaki', lastSA: 'Citra', statusFollowUp: 'BELUM' },
-  { id: 4, nopol: 'BE 5678 BB', nama: 'Iwan Fals', telp: '087712345678', kendaraan: 'Xpander Ultimate', serviceTerakhir: '2023-11-20', potensiNextService: 'Ganti Aki', lastSA: 'Doni', statusFollowUp: 'SUCCESS' },
-];
 
 
 
 const SA = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('potensi'); // 'potensi' | 'konfirmasi'
 
   // State for Potensi
   const [selectedPotensi, setSelectedPotensi] = useState(null);
+  const [potensiData, setPotensiData] = useState([]);
+  const [isLoadingPotensi, setIsLoadingPotensi] = useState(false);
+  const [invalidNoteModal, setInvalidNoteModal] = useState(false);
+  const [invalidNote, setInvalidNote] = useState('');
 
   // State for Konfirmasi Backend
   const [konfirmasiSearchQuery, setKonfirmasiSearchQuery] = useState('');
@@ -45,11 +44,21 @@ const SA = () => {
   const [waGenerating, setWaGenerating] = useState(false);
   const [waGeneratedText, setWaGeneratedText] = useState('');
 
+  // Komplen State
+  const [showKomplenConfirm, setShowKomplenConfirm] = useState(false);
+  const [isKomplenLoading, setIsKomplenLoading] = useState(false);
+
   // SA Setup State
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [saName, setSaName] = useState('');
   const [saPin, setSaPin] = useState('');
   const [saSetupData, setSaSetupData] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
 
   useEffect(() => {
     const checkSetup = () => {
@@ -82,33 +91,69 @@ const SA = () => {
     setSetupModalOpen(false);
   };
 
+  // Fetch potensi service data for this SA
   useEffect(() => {
-    const fetchBookings = async () => {
-      // If length is 1 or 2, don't trigger global API search to avoid spam, we'll just local filter today's data.
-      // But we still need to load today's data if it's 0.
-      if (konfirmasiSearchQuery.length > 0 && konfirmasiSearchQuery.length < 3) {
-        return;
-      }
-
-      setIsLoadingKonfirmasi(true);
+    if (!saSetupData?.name) return;
+    const fetchPotensi = async () => {
+      setIsLoadingPotensi(true);
       try {
-        let url = `https://csdwindo.com/api/panel/data_booking.php?date=${currentDate}`;
-        if (konfirmasiSearchQuery.length >= 3) {
-          url = `https://csdwindo.com/api/panel/data_booking.php?search=${encodeURIComponent(konfirmasiSearchQuery)}`;
+        const res = await fetch(`https://csdwindo.com/api/potensi_service.php?action=list&sa=${encodeURIComponent(saSetupData.name)}`);
+        const json = await res.json();
+        if (json.status) {
+          // Map DB fields to component fields
+          setPotensiData(json.data.map(d => ({
+            id: d.id,
+            nopol: d.nopol,
+            nama: d.nama,
+            telp: d.telp,
+            kendaraan: d.kendaraan,
+            rangka: d.rangka,
+            serviceTerakhir: d.service_terakhir,
+            potensiNextService: d.potensi_service,
+            expectedDate: d.expected_date,
+            lastSA: d.sa,
+            statusFollowUp: d.status,
+            source: d.source,
+            note: d.note,
+            time: d.time,
+          })));
         }
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.status) {
-          setBookings(data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
+      } catch (err) {
+        console.error('Error fetching potensi data:', err);
       } finally {
-        setIsLoadingKonfirmasi(false);
+        setIsLoadingPotensi(false);
       }
     };
+    fetchPotensi();
+  }, [saSetupData?.name]);
 
+  const fetchBookings = async () => {
+    // If length is 1 or 2, don't trigger global API search to avoid spam, we'll just local filter today's data.
+    // But we still need to load today's data if it's 0.
+    if (konfirmasiSearchQuery.length > 0 && konfirmasiSearchQuery.length < 3) {
+      return;
+    }
+
+    setIsLoadingKonfirmasi(true);
+    try {
+      let url = `https://csdwindo.com/api/panel/data_booking.php?date=${currentDate}`;
+      if (konfirmasiSearchQuery.length >= 3) {
+        url = `https://csdwindo.com/api/panel/data_booking.php?search=${encodeURIComponent(konfirmasiSearchQuery)}`;
+      }
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.status) {
+        setBookings(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setIsLoadingKonfirmasi(false);
+    }
+  };
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchBookings();
     }, 500);
@@ -119,12 +164,12 @@ const SA = () => {
   // Stats for Potensi
   const potensiStats = useMemo(() => {
     return {
-      total: MOCK_POTENSI.length,
-      belum: MOCK_POTENSI.filter(p => p.statusFollowUp === 'BELUM').length,
-      sudah: MOCK_POTENSI.filter(p => p.statusFollowUp === 'SUDAH').length,
-      success: MOCK_POTENSI.filter(p => p.statusFollowUp === 'SUCCESS').length,
+      total: potensiData.length,
+      belum: potensiData.filter(p => p.statusFollowUp === 'NEW').length,
+      sudah: potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').length,
+      success: potensiData.filter(p => p.statusFollowUp === 'BOOKING').length,
     };
-  }, []);
+  }, [potensiData]);
 
   // Stats for Konfirmasi
   const konfirmasiStats = useMemo(() => {
@@ -241,6 +286,38 @@ Buatkan draft pesannya sekarang:`;
     setShowWaModal(true);
   };
 
+  const handleIndikasiKomplen = async () => {
+    if (!selectedKonfirmasi) return;
+    setIsKomplenLoading(true);
+    try {
+      const payload = {
+        ...selectedKonfirmasi,
+        user: saSetupData?.name || 'SA',
+        forceStatus: 'INDIKASI_KOMPLEN'
+      };
+
+      const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.status) {
+        showToast('Status berhasil diubah menjadi Indikasi Komplen');
+        setShowKomplenConfirm(false);
+        setSelectedKonfirmasi(null);
+        fetchBookings();
+      } else {
+        showToast(data.message || 'Gagal mengubah status', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan jaringan', 'error');
+    } finally {
+      setIsKomplenLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-[#111111] font-sans">
       {/* Header */}
@@ -306,14 +383,14 @@ Buatkan draft pesannya sekarang:`;
 
             <div className="space-y-6">
 
-              {/* BELUM FOLLOW UP */}
-              {MOCK_POTENSI.filter(p => p.statusFollowUp === 'BELUM').length > 0 && (
+              {/* NEW - Belum Follow Up */}
+              {potensiData.filter(p => p.statusFollowUp === 'NEW').length > 0 && (
                 <div>
                   <h2 className="text-[11px] font-display font-bold text-[#E60012] mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
                     <span className="w-2 h-2 bg-[#E60012]" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: BELUM FOLLOW UP
                   </h2>
                   <div className="space-y-3">
-                    {MOCK_POTENSI.filter(p => p.statusFollowUp === 'BELUM').map((item) => (
+                    {potensiData.filter(p => p.statusFollowUp === 'NEW').map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedPotensi(item)}
@@ -339,14 +416,14 @@ Buatkan draft pesannya sekarang:`;
                 </div>
               )}
 
-              {/* SUDAH FOLLOW UP */}
-              {MOCK_POTENSI.filter(p => p.statusFollowUp === 'SUDAH').length > 0 && (
+              {/* FOLLOW_UP - Sudah Follow Up */}
+              {potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').length > 0 && (
                 <div>
                   <h2 className="text-[11px] font-display font-bold text-blue-600 mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-600" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: SUDAH FOLLOW UP
                   </h2>
                   <div className="space-y-3">
-                    {MOCK_POTENSI.filter(p => p.statusFollowUp === 'SUDAH').map((item) => (
+                    {potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedPotensi(item)}
@@ -372,14 +449,14 @@ Buatkan draft pesannya sekarang:`;
                 </div>
               )}
 
-              {/* SUCCESS BOOKING */}
-              {MOCK_POTENSI.filter(p => p.statusFollowUp === 'SUCCESS').length > 0 && (
+              {/* BOOKING - Success */}
+              {potensiData.filter(p => p.statusFollowUp === 'BOOKING').length > 0 && (
                 <div>
                   <h2 className="text-[11px] font-display font-bold text-green-600 mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-600" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: SUCCESS BOOKING
                   </h2>
                   <div className="space-y-3">
-                    {MOCK_POTENSI.filter(p => p.statusFollowUp === 'SUCCESS').map((item) => (
+                    {potensiData.filter(p => p.statusFollowUp === 'BOOKING').map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedPotensi(item)}
@@ -405,7 +482,11 @@ Buatkan draft pesannya sekarang:`;
                 </div>
               )}
 
-              {MOCK_POTENSI.length === 0 && (
+              {isLoadingPotensi ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#E60012]" />
+                </div>
+              ) : potensiData.length === 0 && (
                 <div className="text-center py-10 font-display font-bold tracking-widest text-gray-400 uppercase text-sm">Tidak ada data potensi.</div>
               )}
             </div>
@@ -666,10 +747,74 @@ Buatkan draft pesannya sekarang:`;
                 <span className="col-span-2 font-bold text-[#111111] bg-white px-2 py-1 border-l-2 border-[#E60012]">{selectedPotensi.potensiNextService}</span>
               </div>
             </div>
-            <div className="p-5 bg-white border-t flex gap-3">
-              <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-2 !bg-[#25D366] hover:!bg-[#1ebd5a]" onClick={() => alert('Fitur WhatsApp sedang dalam pengembangan')}>
-                HUBUNGI VIA WHATSAPP
-              </AngularButton>
+            <div className={`p-5 bg-white border-t ${selectedPotensi.statusFollowUp === 'FOLLOW_UP' ? 'grid grid-cols-3 gap-3' : 'flex gap-3'}`}>
+              {selectedPotensi.statusFollowUp === 'FOLLOW_UP' ? (
+                <>
+                  <AngularButton variant="danger" className="w-full !flex !items-center !justify-center text-xs" onClick={() => setInvalidNoteModal(true)}>
+                    INVALID
+                  </AngularButton>
+                  <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-1 !bg-[#25D366] hover:!bg-[#1ebd5a] text-[10px]" onClick={async () => {
+                    const p = selectedPotensi;
+                    const saName = saSetupData?.name || 'SA';
+                    let phone = (p.telp || '').replace(/\D/g, '');
+                    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                    const message = `Halo Bapak/Ibu ${p.nama},\n\nPerkenalkan saya ${saName}, Service Advisor dari Mitsubishi Dwindo.\n\nKami ingin menginformasikan bahwa kendaraan *${p.kendaraan}* (${p.nopol}) Anda sudah waktunya untuk melakukan *${p.potensiNextService}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nOh ya, perkenalkan juga DINA layanan 24/7 dari kami https://csdwindo.com, Bapak/Ibu bisa booking service dan lainnya melalui link tersebut.\n\nTerima kasih.\n\nSalam,\n${saName} - Service Advisor\nMitsubishi Dwindo`;
+                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                  }}>
+                    HUBUNGI ULANG
+                  </AngularButton>
+                  <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-1 text-xs" onClick={() => {
+                    const kmMatch = selectedPotensi.potensiNextService.match(/([\d\.]+)\s*KM/i);
+                    const parsedKm = kmMatch ? parseInt(kmMatch[1].replace(/\./g, '')).toString() : '';
+                    navigate('/booking', { 
+                      state: { 
+                        step: 2, 
+                        nopol: selectedPotensi.nopol,
+                        nopolFound: true,
+                        nama: selectedPotensi.nama,
+                        kendaraan: selectedPotensi.kendaraan,
+                        telp: selectedPotensi.telp,
+                        km: parsedKm
+                      } 
+                    });
+                  }}>
+                    BOOKING
+                  </AngularButton>
+                </>
+              ) : selectedPotensi.statusFollowUp === 'NEW' ? (
+                <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-2 !bg-[#25D366] hover:!bg-[#1ebd5a]" onClick={async () => {
+                  const p = selectedPotensi;
+                  const saName = saSetupData?.name || 'SA';
+                  let phone = (p.telp || '').replace(/\D/g, '');
+                  if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+  
+                  const message = `Halo Bapak/Ibu ${p.nama},\n\nPerkenalkan saya ${saName}, Service Advisor dari Mitsubishi Dwindo.\n\nKami ingin menginformasikan bahwa kendaraan *${p.kendaraan}* (${p.nopol}) Anda sudah waktunya untuk melakukan *${p.potensiNextService}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nOh ya, perkenalkan juga DINA layanan 24/7 dari kami https://csdwindo.com, Bapak/Ibu bisa booking service dan lainnya melalui link tersebut.\n\nTerima kasih.\n\nSalam,\n${saName} - Service Advisor\nMitsubishi Dwindo`;
+  
+                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  
+                  // Update status to FOLLOW_UP
+                  if (p.id) {
+                    try {
+                      await fetch('https://csdwindo.com/api/potensi_service.php', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: p.id, status: 'FOLLOW_UP' })
+                      });
+                      
+                      // Force refresh page so status change is immediately visible
+                      window.location.reload();
+                    } catch (err) {
+                      console.error('Failed to update status:', err);
+                    }
+                  }
+                }}>
+                  HUBUNGI VIA WHATSAPP
+                </AngularButton>
+              ) : (
+                <div className="w-full text-center py-2 font-display font-bold text-gray-400 uppercase tracking-widest text-sm">
+                  TIDAK ADA AKSI
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -730,10 +875,16 @@ Buatkan draft pesannya sekarang:`;
             </div>
 
             {/* Action Buttons for Booking */}
-            <div className="p-5 bg-white border-t flex gap-3">
+            <div className="p-5 bg-white border-t flex flex-col gap-3">
               <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-2 !bg-[#25D366] hover:!bg-[#1ebd5a]" onClick={openChatFlow}>
                 <Bot className="w-4 h-4" /> Whatsapp Konfirmasi
               </AngularButton>
+              <button 
+                onClick={() => setShowKomplenConfirm(true)}
+                className="w-full py-3 bg-white border border-red-200 text-red-600 font-bold uppercase tracking-widest text-[11px] rounded hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <AlertTriangle className="w-4 h-4" /> Indikasi Komplen
+              </button>
             </div>
           </div>
         </div>
@@ -902,6 +1053,112 @@ Buatkan draft pesannya sekarang:`;
         )}
       </AnimatePresence>
 
+      {/* Modal Invalid Note */}
+      {invalidNoteModal && selectedPotensi && (
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div style={{ clipPath: ANGULAR_CLIP }} className="bg-white w-full max-w-sm shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 border-t-4 border-[#E60012]">
+            <div className="bg-[#111111] px-5 py-4 flex justify-between items-center text-white">
+              <h3 className="font-display font-bold text-sm tracking-widest uppercase text-[#E60012]">Tandai Invalid</h3>
+              <button onClick={() => { setInvalidNoteModal(false); setInvalidNote(''); }} className="text-white/60 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-600">Berikan catatan mengapa data <span className="font-bold text-gray-900">{selectedPotensi.nopol}</span> ini dianggap tidak valid (misal: nomor salah, mobil sudah dijual, dll).</p>
+              <textarea
+                value={invalidNote}
+                onChange={(e) => setInvalidNote(e.target.value)}
+                placeholder="Tuliskan catatan di sini..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
+              ></textarea>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setInvalidNoteModal(false); setInvalidNote(''); }}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Batal
+                </button>
+                <AngularButton
+                  variant="danger"
+                  className="px-6 py-2 text-sm font-bold"
+                  disabled={!invalidNote.trim()}
+                  onClick={async () => {
+                    try {
+                      await fetch('https://csdwindo.com/api/potensi_service.php', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: selectedPotensi.id, status: 'INVALID', note: invalidNote })
+                      });
+                      window.location.reload();
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                >
+                  KIRIM
+                </AngularButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Indikasi Komplen Confirm Modal */}
+      <AnimatePresence>
+        {showKomplenConfirm && selectedKonfirmasi && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowKomplenConfirm(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-red-50">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2 font-display uppercase tracking-tight">Indikasi Komplen</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                  Yakin konsumen <strong className="text-gray-900">{selectedKonfirmasi.nama}</strong> berindikasi komplen? Status booking ini akan diubah.
+                </p>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowKomplenConfirm(false)}
+                    className="flex-1 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    onClick={handleIndikasiKomplen}
+                    disabled={isKomplenLoading}
+                    className="flex-1 py-3 text-[11px] font-bold uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-600/30"
+                  >
+                    {isKomplenLoading ? <Loader2 size={16} className="animate-spin" /> : 'Ya!'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className={`fixed bottom-6 left-1/2 z-[200] px-6 py-3 rounded-full shadow-xl font-bold text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}
+          >
+            {toast.type === 'error' ? <ShieldAlert size={16} /> : <Check size={16} />}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

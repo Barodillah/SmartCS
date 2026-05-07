@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare } from 'lucide-react';
 import CustomDatePicker from '../components/ui/CustomDatePicker';
 
@@ -118,7 +119,11 @@ const CustomSelect = ({ value, onChange, options, placeholder, allowCustom = fal
 };
 
 export default function BookingService() {
-    const [currentStep, setCurrentStep] = useState(1);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const initialState = location.state || {};
+    
+    const [currentStep, setCurrentStep] = useState(initialState.step || 1);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -148,17 +153,17 @@ export default function BookingService() {
     // Form Data
     const [formData, setFormData] = useState({
         // Step 1: Nopol & Vehicle Info
-        nopol: '',
-        nopolFound: false,
-        nama: '',
-        kendaraan: '',
-        maskedPhone: '',
-        fullPhone: '', // Expected phone if found
+        nopol: initialState.nopol || '',
+        nopolFound: initialState.nopolFound || false,
+        nama: initialState.nama || '',
+        kendaraan: initialState.kendaraan || '',
+        maskedPhone: initialState.telp ? `xxxx-xxxx-${initialState.telp.slice(-4)}` : '',
+        fullPhone: initialState.telp || '', // Expected phone if found
         riwayat: [],
-        manualInput: false, // true if nopol not found, requiring manual entry
+        manualInput: initialState.step === 2 && !initialState.nopolFound, // true if from POTENSI and no full data
 
         // Step 2: Service Info
-        km: '',
+        km: initialState.km || '',
         keluhan: '',
         acCare: false,
 
@@ -167,7 +172,7 @@ export default function BookingService() {
         jam: '',
 
         // Step 4: Verification
-        verifyPhone: '',
+        verifyPhone: initialState.telp || '',
     });
 
     const [availableDates, setAvailableDates] = useState([]);
@@ -435,6 +440,27 @@ export default function BookingService() {
             const result = await res.json();
 
             if (result.status) {
+                // Update potensi_service status to BOOKING if applicable
+                try {
+                    const cleanNopol = payload.nopol;
+                    const potensiRes = await fetch(`https://csdwindo.com/api/potensi_service.php?action=list&search=${encodeURIComponent(cleanNopol)}`);
+                    const potensiData = await potensiRes.json();
+                    
+                    if (potensiData.status && potensiData.data) {
+                        const matchingPotensi = potensiData.data.find(p => p.nopol.replace(/\s+/g, '').toUpperCase() === cleanNopol && p.status !== 'BOOKING');
+                        
+                        if (matchingPotensi) {
+                            await fetch('https://csdwindo.com/api/potensi_service.php', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: matchingPotensi.id, status: 'BOOKING' })
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to sync potensi status:', e);
+                }
+
                 setCurrentStep(5); // Success step
             } else {
                 setErrorMsg(result.message || 'Gagal menyimpan booking.');
@@ -1038,18 +1064,27 @@ export default function BookingService() {
                                 <MessageSquare className="w-5 h-5" /> Tanya DINA
                             </button>
 
-                            <button
-                                onClick={() => {
-                                    if (window.location.hostname.startsWith('booking.')) {
-                                        window.location.href = 'https://csdwindo.com';
-                                    } else {
-                                        window.location.href = '/';
-                                    }
-                                }}
-                                className="w-full bg-gray-900 hover:bg-black text-white font-medium py-3.5 rounded-xl transition-all"
-                            >
-                                Kembali ke Beranda
-                            </button>
+                            {initialState.step === 2 ? (
+                                <button
+                                    onClick={() => navigate('/sa')}
+                                    className="w-full bg-gray-900 hover:bg-black text-white font-medium py-3.5 rounded-xl transition-all"
+                                >
+                                    Kembali ke SA Dashboard
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        if (window.location.hostname.startsWith('booking.')) {
+                                            window.location.href = 'https://csdwindo.com';
+                                        } else {
+                                            window.location.href = '/';
+                                        }
+                                    }}
+                                    className="w-full bg-gray-900 hover:bg-black text-white font-medium py-3.5 rounded-xl transition-all"
+                                >
+                                    Kembali ke Beranda
+                                </button>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>

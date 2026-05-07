@@ -1,10 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car } from 'lucide-react';
+import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car, ChevronLeft, ShieldAlert, Loader2 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
+import CustomDatePicker from '../../components/ui/CustomDatePicker';
+import { CustomSelect, LegacyFormModal } from '../../components/panel/booking/LegacyBookingModals';
 
-const DetailModal = ({ isOpen, onClose, item }) => {
+const DetailModal = ({ isOpen, onClose, item, onProcess, onNext, mainFilter, onWhatsapp, onBooking }) => {
     const [copiedField, setCopiedField] = useState(null);
+    const [fetchedRangka, setFetchedRangka] = useState(null);
+
+    useEffect(() => {
+        if (!isOpen || !item) {
+            setFetchedRangka(null);
+            return;
+        }
+        // Jika item sudah punya rangka (dari Data PKT), tidak perlu fetch
+        if (item.rangka) {
+            setFetchedRangka(null);
+            return;
+        }
+        // Fetch rangka dari STNK data (untuk Data Booking yang tidak punya rangka)
+        if (item.plate) {
+            const cleanPlate = item.plate.replace(/\s/g, '').toUpperCase();
+            fetch(`https://csdwindo.com/api/panel/sales_survey.php?action=list&search=${encodeURIComponent(cleanPlate)}`)
+                .then(res => res.json())
+                .then(json => {
+                    if (json.status && json.data && json.data.length > 0) {
+                        const match = json.data.find(d =>
+                            d.stnk?.replace(/\s/g, '').toUpperCase() === cleanPlate ||
+                            d.nopol?.replace(/\s/g, '').toUpperCase() === cleanPlate
+                        );
+                        if (match && match.rangka) {
+                            setFetchedRangka(match.rangka);
+                        } else {
+                            setFetchedRangka(null);
+                        }
+                    } else {
+                        setFetchedRangka(null);
+                    }
+                })
+                .catch(() => setFetchedRangka(null));
+        }
+    }, [isOpen, item?.plate, item?.rangka]);
 
     if (!isOpen || !item) return null;
 
@@ -14,12 +51,14 @@ const DetailModal = ({ isOpen, onClose, item }) => {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
+    const rangkaValue = item.rangka || fetchedRangka;
+
     const detailRows = [
         { label: 'Customer', value: item.name, icon: User },
         { label: 'Phone', value: item.phone, icon: Phone },
         { label: 'Kendaraan', value: item.model, icon: Car },
         { label: 'Nomor Polisi', value: item.plate, icon: Hash, copyable: true, field: 'plate' },
-        ...(item.rangka ? [{ label: 'No. Rangka', value: item.rangka, icon: Wrench, copyable: true, field: 'rangka' }] : []),
+        ...(rangkaValue ? [{ label: 'No. Rangka', value: rangkaValue, icon: Wrench, copyable: true, field: 'rangka' }] : []),
         { label: 'Service', value: item.last_service, icon: Calendar },
         { label: 'Potensi', value: item.potential, icon: Info },
     ];
@@ -73,13 +112,48 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-8 flex gap-3">
+                    <div className="mt-8 flex gap-2">
                         <button
                             onClick={onClose}
                             className="flex-1 py-3 bg-[#F5F5F5] text-[#111111] text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all border border-[#E5E5E5]"
                         >
                             Tutup
                         </button>
+                        {mainFilter === 'clean' ? (
+                            <>
+                                {item.status === 'NEW' && (
+                                    <button
+                                        onClick={onWhatsapp}
+                                        className="flex-1 py-3 bg-[#25D366] text-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-[#128C7E] transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <MessageSquare size={14} /> WhatsApp
+                                    </button>
+                                )}
+                                {item.status === 'FOLLOW_UP' && (
+                                    <button
+                                        onClick={onBooking}
+                                        className="flex-1 py-3 bg-blue-600 text-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Calendar size={14} /> Booking
+                                    </button>
+                                )}
+                            </>
+                        ) : (
+                            <button
+                                onClick={onProcess}
+                                className="flex-1 py-3 bg-[#111111] text-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-[#E60012] transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Wrench size={14} /> Proses
+                            </button>
+                        )}
+                        {onNext && (
+                            <button
+                                onClick={onNext}
+                                className="flex-1 py-3 bg-[#E60012] text-white text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-red-700 transition-colors flex items-center justify-center gap-1"
+                            >
+                                Next <ChevronRight size={14} />
+                            </button>
+                        )}
                     </div>
                 </div>
             </motion.div>
@@ -87,15 +161,89 @@ const DetailModal = ({ isOpen, onClose, item }) => {
     );
 };
 
-const ProcessModal = ({ isOpen, onClose, item, onAction }) => {
+const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter }) => {
+    const [activeAction, setActiveAction] = useState(null);
+
+    // Form states
+    const [potensiService, setPotensiService] = useState('');
+    const [expiredDate, setExpiredDate] = useState('');
+    const [serviceDate, setServiceDate] = useState('');
+    const [otherDealer, setOtherDealer] = useState('');
+    const [rangka, setRangka] = useState('');
+
+    const [showDatePicker1, setShowDatePicker1] = useState(false);
+    const [showDatePicker2, setShowDatePicker2] = useState(false);
+
+    // Auto-fetch rangka from STNK data (same logic as DetailModal)
+    useEffect(() => {
+        if (!isOpen || !item) {
+            setRangka('');
+            return;
+        }
+        // If item already has rangka (from PKT data), use it
+        if (item.rangka) {
+            setRangka(item.rangka);
+            return;
+        }
+        // Fetch from STNK data
+        if (item.plate) {
+            const cleanPlate = item.plate.replace(/\s/g, '').toUpperCase();
+            fetch(`https://csdwindo.com/api/panel/sales_survey.php?action=list&search=${encodeURIComponent(cleanPlate)}`)
+                .then(res => res.json())
+                .then(json => {
+                    if (json.status && json.data && json.data.length > 0) {
+                        const match = json.data.find(d =>
+                            d.stnk?.replace(/\s/g, '').toUpperCase() === cleanPlate ||
+                            d.nopol?.replace(/\s/g, '').toUpperCase() === cleanPlate
+                        );
+                        if (match && match.rangka) {
+                            setRangka(match.rangka);
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [isOpen, item?.plate, item?.rangka]);
+
     if (!isOpen || !item) return null;
 
     const actions = [
-        { id: 'whatsapp', label: 'Whatsapp', icon: MessageSquare, color: 'bg-[#25D366]' },
-        { id: 'invalid', label: 'Invalid', icon: X, color: 'bg-red-500' },
-        { id: 'booking', label: 'Booking', icon: Calendar, color: 'bg-blue-500' },
-        { id: 'dealer', label: 'Dealer Lain', icon: Store, color: 'bg-orange-500' },
+        { id: 'clean', label: 'Clean Data', icon: Check, color: 'bg-[#25D366]' },
+        { id: 'dwindo', label: 'Service Dwindo', icon: Wrench, color: 'bg-blue-500' },
+        { id: 'other', label: 'Other Dealer', icon: Store, color: 'bg-orange-500' },
     ];
+
+    const serviceOptions = [
+        { value: '1.000 KM', label: '1.000 KM' },
+        { value: '10.000 KM', label: '10.000 KM' },
+        { value: '20.000 KM', label: '20.000 KM' },
+        { value: '30.000 KM', label: '30.000 KM' },
+        { value: '40.000 KM', label: '40.000 KM' },
+        { value: '50.000 KM', label: '50.000 KM' },
+        { value: '60.000 KM', label: '60.000 KM' },
+        { value: '70.000 KM', label: '70.000 KM' },
+        { value: '80.000 KM', label: '80.000 KM' },
+        { value: '90.000 KM', label: '90.000 KM' },
+        { value: '100.000 KM', label: '100.000 KM' },
+    ];
+
+    const handleRangkaChange = (e) => {
+        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
+        setRangka(val);
+    };
+
+    const handleSubmit = () => {
+        let payload = {};
+        if (activeAction === 'clean') {
+            payload = { type: 'clean', potensiService, expiredDate, rangka, source: mainFilter?.toUpperCase() || '' };
+        } else if (activeAction === 'dwindo') {
+            payload = { type: 'dwindo', serviceDate };
+        } else if (activeAction === 'other') {
+            payload = { type: 'other', serviceDate, otherDealer };
+        }
+        onAction(activeAction, item, payload);
+        setActiveAction(null);
+    };
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -104,31 +252,160 @@ const ProcessModal = ({ isOpen, onClose, item, onAction }) => {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
-                className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden"
+                className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-visible"
             >
                 <div className="p-4 border-b border-[#E5E5E5] flex items-center justify-between bg-gray-50">
-                    <h3 className="text-sm font-bold text-[#111111] uppercase tracking-wider">Proses Customer</h3>
+                    <div className="flex items-center gap-2">
+                        {activeAction && (
+                            <button onClick={() => setActiveAction(null)} className="p-1 text-gray-400 hover:text-[#111111] transition-colors rounded">
+                                <ChevronLeft size={16} />
+                            </button>
+                        )}
+                        <h3 className="text-sm font-bold text-[#111111] uppercase tracking-wider">
+                            {activeAction ? actions.find(a => a.id === activeAction)?.label : 'Proses Pontential Data'}
+                        </h3>
+                    </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-[#E60012] transition-colors">
                         <X size={18} />
                     </button>
                 </div>
                 <div className="p-6">
-                    <div className="mb-6 text-center">
-                        <div className="text-sm font-bold text-[#111111]">{item.name}</div>
-                        <div className="text-xs text-gray-500 mt-1">{item.plate} • {item.model}</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        {actions.map((action) => (
+                    {!activeAction ? (
+                        <>
+                            <div className="mb-6 text-center">
+                                <div className="text-sm font-bold text-[#111111]">{item.name}</div>
+                                <div className="text-xs text-gray-500 mt-1">{item.plate} • {item.model}</div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                {actions.map((action) => (
+                                    <button
+                                        key={action.id}
+                                        onClick={() => setActiveAction(action.id)}
+                                        className={`flex flex-col items-center justify-center gap-2 p-3 rounded-lg text-white ${action.color} hover:opacity-90 transition-all shadow-sm group`}
+                                    >
+                                        <action.icon size={20} className="group-hover:scale-110 transition-transform" />
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-center">{action.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="space-y-4">
+                            {activeAction === 'clean' && (
+                                <>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">No. Rangka</label>
+                                        <input
+                                            type="text"
+                                            value={rangka}
+                                            onChange={handleRangkaChange}
+                                            maxLength={17}
+                                            className={`w-full bg-white border ${rangka.length === 17 ? 'border-green-400' : 'border-[#E5E5E5]'} focus:border-red-500 focus:ring-1 focus:ring-red-500 rounded p-2.5 text-sm transition-all outline-none font-mono uppercase tracking-wider`}
+                                            placeholder="Contoh: MK2NCXTATPJ014580"
+                                        />
+                                        <p className={`text-[10px] mt-1 ${rangka.length === 17 ? 'text-green-500' : 'text-gray-400'}`}>{rangka.length}/17 karakter</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Potensi Service</label>
+                                        <CustomSelect
+                                            value={potensiService}
+                                            onChange={setPotensiService}
+                                            options={serviceOptions}
+                                            placeholder="Pilih Potensi Service"
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Expected Date</label>
+                                        <div
+                                            onClick={() => setShowDatePicker1(!showDatePicker1)}
+                                            className="w-full bg-white border border-[#E5E5E5] hover:border-gray-300 rounded p-2.5 text-left text-sm transition-all flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <Calendar size={16} className="text-[#E60012]" />
+                                            <span className={expiredDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                                                {expiredDate || 'Pilih Tanggal'}
+                                            </span>
+                                        </div>
+                                        <AnimatePresence>
+                                            {showDatePicker1 && (
+                                                <CustomDatePicker
+                                                    currentDate={expiredDate}
+                                                    onSelect={(date) => { setExpiredDate(date); setShowDatePicker1(false); }}
+                                                    onClose={() => setShowDatePicker1(false)}
+                                                />
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </>
+                            )}
+
+                            {activeAction === 'dwindo' && (
+                                <div className="relative">
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Service Date</label>
+                                    <div
+                                        onClick={() => setShowDatePicker2(!showDatePicker2)}
+                                        className="w-full bg-white border border-[#E5E5E5] hover:border-gray-300 rounded p-2.5 text-left text-sm transition-all flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Calendar size={16} className="text-[#E60012]" />
+                                        <span className={serviceDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                                            {serviceDate || 'Pilih Tanggal'}
+                                        </span>
+                                    </div>
+                                    <AnimatePresence>
+                                        {showDatePicker2 && (
+                                            <CustomDatePicker
+                                                currentDate={serviceDate}
+                                                onSelect={(date) => { setServiceDate(date); setShowDatePicker2(false); }}
+                                                onClose={() => setShowDatePicker2(false)}
+                                            />
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )}
+
+                            {activeAction === 'other' && (
+                                <>
+                                    <div className="relative">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Service Date</label>
+                                        <div
+                                            onClick={() => setShowDatePicker2(!showDatePicker2)}
+                                            className="w-full bg-white border border-[#E5E5E5] hover:border-gray-300 rounded p-2.5 text-left text-sm transition-all flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <Calendar size={16} className="text-[#E60012]" />
+                                            <span className={serviceDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                                                {serviceDate || 'Pilih Tanggal'}
+                                            </span>
+                                        </div>
+                                        <AnimatePresence>
+                                            {showDatePicker2 && (
+                                                <CustomDatePicker
+                                                    currentDate={serviceDate}
+                                                    onSelect={(date) => { setServiceDate(date); setShowDatePicker2(false); }}
+                                                    onClose={() => setShowDatePicker2(false)}
+                                                />
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Other Dealer</label>
+                                        <input
+                                            type="text"
+                                            value={otherDealer}
+                                            onChange={(e) => setOtherDealer(e.target.value)}
+                                            className="w-full bg-white border border-[#E5E5E5] focus:border-red-500 focus:ring-1 focus:ring-red-500 rounded p-2.5 text-sm transition-all outline-none"
+                                            placeholder="Nama Dealer Lain"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
                             <button
-                                key={action.id}
-                                onClick={() => onAction(action.id, item)}
-                                className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg text-white ${action.color} hover:opacity-90 transition-all shadow-sm group`}
+                                onClick={handleSubmit}
+                                className="w-full mt-4 py-3 bg-[#E60012] text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-red-700 transition-colors"
                             >
-                                <action.icon size={20} className="group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">{action.label}</span>
+                                Submit
                             </button>
-                        ))}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </div>
@@ -136,13 +413,30 @@ const ProcessModal = ({ isOpen, onClose, item, onAction }) => {
 };
 
 const PotensiBooking = () => {
-    const [mainFilter, setMainFilter] = useState('booking'); // 'booking' or 'pkt'
+    const [mainFilter, setMainFilter] = useState('booking'); // 'booking', 'pkt', 'clean'
     const [activeTab, setActiveTab] = useState('6_bulan'); // for booking: 6, 12, 18, 24; for pkt: 1k, 10k...60k
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState({ booking: {}, pkt: {} });
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    // Clean data states
+    const [cleanData, setCleanData] = useState([]);
+    const [cleanFilterSA, setCleanFilterSA] = useState('');
+    const [cleanFilterStatus, setCleanFilterStatus] = useState('');
+    const [isLoadingClean, setIsLoadingClean] = useState(false);
+    
+    // Booking Form Modal states
+    const [showBookingForm, setShowBookingForm] = useState(false);
+    const [bookingFormData, setBookingFormData] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    };
 
     const bookingTabs = [
         { id: '6_bulan', label: '6 Bulan' },
@@ -162,6 +456,40 @@ const PotensiBooking = () => {
     ];
 
     useEffect(() => {
+        if (mainFilter !== 'clean') return;
+        const fetchCleanData = async () => {
+            setIsLoadingClean(true);
+            try {
+                let url = 'https://csdwindo.com/api/potensi_service.php?action=list';
+                if (cleanFilterSA) url += `&sa=${encodeURIComponent(cleanFilterSA)}`;
+                if (cleanFilterStatus) url += `&status=${encodeURIComponent(cleanFilterStatus)}`;
+                const res = await fetch(url);
+                const json = await res.json();
+                if (json.status && json.data) {
+                    const mappedData = json.data.map(d => ({
+                        ...d,
+                        name: d.nama,
+                        phone: d.telp,
+                        plate: d.nopol,
+                        model: d.kendaraan,
+                        last_service: d.service_terakhir,
+                        potential: d.potensi_service,
+                    }));
+                    setCleanData(mappedData);
+                } else {
+                    setCleanData([]);
+                }
+            } catch (err) {
+                console.error(err);
+                setCleanData([]);
+            } finally {
+                setIsLoadingClean(false);
+            }
+        };
+        fetchCleanData();
+    }, [mainFilter, cleanFilterSA, cleanFilterStatus]);
+
+    useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
@@ -179,22 +507,120 @@ const PotensiBooking = () => {
         fetchData();
     }, []);
 
-    const currentData = data[mainFilter][activeTab] || [];
+    const currentData = mainFilter === 'clean' ? cleanData : (data[mainFilter]?.[activeTab] || []);
 
-    const handleAction = (type, item) => {
-        if (type === 'whatsapp') {
-            const message = `Halo Bapak/Ibu ${item.name}, kami dari dealer Mitsubishi ingin menginformasikan bahwa kendaraan Anda memiliki ${item.potential}. Ingin dibantu untuk booking service?`;
-            window.open(`https://wa.me/62${item.phone.substring(1)}?text=${encodeURIComponent(message)}`, '_blank');
-        } else if (type === 'telpon') {
-            window.open(`tel:${item.phone}`, '_self');
-        } else if (type === 'booking') {
-            alert(`Booking untuk ${item.name} (${item.plate}) sedang diproses...`);
-        } else if (type === 'dealer') {
-            alert(`Customer ${item.name} dicatat service di Dealer Lain.`);
-        } else if (type === 'invalid') {
-            alert(`Customer ${item.name} ditandai sebagai Invalid.`);
+    const handleAction = async (type, item, payload) => {
+        if (type === 'clean') {
+            setIsSubmitting(true);
+            try {
+                const cleanPayload = {
+                    nopol: item.plate || '',
+                    nama: item.name || '',
+                    telp: item.phone || '',
+                    kendaraan: item.model || '',
+                    rangka: payload?.rangka || '',
+                    potensi_service: payload?.potensiService || '',
+                    expected_date: payload?.expiredDate || '',
+                    service_terakhir: item.last_service || '',
+                    source: payload?.source || mainFilter?.toUpperCase() || '',
+                };
+
+                const res = await fetch('https://csdwindo.com/api/potensi_service.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanPayload)
+                });
+                const result = await res.json();
+                if (result.status) {
+                    showToast(result.message || `Data ${item.name} berhasil di-clean`);
+                } else {
+                    showToast(result.message || 'Gagal menyimpan data', 'error');
+                }
+            } catch (err) {
+                console.error('Clean data error:', err);
+                showToast('Terjadi kesalahan jaringan', 'error');
+            } finally {
+                setIsSubmitting(false);
+            }
+            setShowModal(false);
+            return;
+        }
+
+        // For dwindo and other, create a booking entry
+        setIsSubmitting(true);
+        const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+        const userName = user.name || user.nama || 'STAFF';
+
+        let bookingPayload = {
+            tanggal: payload?.serviceDate || new Date().toISOString().split('T')[0],
+            jam: '10:00',
+            kendaraan: item.model || '',
+            nopol: item.plate || '',
+            nama: item.name || '',
+            telp: item.phone || '',
+            user: userName,
+        };
+
+        if (type === 'dwindo') {
+            bookingPayload.jenis = 'WALK IN';
+            bookingPayload.keluhan = '';
+            bookingPayload.forceStatus = 'DATANG';
+        } else if (type === 'other') {
+            bookingPayload.jenis = payload?.otherDealer || 'OTHER DEALER';
+            bookingPayload.keluhan = payload?.otherDealer || '';
+            bookingPayload.forceStatus = 'OTHER DEALER';
+        }
+
+        try {
+            const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingPayload)
+            });
+            const result = await res.json();
+            if (result.status) {
+                showToast(result.message || `Booking ${type === 'dwindo' ? 'Service Dwindo' : 'Other Dealer'} berhasil dibuat`);
+            } else {
+                showToast(result.message || 'Gagal membuat booking', 'error');
+            }
+        } catch (err) {
+            console.error('Create booking error:', err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        } finally {
+            setIsSubmitting(false);
         }
         setShowModal(false);
+    };
+
+    const handleSaveLegacyBooking = async (formData) => {
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const result = await res.json();
+            if (result.status) {
+                showToast('Booking berhasil dibuat');
+                setShowBookingForm(false);
+                if (selectedItem?.id) {
+                    await fetch('https://csdwindo.com/api/potensi_service.php', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: selectedItem.id, status: 'BOOKING' })
+                    });
+                    setCleanData(prev => prev.map(item => item.id === selectedItem.id ? { ...item, status: 'BOOKING' } : item));
+                }
+            } else {
+                showToast(result.message || 'Gagal membuat booking', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -234,20 +660,67 @@ const PotensiBooking = () => {
                 >
                     Data PKT
                 </button>
+                <button
+                    onClick={() => {
+                        setMainFilter('clean');
+                        setActiveTab('');
+                    }}
+                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'clean' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
+                    style={mainFilter === 'clean' ? { clipPath: ANGULAR_CLIP } : {}}
+                >
+                    Clean Data
+                </button>
             </div>
 
-            {/* Sub Tabs */}
-            <div className="flex overflow-x-auto pb-2 gap-2 mb-6 scrollbar-hide">
-                {(mainFilter === 'booking' ? bookingTabs : pktTabs).map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex-none px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all ${activeTab === tab.id ? 'bg-[#111111] text-white border-[#111111]' : 'bg-white text-gray-500 border-[#E5E5E5] hover:border-gray-400'}`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
+            {/* Sub Tabs or Filters */}
+            {mainFilter !== 'clean' ? (
+                <div className="flex overflow-x-auto pb-2 gap-2 mb-6 scrollbar-hide">
+                    {(mainFilter === 'booking' ? bookingTabs : pktTabs).map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex-none px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all ${activeTab === tab.id ? 'bg-[#111111] text-white border-[#111111]' : 'bg-white text-gray-500 border-[#E5E5E5] hover:border-gray-400'}`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex gap-4 mb-6">
+                    <div className="w-56">
+                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Filter SA</label>
+                        <CustomSelect 
+                            value={cleanFilterSA}
+                            onChange={(val) => setCleanFilterSA(val)}
+                            options={[
+                                {value: '', label: 'Semua SA'},
+                                {value: 'Dimas', label: 'Dimas'},
+                                {value: 'Ipral', label: 'Ipral'},
+                                {value: 'Muti', label: 'Muti'},
+                                {value: 'Rudi', label: 'Rudi'},
+                                {value: 'Yuda', label: 'Yuda'},
+                                {value: 'Ilham', label: 'Ilham'},
+                            ]}
+                            placeholder="Semua SA"
+                        />
+                    </div>
+                    <div className="w-56">
+                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Filter Status</label>
+                        <CustomSelect 
+                            value={cleanFilterStatus}
+                            onChange={(val) => setCleanFilterStatus(val)}
+                            options={[
+                                {value: '', label: 'Semua Status'},
+                                {value: 'NEW', label: 'Belum Follow Up (NEW)'},
+                                {value: 'FOLLOW_UP', label: 'Sudah Follow Up'},
+                                {value: 'BOOKING', label: 'Success Booking'},
+                                {value: 'INVALID', label: 'Invalid'},
+                            ]}
+                            placeholder="Semua Status"
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Data Table */}
             <div className="bg-white border border-[#E5E5E5] overflow-hidden">
@@ -255,60 +728,118 @@ const PotensiBooking = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#F9F9F9] border-b border-[#E5E5E5]">
-                                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
-                                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
-                                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">{mainFilter === 'booking' ? 'Service Terakhir' : 'Warranty Date'}</th>
-                                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi</th>
-                                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
+                                {mainFilter === 'clean' ? (
+                                    <>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi & Tanggal</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">SA & Status</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">{mainFilter === 'booking' ? 'Service Terakhir' : 'Warranty Date'}</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
+                                    </>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E5E5E5]">
-                            {currentData.length > 0 ? (
+                            {isLoadingClean && mainFilter === 'clean' ? (
+                                <tr>
+                                    <td colSpan={5} className="py-12 text-center text-gray-500">Loading data...</td>
+                                </tr>
+                            ) : currentData.length > 0 ? (
                                 currentData.map((item) => (
-                                    <tr 
-                                        key={item.id || item.plate} 
+                                    <tr
+                                        key={item.id || item.plate || item.nopol}
                                         onClick={() => {
                                             setSelectedItem(item);
                                             setShowDetailModal(true);
                                         }}
                                         className="hover:bg-gray-50 transition-colors group cursor-pointer"
                                     >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
-                                                    <User size={14} />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-bold text-[#111111]">{item.name}</div>
-                                                    <div className="text-[11px] text-gray-500 font-medium">{item.phone}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-bold text-[#111111]">{item.plate}</div>
-                                            <div className="text-[11px] text-gray-500">{item.model}</div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                            {item.last_service}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-blue-100">
-                                                {item.potential}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedItem(item);
-                                                    setShowModal(true);
-                                                }}
-                                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#111111] text-white text-[11px] font-bold uppercase tracking-wider rounded-sm hover:bg-[#E60012] transition-colors"
-                                            >
-                                                <Wrench size={12} />
-                                                Proses
-                                            </button>
-                                        </td>
+                                        {mainFilter === 'clean' ? (
+                                            <>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                                                            <User size={14} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-bold text-[#111111]">{item.nama}</div>
+                                                            <div className="text-[11px] text-gray-500 font-medium">{item.telp}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-bold text-[#111111]">{item.nopol}</div>
+                                                    <div className="text-[11px] text-gray-500">{item.kendaraan}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-bold text-[#111111]">{item.potensi_service}</div>
+                                                    <div className="text-[11px] text-gray-500">{item.expected_date}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-bold text-[#111111]">{item.sa}</div>
+                                                    <div className="text-[10px] font-bold mt-1 inline-block px-2 py-0.5 rounded-full" style={{
+                                                        backgroundColor: item.status === 'NEW' ? '#FFFBEB' : item.status === 'FOLLOW_UP' ? '#EFF6FF' : item.status === 'BOOKING' ? '#ECFDF5' : '#FEF2F2',
+                                                        color: item.status === 'NEW' ? '#D97706' : item.status === 'FOLLOW_UP' ? '#3B82F6' : item.status === 'BOOKING' ? '#10B981' : '#EF4444'
+                                                    }}>
+                                                        {item.status}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="text-[11px] text-gray-500">{item.time}</div>
+                                                    {item.note && <div className="text-[10px] text-red-500 mt-1 truncate max-w-[120px] ml-auto">{item.note}</div>}
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                                                            <User size={14} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-bold text-[#111111]">{item.name}</div>
+                                                            <div className="text-[11px] text-gray-500 font-medium">{item.phone}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-bold text-[#111111]">{item.plate}</div>
+                                                    <div className="text-[11px] text-gray-500">{item.model}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar size={14} className="text-gray-400" />
+                                                        {item.last_service || item.warranty_date}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-blue-100">
+                                                        {item.potential}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedItem(item);
+                                                            setShowModal(true);
+                                                        }}
+                                                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#111111] text-white text-[11px] font-bold uppercase tracking-wider rounded-sm hover:bg-[#E60012] transition-colors"
+                                                    >
+                                                        <Wrench size={12} />
+                                                        Proses
+                                                    </button>
+                                                </td>
+                                            </>
+                                        )}
                                     </tr>
                                 ))
                             ) : (
@@ -333,14 +864,81 @@ const PotensiBooking = () => {
                         onClose={() => setShowModal(false)}
                         item={selectedItem}
                         onAction={handleAction}
+                        mainFilter={mainFilter}
                     />
                 )}
                 {showDetailModal && (
-                    <DetailModal
-                        isOpen={showDetailModal}
-                        onClose={() => setShowDetailModal(false)}
-                        item={selectedItem}
+                  <DetailModal
+                      isOpen={showDetailModal}
+                      onClose={() => setShowDetailModal(false)}
+                      item={selectedItem}
+                      mainFilter={mainFilter}
+                      onProcess={() => {
+                          setShowDetailModal(false);
+                          setShowModal(true);
+                      }}
+                      onWhatsapp={() => {
+                          const p = selectedItem;
+                          let phone = (p.phone || p.telp || '').replace(/\D/g, '');
+                          if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+                          const message = `Halo Bapak/Ibu ${p.name || p.nama},\n\nKami ingin menginformasikan bahwa kendaraan *${p.model || p.kendaraan}* (${p.plate || p.nopol}) Anda sudah waktunya untuk melakukan *${p.potential || p.potensi_service}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service?`;
+                          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+
+                          if (p.id) {
+                              fetch('https://csdwindo.com/api/potensi_service.php', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ id: p.id, status: 'FOLLOW_UP' })
+                              }).then(() => {
+                                  setCleanData(prev => prev.map(item => item.id === p.id ? { ...item, status: 'FOLLOW_UP' } : item));
+                              });
+                          }
+                      }}
+                      onBooking={() => {
+                          setShowDetailModal(false);
+                          setBookingFormData({
+                              nopol: selectedItem.plate || selectedItem.nopol,
+                              nama: selectedItem.name || selectedItem.nama,
+                              telp: selectedItem.phone || selectedItem.telp,
+                              kendaraan: selectedItem.model || selectedItem.kendaraan,
+                              jenis: selectedItem.potential || selectedItem.potensi_service,
+                              user: 'CUSTOMER',
+                              jam: '10:00'
+                          });
+                          setShowBookingForm(true);
+                      }}
+                      onNext={() => {
+                          const idx = currentData.findIndex(i => (i.id || i.plate || i.nopol) === (selectedItem.id || selectedItem.plate || selectedItem.nopol));
+                          if (idx >= 0 && idx < currentData.length - 1) {
+                              setSelectedItem(currentData[idx + 1]);
+                          }
+                      }}
+                  />
+                )}
+                {showBookingForm && (
+                    <LegacyFormModal
+                        isOpen={showBookingForm}
+                        onClose={() => setShowBookingForm(false)}
+                        initialData={bookingFormData}
+                        onSave={handleSaveLegacyBooking}
+                        isLoading={isSubmitting}
+                        isNewBooking={true}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Toast */}
+            <AnimatePresence>
+                {toast.show && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 50, x: '-50%' }}
+                        className={`fixed bottom-6 left-1/2 z-[200] px-6 py-3 rounded-full shadow-xl font-bold text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}
+                    >
+                        {toast.type === 'error' ? <ShieldAlert size={16} /> : <Check size={16} />}
+                        {toast.message}
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
