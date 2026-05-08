@@ -113,7 +113,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
             }
         };
         fetchCounts();
-        const interval = setInterval(fetchCounts, 60000); // refresh every minute
+        const interval = setInterval(fetchCounts, 300000); // refresh every 5 minutes
         return () => clearInterval(interval);
     }, [location.pathname]);
 
@@ -221,7 +221,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
 
             {/* Sidebar Links */}
             <div className="h-[calc(100vh-4rem)] flex flex-col">
-                <div className={`py-6 px-4 flex-1 ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'} space-y-1`}>
+                <div className={`py-6 px-4 flex-1 ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'} space-y-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent`}>
                     {filteredNavigations.filter(item => !(user?.role === 'admin' && item.group === 'lead')).map((item) => (
                         <NavLink
                             key={item.name}

@@ -133,7 +133,7 @@ const PanelChat = () => {
         };
         fetchSessions();
         // Optional: polling every 30 seconds for new chats
-        const interval = setInterval(fetchSessions, 30000);
+        const interval = setInterval(fetchSessions, 300000); // refresh every 5 minutes
         return () => clearInterval(interval);
     }, []);
 

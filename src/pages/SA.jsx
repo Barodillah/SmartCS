@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, Check, ArrowRight, User, Calendar, Phone, CarFront, Wrench, Search as SearchIcon, Bot, Send, Loader2, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Search, X, Check, ArrowRight, User, Calendar, Phone, CarFront, Wrench, Search as SearchIcon, Bot, Send, Loader2, AlertTriangle, ShieldAlert, Lock, UserRound, KeyRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ANGULAR_CLIP } from '../utils/constants';
@@ -48,10 +48,18 @@ const SA = () => {
   const [showKomplenConfirm, setShowKomplenConfirm] = useState(false);
   const [isKomplenLoading, setIsKomplenLoading] = useState(false);
 
+  // Other Number State
+  const [showOtherNumberModal, setShowOtherNumberModal] = useState(false);
+  const [otherNumberInput, setOtherNumberInput] = useState('');
+  const [isUpdatingNumber, setIsUpdatingNumber] = useState(false);
+
   // SA Setup State
   const [setupModalOpen, setSetupModalOpen] = useState(false);
+  const [authStep, setAuthStep] = useState('SELECT_SA'); // 'SELECT_SA' | 'ENTER_PIN' | 'CREATE_PIN'
   const [saName, setSaName] = useState('');
   const [saPin, setSaPin] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [isCheckingPin, setIsCheckingPin] = useState(false);
   const [saSetupData, setSaSetupData] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -73,22 +81,105 @@ const SA = () => {
           }
         } catch(e) {}
       }
+
+      const savedName = localStorage.getItem('saved_sa_name');
+      if (savedName) {
+        setSaName(savedName);
+        setAuthStep('ENTER_PIN');
+      } else {
+        setAuthStep('SELECT_SA');
+      }
       setSetupModalOpen(true);
     };
     checkSetup();
   }, []);
 
-  const handleSetupSubmit = (e) => {
-    e.preventDefault();
-    if (!saName || saPin.length !== 4) {
-      alert('Nama SA harus dipilih dan PIN harus 4 angka');
-      return;
+  const handleSaChange = async (val) => {
+    setSaName(val);
+    if (!val) return;
+    
+    setIsCheckingPin(true);
+    try {
+      const res = await fetch(`https://csdwindo.com/api/panel/sa_auth.php?action=check&name=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (data.status) {
+        if (data.data.exists) {
+          setAuthStep('ENTER_PIN');
+        } else {
+          setAuthStep('CREATE_PIN');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCheckingPin(false);
     }
+  };
+
+  const saveSession = (name) => {
     const today = new Date().toISOString().split('T')[0];
-    const data = { name: saName, date: today };
+    const data = { name, date: today };
     localStorage.setItem('sa_setup_session', JSON.stringify(data));
+    localStorage.setItem('saved_sa_name', name);
     setSaSetupData(data);
     setSetupModalOpen(false);
+    setSaPin('');
+    setPinConfirm('');
+  };
+
+  const handleSetupSubmit = async (e) => {
+    e.preventDefault();
+    if (!saName) return;
+
+    if (authStep === 'ENTER_PIN') {
+      if (saPin.length !== 4) return;
+      setIsCheckingPin(true);
+      try {
+        const res = await fetch('https://csdwindo.com/api/panel/sa_auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verify', name: saName, pin: saPin })
+        });
+        const data = await res.json();
+        if (data.status) {
+          saveSession(saName);
+        } else {
+          showToast(data.message || 'PIN Salah', 'error');
+        }
+      } catch (err) {
+        showToast('Gagal verifikasi PIN', 'error');
+      } finally {
+        setIsCheckingPin(false);
+      }
+    } else if (authStep === 'CREATE_PIN') {
+      if (saPin.length !== 4 || pinConfirm.length !== 4) {
+        showToast('PIN harus 4 angka', 'error');
+        return;
+      }
+      if (saPin !== pinConfirm) {
+        showToast('Konfirmasi PIN tidak cocok', 'error');
+        return;
+      }
+      setIsCheckingPin(true);
+      try {
+        const res = await fetch('https://csdwindo.com/api/panel/sa_auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'setup', name: saName, pin: saPin })
+        });
+        const data = await res.json();
+        if (data.status) {
+          showToast('PIN berhasil disetting');
+          saveSession(saName);
+        } else {
+          showToast(data.message || 'Gagal setting PIN', 'error');
+        }
+      } catch (err) {
+        showToast('Terjadi kesalahan', 'error');
+      } finally {
+        setIsCheckingPin(false);
+      }
+    }
   };
 
   // Fetch potensi service data for this SA
@@ -286,6 +377,25 @@ Buatkan draft pesannya sekarang:`;
     setShowWaModal(true);
   };
 
+  const recordWhatsAppAction = async () => {
+    if (!selectedKonfirmasi) return;
+    try {
+      await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'record_whatsapp',
+          booking_id: selectedKonfirmasi.id,
+          user: saSetupData?.name || 'SA',
+          before: waContextInput || '-',
+          after: waGeneratedText || '-'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to record WA action:', err);
+    }
+  };
+
   const handleIndikasiKomplen = async () => {
     if (!selectedKonfirmasi) return;
     setIsKomplenLoading(true);
@@ -315,6 +425,52 @@ Buatkan draft pesannya sekarang:`;
       showToast('Terjadi kesalahan jaringan', 'error');
     } finally {
       setIsKomplenLoading(false);
+    }
+  };
+
+  const handleUpdateNumberAndSend = async (e) => {
+    e.preventDefault();
+    if (!selectedKonfirmasi || !otherNumberInput) return;
+    if (!otherNumberInput.startsWith('0')) {
+      showToast('Nomor telepon harus dimulai dengan 0', 'error');
+      return;
+    }
+
+    setIsUpdatingNumber(true);
+    try {
+      const payload = {
+        ...selectedKonfirmasi,
+        user: saSetupData?.name || 'SA',
+        telp: otherNumberInput
+      };
+
+      const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      
+      if (data.status) {
+        showToast('Nomor telepon berhasil diperbarui');
+        const updatedKonfirmasi = { ...selectedKonfirmasi, telp: otherNumberInput };
+        setSelectedKonfirmasi(updatedKonfirmasi);
+        
+        setShowOtherNumberModal(false);
+        setShowWaModal(false);
+        setOtherNumberInput('');
+        await recordWhatsAppAction();
+        directWhatsApp(otherNumberInput, waGeneratedText);
+        
+        fetchBookings();
+      } else {
+        showToast(data.message || 'Gagal memperbarui nomor telepon', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan jaringan', 'error');
+    } finally {
+      setIsUpdatingNumber(false);
     }
   };
 
@@ -879,12 +1035,13 @@ Buatkan draft pesannya sekarang:`;
               <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-2 !bg-[#25D366] hover:!bg-[#1ebd5a]" onClick={openChatFlow}>
                 <Bot className="w-4 h-4" /> Whatsapp Konfirmasi
               </AngularButton>
-              <button 
+              <AngularButton 
+                variant="danger"
                 onClick={() => setShowKomplenConfirm(true)}
-                className="w-full py-3 bg-white border border-red-200 text-red-600 font-bold uppercase tracking-widest text-[11px] rounded hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full !flex !items-center !justify-center !gap-2"
               >
                 <AlertTriangle className="w-4 h-4" /> Indikasi Komplen
-              </button>
+              </AngularButton>
             </div>
           </div>
         </div>
@@ -987,8 +1144,15 @@ Buatkan draft pesannya sekarang:`;
                       Kembali
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={() => setShowOtherNumberModal(true)}
+                      className="px-4 py-2 text-sm font-medium text-[#E60012] bg-red-50 hover:bg-red-100 rounded transition-colors flex items-center gap-2"
+                    >
+                      Nomor Lain
+                    </button>
+                    <button
+                      onClick={async () => {
                         setShowWaModal(false);
+                        await recordWhatsAppAction();
                         directWhatsApp(selectedKonfirmasi.telp, waGeneratedText);
                       }}
                       disabled={waGenerating || !waGeneratedText}
@@ -1008,45 +1172,112 @@ Buatkan draft pesannya sekarang:`;
       {/* Setup SA Modal */}
       <AnimatePresence>
         {setupModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-sm"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-sm relative"
             >
-              <div className="bg-[#E60012] rounded-t-xl p-4 text-center">
-                <h3 className="font-display font-bold uppercase tracking-wider text-white text-lg">Setup SA Session</h3>
+              <div className="bg-[#E60012] p-5 text-center relative rounded-t-xl">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 transform rotate-45 translate-x-12 -translate-y-12"></div>
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  {authStep === 'SELECT_SA' ? <UserRound className="text-white" /> : <Lock className="text-white" />}
+                </div>
+                <h3 className="font-display font-bold uppercase tracking-wider text-white text-lg">
+                  {authStep === 'SELECT_SA' ? 'Service Advisor' : 
+                   authStep === 'ENTER_PIN' ? 'Verifikasi PIN' : 'Setting PIN Baru'}
+                </h3>
+                {authStep !== 'SELECT_SA' && (
+                  <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mt-1">SA: {saName}</p>
+                )}
               </div>
-              <form onSubmit={handleSetupSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-[10px] font-display font-bold text-gray-500 uppercase tracking-wider mb-1">Nama SA</label>
-                  <CustomSelect
-                    value={saName}
-                    onChange={setSaName}
-                    options={SA_OPTIONS}
-                    placeholder="Pilih Nama SA"
-                    allowCustom={false}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-display font-bold text-gray-500 uppercase tracking-wider mb-1">PIN (4 Angka)</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={saPin}
-                    onChange={(e) => setSaPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Masukkan 4 angka PIN"
-                    className="w-full border border-gray-300 rounded p-2.5 text-center text-lg font-bold tracking-[0.5em] focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none"
-                    required
-                  />
-                </div>
-                <div className="pt-2">
-                  <AngularButton variant="primary" type="submit" className="w-full !flex !items-center !justify-center">
-                    MULAI SESI HARI INI
-                  </AngularButton>
-                </div>
+
+              <form onSubmit={handleSetupSubmit} className="p-6 space-y-5">
+                {authStep === 'SELECT_SA' ? (
+                  <div>
+                    <label className="block text-[10px] font-display font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Pilih Identitas SA</label>
+                    <CustomSelect
+                      value={saName}
+                      onChange={handleSaChange}
+                      options={SA_OPTIONS}
+                      placeholder="Pilih Nama SA"
+                      allowCustom={false}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-display font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">
+                          {authStep === 'ENTER_PIN' ? 'Masukkan 4 Angka PIN' : 'Buat 4 Angka PIN'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={4}
+                            autoFocus
+                            value={saPin}
+                            onChange={(e) => setSaPin(e.target.value.replace(/\D/g, ''))}
+                            placeholder="••••"
+                            className="w-full border-2 border-gray-100 rounded-xl p-3 text-center text-2xl font-bold tracking-[0.5em] focus:border-[#E60012] focus:ring-0 outline-none bg-gray-50 transition-all"
+                            required
+                          />
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300">
+                            <KeyRound size={20} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {authStep === 'CREATE_PIN' && (
+                        <div className="animate-in slide-in-from-top-2 duration-200">
+                          <label className="block text-[10px] font-display font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Konfirmasi PIN</label>
+                          <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={4}
+                            value={pinConfirm}
+                            onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, ''))}
+                            placeholder="••••"
+                            className="w-full border-2 border-gray-100 rounded-xl p-3 text-center text-2xl font-bold tracking-[0.5em] focus:border-[#E60012] focus:ring-0 outline-none bg-gray-50 transition-all"
+                            required
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-2">
+                      <AngularButton 
+                        variant="primary" 
+                        type="submit" 
+                        disabled={isCheckingPin || saPin.length !== 4 || (authStep === 'CREATE_PIN' && pinConfirm.length !== 4)}
+                        className="w-full !py-4 !flex !items-center !justify-center !gap-2 !text-xs !tracking-[0.2em]"
+                      >
+                        {isCheckingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : 'MASUK SEKARANG'}
+                      </AngularButton>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthStep('SELECT_SA');
+                          setSaName('');
+                          setSaPin('');
+                          setPinConfirm('');
+                        }}
+                        className="text-[10px] font-bold text-gray-400 hover:text-[#E60012] uppercase tracking-widest transition-colors py-2"
+                      >
+                        Bukan {saName}? Ganti Akun
+                      </button>
+                    </div>
+                  </>
+                )}
+                
+                {authStep === 'SELECT_SA' && isCheckingPin && (
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#E60012]" />
+                  </div>
+                )}
               </form>
             </motion.div>
           </div>
@@ -1140,6 +1371,65 @@ Buatkan draft pesannya sekarang:`;
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Nomor Lain */}
+      <AnimatePresence>
+        {showOtherNumberModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowOtherNumberModal(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="bg-[#111] p-4 flex justify-between items-center text-white">
+                <h3 className="font-display font-bold uppercase tracking-wider text-sm">Kirim ke Nomor Lain</h3>
+                <button onClick={() => setShowOtherNumberModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateNumberAndSend} className="p-4 flex flex-col gap-4">
+                <p className="text-xs text-gray-500">
+                  Masukkan nomor WhatsApp baru untuk <strong className="text-[#111111]">{selectedKonfirmasi?.nama}</strong>. Nomor ini akan diupdate pada data booking dan konsumen.
+                </p>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Nomor Telepon</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={otherNumberInput}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setOtherNumberInput(val);
+                    }}
+                    placeholder="08xxxxxxxxxx"
+                    className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012]"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowOtherNumberModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingNumber || !otherNumberInput}
+                    className="px-4 py-2 text-sm font-medium bg-[#E60012] text-white hover:bg-[#B5000F] rounded transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isUpdatingNumber ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send size={16} />}
+                    Update & Kirim
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

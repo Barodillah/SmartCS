@@ -189,6 +189,14 @@ const KonsumenBooking = () => {
         fetchHistory(item.nopol);
     };
 
+    const handleNextData = () => {
+        if (!selectedKonsumen || data.length === 0) return;
+        const currentIndex = data.findIndex(item => item.id === selectedKonsumen.id);
+        if (currentIndex !== -1 && currentIndex < data.length - 1) {
+            handleRowClick(data[currentIndex + 1]);
+        }
+    };
+
     const fetchHistory = async (nopol) => {
         if (!nopol) return;
         setIsHistoryLoading(true);
@@ -635,7 +643,7 @@ const KonsumenBooking = () => {
                                 </button>
                             </div>
 
-                            <div className="p-4 overflow-visible flex-1 space-y-5">
+                            <div className="p-4 overflow-y-auto flex-1 space-y-5 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {/* Info Data Diri */}
                                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 grid grid-cols-2 gap-3 text-sm">
                                     <div 
@@ -874,13 +882,24 @@ const KonsumenBooking = () => {
                                 </div>
                             </div>
 
-                            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-                                >
-                                    Batal
-                                </button>
+                            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setShowModal(false)}
+                                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
+                                    {data.findIndex(item => item.id === selectedKonsumen?.id) < data.length - 1 && (
+                                        <button
+                                            onClick={handleNextData}
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        >
+                                            Next Data
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    )}
+                                </div>
                                 <button
                                     onClick={handleSave}
                                     disabled={isSaving}

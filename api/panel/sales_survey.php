@@ -214,7 +214,8 @@ if ($method === 'GET') {
                     'id'     => $row['id'],
                     'date'   => $row['time'],
                     'status' => $row['status'],
-                    'pkt'    => $row['pkt'] ?? ''
+                    'pkt'    => $row['pkt'] ?? '',
+                    'note'   => $row['note'] ?? ''
                 ];
             }
         }
@@ -253,7 +254,7 @@ if ($method === 'GET') {
 
     if (mysqli_query($conn, $updateQuery)) {
         // Insert record log
-        $recordQuery = "INSERT INTO surveyupdate_record VALUES (NULL, NULL, $id, '$status', '$pkt')";
+        $recordQuery = "INSERT INTO surveyupdate_record (id, time, unit_id, status, pkt, note) VALUES (NULL, NULL, $id, '$status', '$pkt', '$note')";
         mysqli_query($conn, $recordQuery);
 
         echo json_encode(['status' => true, 'message' => 'Status survey berhasil diperbarui']);

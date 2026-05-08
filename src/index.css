@@ -81,3 +81,23 @@
 .animate-shimmer {
   animation: shimmer 3s infinite;
 }
+
+/* Custom Scrollbar Utilities */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thumb-gray-200::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+.scrollbar-thumb-gray-200:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+.dark .scrollbar-thumb-gray-200:hover::-webkit-scrollbar-thumb,
+[class*="bg-[#111111]"].scrollbar-thumb-gray-200:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}

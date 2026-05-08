@@ -6,6 +6,7 @@ const AngularButton = ({ children, variant = 'primary', className = '', onClick 
         primary: `bg-[#E60012] text-white hover:bg-[#B5000F]`,
         secondary: `bg-transparent border-2 border-[#111111] text-[#111111] hover:bg-[#111111] hover:text-white`,
         white: `bg-white text-[#111111] hover:bg-[#E5E5E5]`,
+        danger: `bg-white border-2 border-[#E60012] text-[#E60012] hover:bg-red-50`,
     };
 
     return (

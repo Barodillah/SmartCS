@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRight, Calendar, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import SurveySearchModal from '../../components/panel/survey/SurveySearchModal';
@@ -152,6 +152,8 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
 const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, onEdit }) => {
     const [logs, setLogs] = useState([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
+    const [npsData, setNpsData] = useState(null);
+    const [loadingNps, setLoadingNps] = useState(false);
 
     useEffect(() => {
         if (data?.id) {
@@ -163,6 +165,42 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                 .finally(() => setLoadingLogs(false));
         }
     }, [data]);
+
+    useEffect(() => {
+        if (data?.rangka) {
+            setLoadingNps(true);
+            setNpsData(null);
+            // Search across last 6 months since NPS data can be in any month
+            const months = [];
+            const now = new Date();
+            for (let i = 0; i < 6; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+            }
+            Promise.all(months.map(m => {
+                const params = new URLSearchParams({ bulan: m, divisi: 'Sales', cabang: 'All', search: data.rangka });
+                return fetch(`https://csdwindo.com/api/panel/nps_detail.php?${params}`)
+                    .then(r => r.json())
+                    .catch(() => null);
+            })).then(results => {
+                for (const res of results) {
+                    if (res?.status && res.data?.list?.length > 0) {
+                        const match = res.data.list.find(item => item.rangka === data.rangka);
+                        if (match) { setNpsData(match); return; }
+                    }
+                }
+            }).finally(() => setLoadingNps(false));
+        }
+    }, [data]);
+
+    const getNpsBannerStyle = (status) => {
+        switch (status) {
+            case 'Promotor': return { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-800', badge: 'bg-green-600 text-white', icon: 'text-green-600', scoreBg: 'bg-green-100 text-green-700 border-green-200' };
+            case 'Passive': return { bg: 'bg-amber-50', border: 'border-amber-300', text: 'text-amber-800', badge: 'bg-amber-500 text-white', icon: 'text-amber-600', scoreBg: 'bg-amber-100 text-amber-700 border-amber-200' };
+            case 'Detractor': return { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-800', badge: 'bg-red-600 text-white', icon: 'text-red-600', scoreBg: 'bg-red-100 text-red-700 border-red-200' };
+            default: return { bg: 'bg-gray-50', border: 'border-gray-300', text: 'text-gray-800', badge: 'bg-gray-600 text-white', icon: 'text-gray-600', scoreBg: 'bg-gray-100 text-gray-700 border-gray-200' };
+        }
+    };
 
     if (!isOpen || !data) return null;
 
@@ -213,6 +251,44 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                                 <div className="flex flex-col"><span className="text-gray-500 text-xs">Catatan</span><span className="font-medium">{data.note || '-'}</span></div>
                             </div>
                         )}
+                        {/* NPS Alert Banner */}
+                        {loadingNps ? (
+                            <div className="mt-4 flex items-center justify-center gap-2 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#E60012] border-t-transparent"></div>
+                                <span className="text-xs text-gray-500">Mencari data NPS...</span>
+                            </div>
+                        ) : npsData && (() => {
+                            const style = getNpsBannerStyle(npsData.status_nps);
+                            const period = npsData.bulan
+                                ? new Date(npsData.bulan + '-01').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+                                : '-';
+                            return (
+                                <div className={`mt-4 rounded-lg border-2 ${style.bg} ${style.border} overflow-hidden`}>
+                                    <div className={`flex items-center gap-2 px-3 py-2 ${style.bg} border-b ${style.border}`}>
+                                        <BarChart3 size={14} className={style.icon} />
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${style.text}`}>Hasil NPS</span>
+                                        <span className="text-[10px] text-gray-500 ml-auto">{period}</span>
+                                    </div>
+                                    <div className="px-3 py-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-black border-2 shrink-0 ${style.scoreBg}`}>
+                                                {npsData.score}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${style.badge}`}>
+                                                    {npsData.status_nps}
+                                                </span>
+                                                {npsData.note && (
+                                                    <p className={`text-xs mt-1.5 ${style.text} opacity-80 leading-relaxed line-clamp-2`}>
+                                                        "{npsData.note}"
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                         <div className="mt-6 border-t border-gray-200 pt-4">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Log Tindak Lanjut</h3>
                             {loadingLogs ? (
@@ -229,6 +305,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                                                     <span className="text-gray-400 text-[10px]">{log.date}</span>
                                                 </div>
                                                 {log.pkt && log.pkt !== 'No' && <div className="text-green-600 text-[10px] mb-1">PKT: {log.pkt}</div>}
+                                                {log.note && <div className="text-gray-600 text-[10px] italic leading-relaxed bg-gray-50 rounded px-2 py-1 mt-1 border border-gray-100">"{log.note}"</div>}
                                             </div>
                                         </div>
                                     ))}

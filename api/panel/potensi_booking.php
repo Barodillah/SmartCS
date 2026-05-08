@@ -50,7 +50,8 @@ if ($type === 'all' || $type === 'booking') {
                       FROM booking
                       GROUP BY nopol
                   ) latest ON b.nopol = latest.nopol AND b.tanggal = latest.max_tanggal
-                  WHERE DATE_ADD(b.tanggal, INTERVAL $mo MONTH) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 14 DAY)
+                  WHERE b.status != 'INVALID' 
+                  AND DATE_ADD(b.tanggal, INTERVAL $mo MONTH) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 14 DAY)
                   GROUP BY b.nopol
                   ORDER BY last_service ASC";
         

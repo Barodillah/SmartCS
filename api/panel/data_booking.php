@@ -87,6 +87,24 @@ if ($method === 'GET') {
 } elseif ($method === 'POST') {
     $raw = file_get_contents('php://input');
     $body = json_decode($raw, true);
+
+    if (isset($body['action']) && $body['action'] === 'record_whatsapp') {
+        $id = (int)($body['booking_id'] ?? 0);
+        $user = mysqli_real_escape_string($conn, $body['user'] ?? 'SA');
+        $before = mysqli_real_escape_string($conn, $body['before'] ?? '');
+        $after = mysqli_real_escape_string($conn, $body['after'] ?? '');
+
+        if ($id > 0) {
+            $query = "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
+                      VALUES ($id, '$user', 'WHATSAPP', '$before', '$after')";
+            mysqli_query($conn, $query);
+            echo json_encode(['status' => true, 'message' => 'Record added']);
+        } else {
+            http_response_code(400);
+            echo json_encode(['status' => false, 'message' => 'Invalid booking ID']);
+        }
+        exit;
+    }
     
     $user      = mysqli_real_escape_string($conn, $body['user'] ?? 'STAFF');
     $tanggal   = mysqli_real_escape_string($conn, $body['tanggal'] ?? '');

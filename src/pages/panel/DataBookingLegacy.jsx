@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus, Search, ShieldAlert, Check, Database, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus, Search, ShieldAlert, Check, Database, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LegacyDetailModal, LegacyFormModal } from '../../components/panel/booking/LegacyBookingModals';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
@@ -80,6 +80,25 @@ const DataBookingLegacy = () => {
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const [showDatePicker, setShowDatePicker] = useState(false);
     const datePickerRef = useRef(null);
+
+    // Sorting state
+    const [jamSort, setJamSort] = useState(null); // null | 'asc' | 'desc'
+
+    const sortedBookings = React.useMemo(() => {
+        if (!jamSort) return bookings;
+        return [...bookings].sort((a, b) => {
+            const jamA = a.jam || '';
+            const jamB = b.jam || '';
+            if (jamSort === 'asc') return jamA.localeCompare(jamB);
+            return jamB.localeCompare(jamA);
+        });
+    }, [bookings, jamSort]);
+
+    const toggleJamSort = () => {
+        if (jamSort === null) setJamSort('asc');
+        else if (jamSort === 'asc') setJamSort('desc');
+        else setJamSort(null);
+    };
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -344,10 +363,19 @@ const DataBookingLegacy = () => {
             {/* Content Table / List */}
             <div className="bg-white border border-[#E5E5E5] flex-1 overflow-hidden flex flex-col">
                 <div className="bg-[#fcfcfc] border-b border-[#E5E5E5] grid grid-cols-12 gap-4 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider shrink-0 hidden md:grid">
-                    <div className="col-span-1">Jam</div>
+                    <div 
+                        className="col-span-1 flex items-center gap-1 cursor-pointer hover:text-[#111111] transition-colors select-none"
+                        onClick={toggleJamSort}
+                    >
+                        Jam
+                        {jamSort === 'asc' ? <ArrowUp size={12} className="text-[#E60012]" /> : 
+                         jamSort === 'desc' ? <ArrowDown size={12} className="text-[#E60012]" /> : 
+                         <ArrowUpDown size={12} className="text-gray-300" />}
+                    </div>
+                    {searchQuery && <div className="col-span-2">Tanggal</div>}
                     <div className="col-span-2">Nopol</div>
-                    <div className="col-span-3">Nama</div>
-                    <div className="col-span-3">Kendaraan</div>
+                    <div className={searchQuery ? "col-span-2" : "col-span-3"}>Nama</div>
+                    <div className={searchQuery ? "col-span-2" : "col-span-3"}>Kendaraan</div>
                     <div className="col-span-2">Service</div>
                     <div className="col-span-1">Status</div>
                 </div>
@@ -357,14 +385,14 @@ const DataBookingLegacy = () => {
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
                         </div>
-                    ) : bookings.length === 0 ? (
+                    ) : sortedBookings.length === 0 ? (
                         <div className="text-center py-20">
                             <div className="mx-auto text-gray-300 mb-4 flex justify-center"><Calendar size={32} /></div>
                             <p className="text-gray-500 text-sm">Tidak ada booking untuk tanggal ini.</p>
                         </div>
                     ) : (
                         <div className="divide-y divide-[#E5E5E5]">
-                            {bookings.map((item) => (
+                            {sortedBookings.map((item) => (
                                 <div
                                     key={item.id}
                                     onClick={() => setDetailModalData(item)}
@@ -374,6 +402,11 @@ const DataBookingLegacy = () => {
                                         <span className="inline-block bg-[#E60012]/10 text-[#E60012] px-2 py-1 rounded text-xs font-bold">
                                             {item.jam}
                                         </span>
+                                        {searchQuery && (
+                                            <div className="text-[10px] text-gray-400 mt-1 font-medium md:hidden">
+                                                {new Date(item.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                            </div>
+                                        )}
                                         <div className="md:hidden flex flex-col items-end gap-1">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(item.status)}`}>
                                                 {item.status || 'REQUEST'}
@@ -386,16 +419,22 @@ const DataBookingLegacy = () => {
                                         </div>
                                     </div>
                                     
+                                    {searchQuery && (
+                                        <div className="hidden md:block col-span-2 text-xs font-bold text-[#111111]">
+                                            {new Date(item.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </div>
+                                    )}
+
                                     <div className="md:col-span-2 md:block">
                                         <div className="font-mono text-sm font-bold text-[#111111]">{item.nopol}</div>
                                     </div>
 
-                                    <div className="md:col-span-3 text-sm">
+                                    <div className={`${searchQuery ? "md:col-span-2" : "md:col-span-3"} text-sm`}>
                                         <span className="text-xs font-medium text-gray-400 md:hidden block mb-0.5">Nama</span>
                                         <div className="font-medium text-[#111111]">{item.nama}</div>
                                     </div>
 
-                                    <div className="md:col-span-3 text-xs text-gray-600 bg-gray-50 p-2 md:p-0 md:bg-transparent rounded border border-[#E5E5E5] md:border-none">
+                                    <div className={`${searchQuery ? "md:col-span-2" : "md:col-span-3"} text-xs text-gray-600 bg-gray-50 p-2 md:p-0 md:bg-transparent rounded border border-[#E5E5E5] md:border-none`}>
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider md:hidden block mb-1">Kendaraan</span>
                                         <div className="font-bold text-[#111111]">{item.kendaraan}</div>
                                     </div>

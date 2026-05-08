@@ -138,8 +138,9 @@ elseif ($method === 'PUT') {
         $params[] = $id;
         $sql = "UPDATE potensi_service SET " . implode(', ', $fields) . " WHERE id = ?";
     } else {
-        $params[] = $nopol;
-        $sql = "UPDATE potensi_service SET " . implode(', ', $fields) . " WHERE REPLACE(UPPER(nopol), ' ', '') = REPLACE(UPPER(?), ' ', '')";
+        $cleanNopol = strtoupper(str_replace(' ', '', $nopol));
+        $params[] = $cleanNopol;
+        $sql = "UPDATE potensi_service SET " . implode(', ', $fields) . " WHERE nopol = ?";
         if (isset($body['status']) && $body['status'] === 'BOOKING') {
             $sql .= " AND status != 'BOOKING'";
         }

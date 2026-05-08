@@ -161,12 +161,16 @@ const DetailModal = ({ isOpen, onClose, item, onProcess, onNext, mainFilter, onW
     );
 };
 
-const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter }) => {
+const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter, isAlreadyCleaned }) => {
     const [activeAction, setActiveAction] = useState(null);
 
     // Form states
     const [potensiService, setPotensiService] = useState('');
-    const [expiredDate, setExpiredDate] = useState('');
+    const [expiredDate, setExpiredDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split('T')[0];
+    });
     const [serviceDate, setServiceDate] = useState('');
     const [otherDealer, setOtherDealer] = useState('');
     const [rangka, setRangka] = useState('');
@@ -211,6 +215,7 @@ const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter }) => {
         { id: 'clean', label: 'Clean Data', icon: Check, color: 'bg-[#25D366]' },
         { id: 'dwindo', label: 'Service Dwindo', icon: Wrench, color: 'bg-blue-500' },
         { id: 'other', label: 'Other Dealer', icon: Store, color: 'bg-orange-500' },
+        { id: 'invalid', label: 'Invalid Data', icon: X, color: 'bg-red-600' },
     ];
 
     const serviceOptions = [
@@ -270,13 +275,24 @@ const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter }) => {
                     </button>
                 </div>
                 <div className="p-6">
+                    {isAlreadyCleaned && (
+                        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5 animate-pulse">
+                            <ShieldAlert size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Perhatian</div>
+                                <div className="text-[10px] text-amber-700 leading-relaxed mt-0.5">
+                                    Nopol ini sudah ada di daftar <b>Clean Data</b> dan sedang dalam proses follow-up.
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {!activeAction ? (
                         <>
                             <div className="mb-6 text-center">
                                 <div className="text-sm font-bold text-[#111111]">{item.name}</div>
                                 <div className="text-xs text-gray-500 mt-1">{item.plate} • {item.model}</div>
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 gap-3">
                                 {actions.map((action) => (
                                     <button
                                         key={action.id}
@@ -312,6 +328,7 @@ const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter }) => {
                                             onChange={setPotensiService}
                                             options={serviceOptions}
                                             placeholder="Pilih Potensi Service"
+                                            allowCustom={true}
                                         />
                                     </div>
                                     <div className="relative">
@@ -398,11 +415,21 @@ const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter }) => {
                                 </>
                             )}
 
+                            {activeAction === 'invalid' && (
+                                <div className="text-center py-4">
+                                    <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <X size={32} />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-[#111111] mb-2 uppercase">Konfirmasi Invalid</h4>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Apakah Anda yakin ingin menandai data <b>{item.name}</b> sebagai Invalid?</p>
+                                </div>
+                            )}
+
                             <button
                                 onClick={handleSubmit}
-                                className="w-full mt-4 py-3 bg-[#E60012] text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-red-700 transition-colors"
+                                className={`w-full mt-4 py-3 text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-colors ${activeAction === 'invalid' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#E60012] hover:bg-red-700'}`}
                             >
-                                Submit
+                                {activeAction === 'invalid' ? 'Ya, Tandai Invalid!' : 'Submit'}
                             </button>
                         </div>
                     )}
@@ -422,6 +449,9 @@ const PotensiBooking = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    // State for filtering
+    const [allCleanNopols, setAllCleanNopols] = useState(new Set());
 
     // Clean data states
     const [cleanData, setCleanData] = useState([]);
@@ -493,6 +523,19 @@ const PotensiBooking = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
+                // Fetch All Clean Nopols first
+                const cleanRes = await fetch('https://csdwindo.com/api/potensi_service.php?action=list');
+                const cleanJson = await cleanRes.json();
+                if (cleanJson.status && cleanJson.data) {
+                    // Sembunyikan jika status BUKAN 'BOOKING'
+                    const nopolsToHide = new Set(
+                        cleanJson.data
+                            .filter(d => d.status !== 'BOOKING')
+                            .map(d => d.nopol?.replace(/\s/g, '').toUpperCase())
+                    );
+                    setAllCleanNopols(nopolsToHide);
+                }
+
                 const res = await fetch('https://csdwindo.com/api/panel/potensi_booking.php');
                 const json = await res.json();
                 if (json.status) {
@@ -507,22 +550,28 @@ const PotensiBooking = () => {
         fetchData();
     }, []);
 
-    const currentData = mainFilter === 'clean' ? cleanData : (data[mainFilter]?.[activeTab] || []);
+    const baseData = mainFilter === 'clean' ? cleanData : (data[mainFilter]?.[activeTab] || []);
+    const currentData = mainFilter === 'clean' 
+        ? baseData 
+        : baseData.filter(item => {
+            const plate = (item.plate || item.nopol || '').replace(/\s/g, '').toUpperCase();
+            return !allCleanNopols.has(plate);
+        });
 
     const handleAction = async (type, item, payload) => {
         if (type === 'clean') {
             setIsSubmitting(true);
             try {
-                const cleanPayload = {
+                let cleanPayload = {
                     nopol: item.plate || '',
                     nama: item.name || '',
                     telp: item.phone || '',
                     kendaraan: item.model || '',
+                    service_terakhir: item.last_service || '',
+                    source: payload?.source || mainFilter?.toUpperCase() || '',
                     rangka: payload?.rangka || '',
                     potensi_service: payload?.potensiService || '',
                     expected_date: payload?.expiredDate || '',
-                    service_terakhir: item.last_service || '',
-                    source: payload?.source || mainFilter?.toUpperCase() || '',
                 };
 
                 const res = await fetch('https://csdwindo.com/api/potensi_service.php', {
@@ -531,13 +580,20 @@ const PotensiBooking = () => {
                     body: JSON.stringify(cleanPayload)
                 });
                 const result = await res.json();
+
                 if (result.status) {
-                    showToast(result.message || `Data ${item.name} berhasil di-clean`);
+                    showToast(result.message || `Data ${item.name} berhasil diproses`);
+                    const cleanPlate = (item.plate || item.nopol || '').replace(/\s/g, '').toUpperCase();
+                    setAllCleanNopols(prev => {
+                        const next = new Set(prev);
+                        next.add(cleanPlate);
+                        return next;
+                    });
                 } else {
-                    showToast(result.message || 'Gagal menyimpan data', 'error');
+                    showToast(result.message || 'Gagal memproses data', 'error');
                 }
             } catch (err) {
-                console.error('Clean data error:', err);
+                console.error('Action error:', err);
                 showToast('Terjadi kesalahan jaringan', 'error');
             } finally {
                 setIsSubmitting(false);
@@ -569,6 +625,13 @@ const PotensiBooking = () => {
             bookingPayload.jenis = payload?.otherDealer || 'OTHER DEALER';
             bookingPayload.keluhan = payload?.otherDealer || '';
             bookingPayload.forceStatus = 'OTHER DEALER';
+        } else if (type === 'invalid') {
+            const d = new Date();
+            d.setMonth(d.getMonth() - 1);
+            bookingPayload.tanggal = d.toISOString().split('T')[0];
+            bookingPayload.forceStatus = 'INVALID';
+            bookingPayload.jenis = 'INVALID';
+            bookingPayload.keluhan = 'DATA DISET INVALID DARI POTENSI';
         }
 
         try {
@@ -579,12 +642,21 @@ const PotensiBooking = () => {
             });
             const result = await res.json();
             if (result.status) {
-                showToast(result.message || `Booking ${type === 'dwindo' ? 'Service Dwindo' : 'Other Dealer'} berhasil dibuat`);
+                const typeLabels = { dwindo: 'Service Dwindo', other: 'Other Dealer', invalid: 'Invalid Data' };
+                showToast(result.message || `${typeLabels[type] || type} berhasil diproses`);
+                
+                // Hide from list immediately
+                const cleanPlate = (item.plate || item.nopol || '').replace(/\s/g, '').toUpperCase();
+                setAllCleanNopols(prev => {
+                    const next = new Set(prev);
+                    next.add(cleanPlate);
+                    return next;
+                });
             } else {
-                showToast(result.message || 'Gagal membuat booking', 'error');
+                showToast(result.message || 'Gagal memproses data', 'error');
             }
         } catch (err) {
-            console.error('Create booking error:', err);
+            console.error('Action error:', err);
             showToast('Terjadi kesalahan jaringan', 'error');
         } finally {
             setIsSubmitting(false);
@@ -611,6 +683,14 @@ const PotensiBooking = () => {
                         body: JSON.stringify({ id: selectedItem.id, status: 'BOOKING' })
                     });
                     setCleanData(prev => prev.map(item => item.id === selectedItem.id ? { ...item, status: 'BOOKING' } : item));
+                    
+                    // Karena sudah BOOKING, maka jangan sembunyikan lagi dari list utama
+                    const plate = (selectedItem.plate || selectedItem.nopol || '').replace(/\s/g, '').toUpperCase();
+                    setAllCleanNopols(prev => {
+                        const next = new Set(prev);
+                        next.delete(plate);
+                        return next;
+                    });
                 }
             } else {
                 showToast(result.message || 'Gagal membuat booking', 'error');
@@ -865,6 +945,7 @@ const PotensiBooking = () => {
                         item={selectedItem}
                         onAction={handleAction}
                         mainFilter={mainFilter}
+                        isAlreadyCleaned={allCleanNopols.has((selectedItem?.plate || selectedItem?.nopol || '').replace(/\s/g, '').toUpperCase())}
                     />
                 )}
                 {showDetailModal && (
