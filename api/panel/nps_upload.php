@@ -24,12 +24,19 @@ if ($method === 'POST') {
     try {
         $pdo->beginTransaction();
         
+        // Prepared statement to check for existing rangka in the same period
+        $checkStmt = $pdo->prepare("
+            SELECT COUNT(*) FROM nps_data 
+            WHERE rangka = ? AND bulan = ? AND cabang = ? AND divisi = ?
+        ");
+
         $stmt = $pdo->prepare("
             INSERT INTO nps_data (bulan, cabang, divisi, nama, rangka, kendaraan, score, note) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $inserted = 0;
+        $skipped = 0;
         foreach ($rows as $row) {
             $nama = $row['Nama'] ?? null;
             $rangka = $row['Rangka'] ?? null;
@@ -40,12 +47,25 @@ if ($method === 'POST') {
             // Skip totally empty rows
             if (empty($nama) && empty($rangka) && empty($score)) continue;
 
+            // Skip if rangka already exists in the same period (bulan+cabang+divisi)
+            if (!empty($rangka)) {
+                $checkStmt->execute([$rangka, $bulan, $cabang, $divisi]);
+                if ($checkStmt->fetchColumn() > 0) {
+                    $skipped++;
+                    continue;
+                }
+            }
+
             $stmt->execute([$bulan, $cabang, $divisi, $nama, $rangka, $kendaraan, $score, $note]);
             $inserted++;
         }
 
         $pdo->commit();
-        jsonResponse(true, "$inserted data berhasil diupload.");
+        $msg = "$inserted data berhasil diupload.";
+        if ($skipped > 0) {
+            $msg .= " $skipped data dilewati (rangka sudah ada di periode ini).";
+        }
+        jsonResponse(true, $msg);
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();

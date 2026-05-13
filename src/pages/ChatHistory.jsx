@@ -239,7 +239,7 @@ const ChatHistory = () => {
                         </div>
 
                         {/* Chat Area */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-[#F5F5F5]">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-[#F5F5F5] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             <div className="max-w-[800px] mx-auto w-full space-y-4">
                                 {loadingMessages ? (
                                     <div className="flex items-center justify-center h-40">

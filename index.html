@@ -38,12 +38,35 @@
     rel="stylesheet">
 
   <!-- PWA Setup -->
-  <link rel="manifest" href="/sa-manifest.json" />
-  <meta name="theme-color" content="#E60012" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Dwindo SA" />
-  <link rel="apple-touch-icon" href="/logo/logo_dwindo.png" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <script>
+    (function () {
+      var hostname = window.location.hostname;
+      var pathname = window.location.pathname;
+      var manifestHref = '/manifest.json';
+      var appTitle = 'CS Dwindo Bintaro';
+      var themeColor = '#111111';
+      var iconHref = '/apps.png';
+
+      if (hostname === 'panel.csdwindo.com' || pathname.startsWith('/panel')) {
+        manifestHref = '/panel-manifest.json';
+        appTitle = 'CSDwindo Panel';
+        themeColor = '#111111';
+        iconHref = '/apps.png';
+      } else if (pathname.startsWith('/sa')) {
+        manifestHref = '/sa-manifest.json';
+        appTitle = 'Dwindo SA';
+        themeColor = '#111111';
+        iconHref = '/apps.png';
+      }
+
+      document.write('<link rel="manifest" href="' + manifestHref + '" />');
+      document.write('<meta name="theme-color" content="' + themeColor + '" />');
+      document.write('<meta name="apple-mobile-web-app-title" content="' + appTitle + '" />');
+      document.write('<link rel="apple-touch-icon" href="' + iconHref + '" />');
+    })();
+  </script>
 
   <script>
     if ('serviceWorker' in navigator) {

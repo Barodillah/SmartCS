@@ -114,7 +114,7 @@ const ProsesPDIModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
                     <div className={`w-2.5 h-2.5 rounded-full ${step === 2 ? 'bg-[#E60012]' : 'bg-gray-300'}`}></div>
                 </div>
 
-                <div className={`p-6 flex-1 ${step === 1 ? 'overflow-y-auto' : 'overflow-visible'}`}>
+                <div className={`p-6 flex-1 ${step === 1 ? 'overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent' : 'overflow-visible'}`}>
                     <AnimatePresence mode="wait">
                         {step === 1 ? (
                             <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
@@ -261,7 +261,7 @@ const DetailKonsumenModal = ({ isOpen, data, onClose, adminUser, onEdit }) => {
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Detail Konsumen</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1">
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col">
@@ -347,7 +347,7 @@ const EditPDIModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Edit Data PDI</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 space-y-4">
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 space-y-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
@@ -691,7 +691,7 @@ const DataPDIKTB = () => {
                     <div className="col-span-2">Status / Umur</div>
                     <div className="col-span-2 text-right">Action</div>
                 </div>
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div></div>
                     ) : surveys.length === 0 ? (

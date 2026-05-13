@@ -14,6 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once dirname(__DIR__) . '/config_legacy.php';
 $conn = getLegacyDB();
 
+if ($conn === null) {
+    http_response_code(503);
+    echo json_encode(['status' => false, 'message' => 'Database legacy sedang tidak tersedia.']);
+    exit;
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
@@ -149,7 +155,7 @@ if ($method === 'GET') {
             $search = mysqli_real_escape_string($conn, $search);
             $where = "WHERE (nama LIKE '%$search%' OR rangka LIKE '%$search%' OR spv LIKE '%$search%' OR kendaraan LIKE '%$search%' OR sales LIKE '%$search%' OR stnk LIKE '%$search%')";
         } elseif ($filter === 'belum') {
-            $where = "WHERE status IN ('PERLU FOLLOW UP', 'TIDAK DIANGKAT', 'DITOLAK/REJECT', 'PERJANJIAN')";
+            $where = "WHERE status IN ('PERLU FOLLOW UP', 'TIDAK DIANGKAT', 'DITOLAK/REJECT', 'PERJANJIAN', 'SURVEY_WA')";
             if ($days > 0) {
                 $dateFrom = date('Y-m-d', strtotime("-{$days} days"));
                 $where .= " AND wa_date >= '$dateFrom'";
@@ -185,7 +191,7 @@ if ($method === 'GET') {
         }
 
         // Count belum follow up
-        $countRes = mysqli_query($conn, "SELECT COUNT(*) as total FROM surveyupdate WHERE status = 'PERLU FOLLOW UP'");
+        $countRes = mysqli_query($conn, "SELECT COUNT(*) as total FROM surveyupdate WHERE status IN ('PERLU FOLLOW UP', 'SURVEY_WA')");
         $countRow = mysqli_fetch_assoc($countRes);
         $belumFollowUp = (int)($countRow['total'] ?? 0);
 

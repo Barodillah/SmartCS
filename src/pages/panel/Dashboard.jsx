@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { LayoutDashboard, Users, MessageSquare, TrendingUp, AlertTriangle, Eye, CalendarCheck, FileText, ShieldAlert, Bell } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
@@ -52,6 +53,7 @@ const Dashboard = () => {
     });
     const [trendBooking, setTrendBooking] = useState([]);
     const [surveyRespons, setSurveyRespons] = useState({});
+    const [npsSummary, setNpsSummary] = useState({ promoters: 0, passives: 0, detractors: 0, total: 0, nps: 0, lastUpdate: null });
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('admin_user');
@@ -64,6 +66,7 @@ const Dashboard = () => {
         const fetchStats = async () => {
             try {
                 const res = await fetch('https://csdwindo.com/api/chat/dashboard.php');
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 const json = await res.json();
                 if (json.status) {
                     setStats(json.data);
@@ -82,22 +85,22 @@ const Dashboard = () => {
                 besok.setDate(besok.getDate() + 1);
                 const besokStr = besok.toISOString().split('T')[0];
                 const bookingRes = await fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${besokStr}`);
-                const bookingData = await bookingRes.json();
+                const bookingData = bookingRes.ok ? await bookingRes.json() : { status: false };
                 const bookingBesok = bookingData.status ? (bookingData.data?.length || 0) : 0;
 
                 // 2. Survey perlu follow up
                 const surveyRes = await fetch('https://csdwindo.com/api/panel/sales_survey.php?action=list&filter=belum&days=30');
-                const surveyData = await surveyRes.json();
+                const surveyData = surveyRes.ok ? await surveyRes.json() : { status: false };
                 const surveyPerluFU = surveyData.status ? (surveyData.data?.length || 0) : 0;
 
                 // 3. Perlu konfirmasi (REQUEST + UBAH)
                 const konfirmasiRes = await fetch('https://csdwindo.com/api/panel/wa_followup.php?tab=konfirmasi');
-                const konfirmasiData = await konfirmasiRes.json();
+                const konfirmasiData = konfirmasiRes.ok ? await konfirmasiRes.json() : { status: false };
                 const perluKonfirmasi = konfirmasiData.status ? (konfirmasiData.data?.length || 0) : 0;
 
                 // 4. Warranty Belum Aktif (status PDI, 30 hari terakhir)
                 const pdiRes = await fetch('https://csdwindo.com/api/panel/sales_survey.php?action=list&filter=pdi&days=30');
-                const pdiData = await pdiRes.json();
+                const pdiData = pdiRes.ok ? await pdiRes.json() : { status: false };
                 const warrantyBelumAktif = pdiData.status ? (pdiData.data?.length || 0) : 0;
 
                 setOpsStats({
@@ -121,28 +124,29 @@ const Dashboard = () => {
                     d.setDate(d.getDate() - i);
                     const dateStr = d.toISOString().split('T')[0];
                     last14Days.push(dateStr);
-                    bookingPromises.push(fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${dateStr}`).then(res => res.json()));
+                    bookingPromises.push(fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${dateStr}`).then(res => res.ok ? res.json() : { status: false }).catch(() => ({ status: false })));
                 }
                 const bookingResults = await Promise.all(bookingPromises);
 
                 const trendData = last14Days.map((date, idx) => {
                     const res = bookingResults[idx];
-                    let booking = 0, datang = 0, cancel = 0;
+                    let booking = 0, datang = 0, cancel = 0, walkin = 0;
                     if (res && res.status && res.data) {
                         res.data.forEach(item => {
                             const status = (item.status || '').toUpperCase();
                             if (status === 'BOOKING') booking++;
                             if (status === 'DATANG') datang++;
                             if (status === 'CANCEL' || status === 'BATAL') cancel++;
+                            if (status === 'WALK IN') walkin++;
                         });
                     }
-                    return { date, booking, datang, cancel, total: booking + datang + cancel };
+                    return { date, booking, datang, cancel, walkin, total: booking + datang + cancel + walkin };
                 });
                 setTrendBooking(trendData);
 
                 // 2. Survey Respons (last 30 days)
                 const surveyRes = await fetch('https://csdwindo.com/api/panel/sales_survey.php?action=list');
-                const surveyData = await surveyRes.json();
+                const surveyData = surveyRes.ok ? await surveyRes.json() : { status: false };
 
                 const targetCategories = ['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'KOMPLEN', 'SARAN', 'TIDAK DIANGKAT', 'NOMOR SALAH', 'DITOLAK/REJECT', 'PERJANJIAN', 'SALAH SAMBUNG'];
                 const responsCounts = {};
@@ -168,9 +172,42 @@ const Dashboard = () => {
             }
         };
 
+        const fetchNPSStats = async () => {
+            const storedUserStr = sessionStorage.getItem('admin_user');
+            let sessionUser = null;
+            if (storedUserStr) {
+                try { sessionUser = JSON.parse(storedUserStr); } catch (e) {}
+            }
+            if (sessionUser && sessionUser.role === 'staff' && (sessionUser.divisi === 'sales' || sessionUser.divisi === 'service')) {
+                try {
+                    const currentMonth = new Date().toISOString().slice(0, 7);
+                    const div = sessionUser.divisi === 'sales' ? 'Sales' : 'Service';
+                    const res = await fetch(`https://csdwindo.com/api/panel/nps_report.php?bulan=${currentMonth}&divisi=${div}&cabang=Bintaro`);
+                    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                    const data = await res.json();
+                    if (data.status && data.data && data.data.length > 0) {
+                        const sumRow = data.data[0];
+                        const total = sumRow.promoters + sumRow.passives + sumRow.detractors;
+                        const nps = total > 0 ? Math.round(((sumRow.promoters - sumRow.detractors) / total) * 100) : 0;
+                        setNpsSummary({
+                            promoters: sumRow.promoters,
+                            passives: sumRow.passives,
+                            detractors: sumRow.detractors,
+                            total,
+                            nps,
+                            lastUpdate: sumRow.last_update
+                        });
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch NPS stats", err);
+                }
+            }
+        };
+
         fetchStats();
         fetchOpsStats();
         fetchChartsData();
+        fetchNPSStats();
     }, []);
 
     if (loading) {
@@ -225,9 +262,64 @@ const Dashboard = () => {
                 }
 
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-                        {cards}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                            {cards}
+                        </div>
+                        {(isServiceStaff || isSalesStaff) && (() => {
+                            const targetNPS = isSalesStaff ? 84 : 82;
+                            let requiredPromoters = 0;
+                            if (npsSummary.nps < targetNPS) {
+                                requiredPromoters = Math.ceil((targetNPS * npsSummary.total / 100 - npsSummary.promoters + npsSummary.detractors) / (1 - targetNPS / 100));
+                            }
+                            return (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0 mb-8">
+                                    <div className="bg-white rounded-xl p-4 border border-[#E5E5E5] shadow-sm relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-[#E60012]/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <div className="text-gray-500 text-xs font-bold uppercase tracking-wider">Total NPS ({isSalesStaff ? 'Sales' : 'Service'})</div>
+                                        </div>
+                                        <div className="flex items-end gap-2">
+                                            <div className={`text-3xl font-black ${npsSummary.nps >= targetNPS ? 'text-green-600' : 'text-red-600'}`}>{npsSummary.nps}%</div>
+                                            <div className="text-sm text-gray-400 font-medium pb-1">dari {npsSummary.total}</div>
+                                        </div>
+                                        {npsSummary.lastUpdate && (
+                                            <div className="text-[10px] text-gray-400 font-medium mt-1">Last Update: {new Date(new Date(npsSummary.lastUpdate).getTime() + (7 * 60 * 60 * 1000)).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                                        )}
+                                    </div>
+                                    <div className="bg-white rounded-xl p-4 border border-green-200 shadow-sm relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                        <div className="text-green-600 text-xs font-bold uppercase tracking-wider mb-1">Promoters (9-10)</div>
+                                        <div className="flex items-end gap-2">
+                                            <div className="text-3xl font-black text-green-700">{npsSummary.promoters}</div>
+                                            <div className="text-sm text-green-600 font-medium pb-1 bg-green-100 px-1.5 rounded">{npsSummary.total > 0 ? Math.round((npsSummary.promoters / npsSummary.total) * 100) : 0}%</div>
+                                        </div>
+                                        {requiredPromoters > 0 && (
+                                            <div className="text-[10px] text-red-500 font-bold mt-1 bg-red-50 px-1.5 py-0.5 rounded w-fit">
+                                                Kurang {requiredPromoters} untuk target {targetNPS}%
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="bg-white rounded-xl p-4 border border-amber-200 shadow-sm relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                        <div className="text-amber-600 text-xs font-bold uppercase tracking-wider mb-1">Passives (7-8)</div>
+                                        <div className="flex items-end gap-2">
+                                            <div className="text-3xl font-black text-amber-700">{npsSummary.passives}</div>
+                                            <div className="text-sm text-amber-600 font-medium pb-1 bg-amber-100 px-1.5 rounded">{npsSummary.total > 0 ? Math.round((npsSummary.passives / npsSummary.total) * 100) : 0}%</div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-16 h-16 bg-red-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+                                        <div className="text-red-600 text-xs font-bold uppercase tracking-wider mb-1">Detractors (0-6)</div>
+                                        <div className="flex items-end gap-2">
+                                            <div className="text-3xl font-black text-red-700">{npsSummary.detractors}</div>
+                                            <div className="text-sm text-red-600 font-medium pb-1 bg-red-100 px-1.5 rounded">{npsSummary.total > 0 ? Math.round((npsSummary.detractors / npsSummary.total) * 100) : 0}%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </>
                 );
             })()}
 
@@ -268,10 +360,14 @@ const Dashboard = () => {
                         <div className="bg-white p-8 border border-[#E5E5E5]">
                             <div className="flex flex-col items-start text-left w-full">
                                 <div className="flex justify-between items-center w-full mb-6">
-                                    <h3 className="font-bold text-[#111111] uppercase tracking-wider text-sm">Trend Booking 14 Hari Terakhir</h3>
+                                    <div className="flex items-center gap-3">
+                                        <h3 className="font-bold text-[#111111] uppercase tracking-wider text-sm">Trend Booking 14 Hari Terakhir</h3>
+                                        <Link to="/panel/analisis-booking" className="text-[10px] font-bold text-[#E60012] bg-red-50 px-2.5 py-1 rounded border border-red-100 hover:bg-[#E60012] hover:text-white transition-colors">Detail</Link>
+                                    </div>
                                     <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
                                         <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-purple-500 rounded-sm"></div>BOOKING</div>
                                         <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-green-500 rounded-sm"></div>DATANG</div>
+                                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-gray-400 rounded-sm"></div>WALK IN</div>
                                         <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-red-500 rounded-sm"></div>CANCEL</div>
                                     </div>
                                 </div>
@@ -280,11 +376,13 @@ const Dashboard = () => {
                                         const maxCount = Math.max(...trendBooking.map(d => d.total), 10);
                                         const bookingHeight = `${(item.booking / maxCount) * 100}%`;
                                         const datangHeight = `${(item.datang / maxCount) * 100}%`;
+                                        const walkinHeight = `${(item.walkin / maxCount) * 100}%`;
                                         const cancelHeight = `${(item.cancel / maxCount) * 100}%`;
                                         return (
                                             <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative">
                                                 <div className="w-full flex flex-col justify-end h-full group-hover:opacity-80 transition-opacity">
                                                     {item.cancel > 0 && <div className="w-full bg-red-500" style={{ height: cancelHeight }}></div>}
+                                                    {item.walkin > 0 && <div className="w-full bg-gray-400" style={{ height: walkinHeight }}></div>}
                                                     {item.datang > 0 && <div className="w-full bg-green-500" style={{ height: datangHeight }}></div>}
                                                     {item.booking > 0 && <div className="w-full bg-purple-500" style={{ height: bookingHeight }}></div>}
                                                 </div>
@@ -295,6 +393,7 @@ const Dashboard = () => {
                                                     <div className="font-bold mb-1 border-b border-gray-700 pb-1">{item.date}</div>
                                                     <div className="text-purple-400">Booking: {item.booking}</div>
                                                     <div className="text-green-400">Datang: {item.datang}</div>
+                                                    <div className="text-gray-400">Walk In: {item.walkin}</div>
                                                     <div className="text-red-400">Cancel: {item.cancel}</div>
                                                 </div>
                                             </div>

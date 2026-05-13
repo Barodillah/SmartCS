@@ -81,7 +81,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, allowCustom = fal
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto hide-scrollbar"
+                        className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent"
                     >
                         <div className="py-1">
                             {options.map((opt) => (
@@ -177,6 +177,7 @@ export default function BookingService() {
 
     const [availableDates, setAvailableDates] = useState([]);
     const [availableSlots, setAvailableSlots] = useState([]);
+    const [holidayInfo, setHolidayInfo] = useState(null);
     const [isSlotLoading, setIsSlotLoading] = useState(false);
     const [showCustomDate, setShowCustomDate] = useState(false);
     const [duplicateNopol, setDuplicateNopol] = useState(null);
@@ -330,6 +331,14 @@ export default function BookingService() {
             const response = await fetch(`https://csdwindo.com/api-book/slot-jam/?tanggal=${tanggal}`);
             const data = await response.json();
 
+            if (data.keterangan_libur) {
+                setHolidayInfo(data.keterangan_libur);
+                setAvailableSlots([]);
+                return;
+            } else {
+                setHolidayInfo(null);
+            }
+
             // Logic slot
             const kmValue = parseInt(formData.km) || 0;
             const isMinor = kmValue === 1000 || (kmValue > 0 && (kmValue / 10000) % 2 !== 0); // Ganjil = Minor
@@ -378,6 +387,7 @@ export default function BookingService() {
         handleInputChange('jam', '');
         setShowCustomDate(false);
         setDuplicateNopol(null);
+        setHolidayInfo(null);
         checkDuplicateNopol(isoDate);
         fetchSlots(isoDate);
     };
@@ -387,6 +397,7 @@ export default function BookingService() {
         handleInputChange('jam', '');
         setShowCustomDate(false);
         setDuplicateNopol(null);
+        setHolidayInfo(null);
         if (isoDate) {
             checkDuplicateNopol(isoDate);
             fetchSlots(isoDate);
@@ -861,6 +872,13 @@ export default function BookingService() {
                                         <div className="py-8 flex justify-center">
                                             <div className="w-6 h-6 border-2 border-red-200 border-t-red-600 rounded-full animate-spin"></div>
                                         </div>
+                                    ) : holidayInfo ? (
+                                        <div className="py-6 px-4 bg-orange-50 text-orange-600 rounded-xl border border-orange-200 text-center text-sm font-medium">
+                                            <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+                                            Tanggal ini adalah hari libur:<br/>
+                                            <span className="font-bold text-orange-700">{holidayInfo}</span><br/>
+                                            Bengkel tidak beroperasi. Silakan pilih tanggal lain.
+                                        </div>
                                     ) : (
                                         <>
                                             {availableSlots.length > 0 ? (
@@ -934,7 +952,7 @@ export default function BookingService() {
 
                             <button
                                 onClick={handleNextToStep4}
-                                disabled={!formData.tanggal || !formData.jam || !!duplicateNopol}
+                                disabled={!formData.tanggal || !formData.jam || !!duplicateNopol || !!holidayInfo}
                                 className="w-full bg-gray-900 hover:bg-black text-white font-medium py-3.5 rounded-xl transition-all flex justify-center items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Lanjut Ringkasan <ChevronRight className="w-4 h-4" />

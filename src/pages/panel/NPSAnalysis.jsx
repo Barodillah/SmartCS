@@ -199,7 +199,7 @@ const NPSAnalysis = () => {
 
             {/* Chat Area */}
             <div className="bg-white border border-[#E5E5E5] flex-1 overflow-hidden rounded-xl shadow-sm flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isGenerating && conversation.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full text-center">
                             <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 border border-red-100 relative">

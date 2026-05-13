@@ -35,8 +35,8 @@ function getDB()
                 ]
             );
         } catch (PDOException $e) {
-            jsonResponse(false, 'Database connection failed', null, 500);
-            exit;
+            error_log('SmartCS DB connection failed: ' . $e->getMessage());
+            return null;
         }
     }
     return $pdo;

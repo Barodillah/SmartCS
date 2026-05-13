@@ -13,6 +13,7 @@ import ArticleList from './pages/ArticleList';
 import ArticleDetail from './pages/ArticleDetail';
 import Cetak from './pages/Cetak';
 import BookingService from './pages/BookingService';
+import CustomerSurvey from './pages/CustomerSurvey';
 
 // Panel Views
 import PanelLayout from './components/layout/PanelLayout';
@@ -27,6 +28,7 @@ import { KnowledgeHub } from './pages/panel/GenericPages';
 import Users from './pages/panel/Users';
 import PanelPriceList from './pages/panel/PanelPriceList';
 import DataBookingLegacy from './pages/panel/DataBookingLegacy';
+import AnalisisBooking from './pages/panel/AnalisisBooking';
 import SalesSurvey from './pages/panel/SalesSurvey';
 import SalesSurveyKTB from './pages/panel/SalesSurveyKTB';
 import NPSReport from './pages/panel/NPSReport';
@@ -41,6 +43,7 @@ import PDIUpload from './pages/panel/PDIUpload';
 import ChurnPrediction from './pages/panel/ChurnPrediction';
 import PotensiBooking from './pages/panel/PotensiBooking';
 import KonsumenBooking from './pages/panel/KonsumenBooking';
+import Dissatisfaction from './pages/panel/Dissatisfaction';
 import SA from './pages/SA';
 
 function App() {
@@ -67,6 +70,7 @@ function App() {
                     <Route path="/artikel/:id" element={<ArticleDetail />} />
                     <Route path="/cetak" element={<Cetak />} />
                     <Route path="/booking" element={<BookingService />} />
+                    <Route path="/survey/:uuid" element={<CustomerSurvey />} />
                 </Route>
 
                 {/* Standalone Route for SA */}
@@ -79,6 +83,7 @@ function App() {
                     <Route path="whatsapp" element={<PanelWhatsapp />} />
                     <Route path="booking" element={<LeadManager label="booking" title="Booking Service" desc="Kelola permohonan booking service dari client." icon="CalendarCheck" />} />
                     <Route path="data-booking" element={<DataBookingLegacy />} />
+                    <Route path="analisis-booking" element={<AnalisisBooking />} />
                     <Route path="konsumen-booking" element={<KonsumenBooking />} />
                     <Route path="test-drive" element={<LeadManager label="test_drive" title="Test Drive" desc="Kelola permohonan penjadwalan test drive kendaraan." icon="CarFront" />} />
                     <Route path="prospect" element={<LeadManager label="prospect" title="Prospect Leads" desc="Data potensi prospek pembelian kendaraan dari chatbot." icon="Users" />} />
@@ -107,6 +112,7 @@ function App() {
                     <Route path="users" element={<Users />} />
                     <Route path="churn-prediction" element={<ChurnPrediction />} />
                     <Route path="potensi-booking" element={<PotensiBooking />} />
+                    <Route path="dissatisfaction" element={<Dissatisfaction />} />
 
                     {/* Knowledge base sub-routes */}
                     <Route path="knowledge/price-list" element={<PanelPriceList />} />

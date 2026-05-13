@@ -26,7 +26,8 @@ if ($method === 'GET') {
                     SUM(CASE WHEN score >= 9 THEN 1 ELSE 0 END) AS promoters,
                     SUM(CASE WHEN score >= 7 AND score <= 8 THEN 1 ELSE 0 END) AS passives,
                     SUM(CASE WHEN score <= 6 THEN 1 ELSE 0 END) AS detractors,
-                    COUNT(*) AS total
+                    COUNT(*) AS total,
+                    MAX(created_at) AS last_update
                 FROM nps_data
                 WHERE bulan IN ($placeholders) AND divisi = ?
                 GROUP BY cabang
@@ -40,7 +41,8 @@ if ($method === 'GET') {
                     SUM(CASE WHEN score >= 9 THEN 1 ELSE 0 END) AS promoters,
                     SUM(CASE WHEN score >= 7 AND score <= 8 THEN 1 ELSE 0 END) AS passives,
                     SUM(CASE WHEN score <= 6 THEN 1 ELSE 0 END) AS detractors,
-                    COUNT(*) AS total
+                    COUNT(*) AS total,
+                    MAX(created_at) AS last_update
                 FROM nps_data
                 WHERE bulan IN ($placeholders) AND divisi = ? AND cabang = ?
                 GROUP BY cabang
@@ -52,12 +54,15 @@ if ($method === 'GET') {
 
         // Calculate Dwindo (all) totals if cabang = All
         if (empty($cabang) || $cabang === 'All') {
-            $dwindo = ['cabang' => 'Dwindo', 'promoters' => 0, 'passives' => 0, 'detractors' => 0, 'total' => 0];
+            $dwindo = ['cabang' => 'Dwindo', 'promoters' => 0, 'passives' => 0, 'detractors' => 0, 'total' => 0, 'last_update' => null];
             foreach ($rows as $row) {
                 $dwindo['promoters'] += (int)$row['promoters'];
                 $dwindo['passives'] += (int)$row['passives'];
                 $dwindo['detractors'] += (int)$row['detractors'];
                 $dwindo['total'] += (int)$row['total'];
+                if (!$dwindo['last_update'] || $row['last_update'] > $dwindo['last_update']) {
+                    $dwindo['last_update'] = $row['last_update'];
+                }
             }
             $rows[] = $dwindo;
         }

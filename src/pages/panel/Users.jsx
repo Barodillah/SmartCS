@@ -313,7 +313,7 @@ const Users = () => {
             {/* Modal Tambah / Edit */}
             {(isAddModalOpen || isEditModalOpen) && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                         <div className="p-6 border-b border-[#E5E5E5] flex justify-between items-center">
                             <h3 className="font-display font-bold text-lg text-[#111111] uppercase tracking-wide">
                                 {isAddModalOpen ? 'Tambah User Baru' : 'Edit User'}

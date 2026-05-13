@@ -387,7 +387,7 @@ Buatkan draft balasan pesannya sekarang:`;
                     <div className="col-span-2">Status</div>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {loading ? (
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
@@ -494,7 +494,7 @@ Buatkan draft balasan pesannya sekarang:`;
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8">
+                            <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {modalLoading && !selectedLead.recent_messages ? (
                                     <div className="flex-1 flex items-center justify-center">
                                         <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
@@ -609,7 +609,7 @@ Buatkan draft balasan pesannya sekarang:`;
                                                 <div className="bg-gray-50 px-3 py-2 text-[10px] font-bold uppercase text-gray-500 border-b border-gray-200">
                                                     Konteks Chat Terakhir
                                                 </div>
-                                                <div className="p-3 text-[11px] space-y-2 overflow-y-auto max-h-48 bg-white">
+                                                <div className="p-3 text-[11px] space-y-2 overflow-y-auto max-h-48 bg-white scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                                     {selectedLead.recent_messages && selectedLead.recent_messages.length > 0 ? (
                                                         selectedLead.recent_messages.slice(-5).map((m, i) => (
                                                             <div key={i} className={`p-1.5 rounded ${m.sender_type === 'user' ? 'bg-gray-100 text-gray-800' : 'bg-[#E60012]/10 text-[#E60012]'}`}>
@@ -715,7 +715,7 @@ Buatkan draft balasan pesannya sekarang:`;
                                 </button>
                             </div>
 
-                            <div className="p-4 flex-1 overflow-y-auto">
+                            <div className="p-4 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {aiModalStep === 1 ? (
                                     <>
                                         <p className="text-sm text-gray-600 mb-3">Berikan konteks atau poin utama yang ingin Anda sampaikan ke konsumen. AI akan merangkainya menjadi bahasa yang formal dan sopan.</p>

@@ -328,7 +328,7 @@ const KonsumenBooking = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-[#E60012]/10 text-[#E60012] rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-[#E60012]/10 text-[#E60012] rounded-none flex items-center justify-center">
                             <Users className="w-5 h-5" />
                         </div>
                         <h1 className="text-2xl font-bold text-gray-900 font-display">Data Konsumen Booking</h1>
@@ -339,7 +339,7 @@ const KonsumenBooking = () => {
                     <div className="relative">
                         <button 
                             onClick={() => setShowPajakDropdown(!showPajakDropdown)}
-                            className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+                            className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-none font-bold hover:bg-gray-50 transition-all shadow-sm active:scale-95"
                         >
                             <Globe size={18} className="text-blue-500" />
                             Cek Pajak
@@ -354,16 +354,16 @@ const KonsumenBooking = () => {
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+                                        className="absolute right-0 mt-2 w-56 bg-white rounded-none shadow-xl border border-gray-100 z-50 overflow-hidden"
                                     >
-                                        <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        <div className="p-2 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                             {kodePajak.samsat_urls.map((item, idx) => (
                                                 <React.Fragment key={idx}>
                                                     <a 
                                                         href={item.url} 
                                                         target="_blank" 
                                                         rel="noopener noreferrer" 
-                                                        className="flex items-center justify-between px-4 py-3 hover:bg-red-50 text-gray-700 hover:text-[#E60012] rounded-xl transition-colors group"
+                                                        className="flex items-center justify-between px-4 py-3 hover:bg-red-50 text-gray-700 hover:text-[#E60012] rounded-none transition-colors group"
                                                     >
                                                         <span className="text-sm font-medium">Samsat {item.provinsi}</span>
                                                         <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -381,7 +381,7 @@ const KonsumenBooking = () => {
                     {user?.role === 'admin' && (
                         <button 
                             onClick={() => setShowUploadModal(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-[#E60012] text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                            className="flex items-center gap-2 px-6 py-3 bg-[#E60012] text-white rounded-none font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 active:scale-95"
                         >
                             <UploadCloud size={20} />
                             Upload STNK
@@ -401,13 +401,13 @@ const KonsumenBooking = () => {
                             setFilter(filter === 'empty_pajak' ? 'all' : 'empty_pajak');
                             setPage(1);
                         }}
-                        className={`p-5 rounded-3xl border transition-all cursor-pointer flex items-center gap-4 ${
+                        className={`p-5 rounded-none border transition-all cursor-pointer flex items-center gap-4 ${
                             filter === 'empty_pajak' 
                             ? 'bg-[#E60012] border-[#E60012] text-white shadow-lg shadow-red-500/30' 
                             : 'bg-white border-gray-100 shadow-sm hover:border-red-200 group'
                         }`}
                     >
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                        <div className={`w-12 h-12 rounded-none flex items-center justify-center shrink-0 transition-colors ${
                             filter === 'empty_pajak' ? 'bg-white/20 text-white' : 'bg-red-50 text-[#E60012] group-hover:bg-red-100'
                         }`}>
                             <AlertTriangle size={24} />
@@ -435,9 +435,9 @@ const KonsumenBooking = () => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.1 * (idx + 1) }}
-                                className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 group hover:border-gray-200 transition-all"
+                                className="bg-white p-5 rounded-none border border-gray-100 shadow-sm flex items-center gap-4 group hover:border-gray-200 transition-all"
                             >
-                                <div className={`w-12 h-12 ${item.bgColor} ${item.textColor} rounded-2xl flex items-center justify-center shrink-0`}>
+                                <div className={`w-12 h-12 ${item.bgColor} ${item.textColor} rounded-none flex items-center justify-center shrink-0`}>
                                     <Star size={24} fill="currentColor" className="opacity-20" />
                                 </div>
                                 <div className="flex-1">
@@ -456,7 +456,7 @@ const KonsumenBooking = () => {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+            <div className="bg-white rounded-none shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-4 justify-between items-center">
                     <div className="relative w-full sm:max-w-md">
                         <input
@@ -464,7 +464,7 @@ const KonsumenBooking = () => {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Cari nopol, nama, atau no telp..."
-                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-none text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                         {filter !== 'all' && (
@@ -481,7 +481,7 @@ const KonsumenBooking = () => {
                     </div>
                     <button
                         onClick={fetchData}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors w-full sm:w-auto justify-center"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-none hover:bg-gray-50 hover:text-gray-900 transition-colors w-full sm:w-auto justify-center"
                     >
                         <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                         Refresh
@@ -511,7 +511,7 @@ const KonsumenBooking = () => {
                             ) : data.length === 0 ? (
                                 <tr>
                                     <td colSpan="6" className="px-6 py-20 text-center">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <div className="w-16 h-16 bg-gray-50 rounded-none flex items-center justify-center mx-auto mb-4">
                                             <Search className="w-8 h-8 text-gray-400" />
                                         </div>
                                         <p className="text-gray-500 font-medium">Tidak ada data konsumen yang ditemukan.</p>
@@ -526,12 +526,12 @@ const KonsumenBooking = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded-none bg-gray-100 flex items-center justify-center shrink-0">
                                                     <Car className="w-4 h-4 text-gray-500" />
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-gray-900">{item.kendaraan || '-'}</p>
-                                                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold font-mono tracking-wider bg-gray-100 text-gray-600">
+                                                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded-none text-[10px] font-bold font-mono tracking-wider bg-gray-100 text-gray-600">
                                                         {item.nopol}
                                                     </span>
                                                 </div>
@@ -543,21 +543,21 @@ const KonsumenBooking = () => {
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {item.one_year ? (
-                                                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-100">{item.one_year}</span>
+                                                <span className="px-2.5 py-1 text-xs font-medium rounded-none bg-blue-50 text-blue-700 border border-blue-100">{item.one_year}</span>
                                             ) : (
                                                 <span className="text-gray-300">-</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {item.five_year ? (
-                                                <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-700 border border-purple-100">{item.five_year}</span>
+                                                <span className="px-2.5 py-1 text-xs font-medium rounded-none bg-purple-50 text-purple-700 border border-purple-100">{item.five_year}</span>
                                             ) : (
                                                 <span className="text-gray-300">-</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {item.prioritas > 0 ? (
-                                                <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-orange-50 text-orange-600 border border-orange-100">{item.prioritas}</span>
+                                                <span className="px-2.5 py-1 text-xs font-bold rounded-none bg-orange-50 text-orange-600 border border-orange-100">{item.prioritas}</span>
                                             ) : (
                                                 <span className="text-gray-400 text-xs">Normal</span>
                                             )}
@@ -579,7 +579,7 @@ const KonsumenBooking = () => {
                             <button
                                 onClick={() => handlePageChange(pagination.page - 1)}
                                 disabled={pagination.page === 1}
-                                className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 border border-gray-200 rounded-none text-gray-500 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
@@ -602,7 +602,7 @@ const KonsumenBooking = () => {
                                         <button
                                             key={pageNum}
                                             onClick={() => handlePageChange(pageNum)}
-                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${pagination.page === pageNum
+                                            className={`w-8 h-8 flex items-center justify-center rounded-none text-sm font-medium transition-colors ${pagination.page === pageNum
                                                     ? 'bg-[#E60012] text-white'
                                                     : 'text-gray-600 hover:bg-gray-100'
                                                 }`}
@@ -616,7 +616,7 @@ const KonsumenBooking = () => {
                             <button
                                 onClick={() => handlePageChange(pagination.page + 1)}
                                 disabled={pagination.page === pagination.totalPages}
-                                className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="p-2 border border-gray-200 rounded-none text-gray-500 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronRight className="w-4 h-4" />
                             </button>
@@ -633,7 +633,7 @@ const KonsumenBooking = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-visible flex flex-col max-h-[90vh]"
+                            className="bg-white rounded-none shadow-2xl w-full max-w-lg overflow-visible flex flex-col max-h-[90vh]"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -645,10 +645,10 @@ const KonsumenBooking = () => {
 
                             <div className="p-4 overflow-y-auto flex-1 space-y-5 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {/* Info Data Diri */}
-                                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 grid grid-cols-2 gap-3 text-sm">
+                                <div className="bg-gray-50 rounded-none p-3 border border-gray-100 grid grid-cols-2 gap-3 text-sm">
                                     <div 
                                         onClick={() => handleCopy(selectedKonsumen.nama, 'nama')}
-                                        className="group cursor-pointer p-1.5 -m-1.5 rounded hover:bg-gray-200/50 transition-colors flex items-center justify-between"
+                                        className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
                                         <div>
                                             <span className="text-gray-500 block text-xs">Nama:</span>
@@ -658,7 +658,7 @@ const KonsumenBooking = () => {
                                     </div>
                                     <div 
                                         onClick={() => handleCopy(selectedKonsumen.telp, 'telp')}
-                                        className="group cursor-pointer p-1.5 -m-1.5 rounded hover:bg-gray-200/50 transition-colors flex items-center justify-between"
+                                        className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
                                         <div>
                                             <span className="text-gray-500 block text-xs">Telepon:</span>
@@ -668,7 +668,7 @@ const KonsumenBooking = () => {
                                     </div>
                                     <div 
                                         onClick={() => handleCopy(selectedKonsumen.kendaraan, 'kendaraan')}
-                                        className="group cursor-pointer p-1.5 -m-1.5 rounded hover:bg-gray-200/50 transition-colors flex items-center justify-between"
+                                        className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
                                         <div>
                                             <span className="text-gray-500 block text-xs">Kendaraan:</span>
@@ -678,12 +678,12 @@ const KonsumenBooking = () => {
                                     </div>
                                     <div 
                                         onClick={() => handleCopy(selectedKonsumen.nopol, 'nopol')}
-                                        className="group cursor-pointer p-1.5 -m-1.5 rounded hover:bg-gray-200/50 transition-colors flex items-center justify-between"
+                                        className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
                                         <div>
                                             <span className="text-gray-500 block text-xs">Nopol:</span>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-gray-900 font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200 group-hover:border-[#E60012]/30 group-hover:text-[#E60012] transition-colors">{selectedKonsumen.nopol}</span>
+                                                <span className="font-bold text-gray-900 font-mono bg-white px-1.5 py-0.5 rounded-none border border-gray-200 group-hover:border-[#E60012]/30 group-hover:text-[#E60012] transition-colors">{selectedKonsumen.nopol}</span>
                                                 {getRegionInfo(selectedKonsumen.nopol) && (
                                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
                                                         {getRegionInfo(selectedKonsumen.nopol).detail}, {getRegionInfo(selectedKonsumen.nopol).provinsi}
@@ -706,7 +706,7 @@ const KonsumenBooking = () => {
                                                     setShowOneYearPicker(!showOneYearPicker);
                                                     setShowFiveYearPicker(false);
                                                 }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-left text-xs hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                                className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-none text-left text-xs hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-500"
                                             >
                                                 <Calendar className="w-3.5 h-3.5 text-gray-400" />
                                                 <span className={formData.one_year ? "text-gray-900 font-medium" : "text-gray-400"}>
@@ -740,7 +740,7 @@ const KonsumenBooking = () => {
                                                     setShowFiveYearPicker(!showFiveYearPicker);
                                                     setShowOneYearPicker(false);
                                                 }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-left text-xs hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                                className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-none text-left text-xs hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-500"
                                             >
                                                 <Calendar className="w-3.5 h-3.5 text-gray-400" />
                                                 <span className={formData.five_year ? "text-gray-900 font-medium" : "text-gray-400"}>
@@ -772,7 +772,7 @@ const KonsumenBooking = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, prioritas: 1 }))}
-                                                className={`py-2 px-3 rounded-lg text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
+                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
                                                     formData.prioritas === 1 ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                                                 }`}
                                             >
@@ -782,7 +782,7 @@ const KonsumenBooking = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, prioritas: 2 }))}
-                                                className={`py-2 px-3 rounded-lg text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
+                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
                                                     formData.prioritas === 2 ? 'bg-orange-50 border-orange-500 text-orange-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                                                 }`}
                                             >
@@ -792,7 +792,7 @@ const KonsumenBooking = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, prioritas: 3 }))}
-                                                className={`py-2 px-3 rounded-lg text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
+                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
                                                     formData.prioritas === 3 ? 'bg-red-50 border-red-500 text-red-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'
                                                 }`}
                                             >
@@ -818,7 +818,7 @@ const KonsumenBooking = () => {
                                         <div className="space-y-3">
                                             <div 
                                                 onClick={() => historyData.summary.total_booking > 0 && setIsHistoryExpanded(!isHistoryExpanded)}
-                                                className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                                                className={`p-3 rounded-none border transition-all flex items-center justify-between ${
                                                     historyData.summary.total_booking > 0 
                                                     ? 'bg-gray-50 border-gray-100 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30' 
                                                     : 'bg-gray-50/50 border-gray-100 opacity-60'
@@ -855,10 +855,10 @@ const KonsumenBooking = () => {
                                                     >
                                                         <div className="space-y-2 pt-1">
                                                             {historyData.history.map((booking, idx) => (
-                                                                <div key={idx} className="p-3 bg-white border border-gray-100 rounded-xl text-xs space-y-2 shadow-sm">
+                                                                <div key={idx} className="p-3 bg-white border border-gray-100 rounded-none text-xs space-y-2 shadow-sm">
                                                                     <div className="flex justify-between items-center">
                                                                         <span className="font-bold text-gray-900">{new Date(booking.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                                                        <span className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(booking.status)}`}>
+                                                                        <span className={`px-2 py-0.5 rounded-none-[4px] text-[10px] font-bold tracking-wider uppercase ${getBadgeColor(booking.status)}`}>
                                                                             {booking.status}
                                                                         </span>
                                                                     </div>
@@ -893,7 +893,7 @@ const KonsumenBooking = () => {
                                     {data.findIndex(item => item.id === selectedKonsumen?.id) < data.length - 1 && (
                                         <button
                                             onClick={handleNextData}
-                                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-none transition-colors"
                                         >
                                             Next Data
                                             <ChevronRight size={16} />
@@ -903,7 +903,7 @@ const KonsumenBooking = () => {
                                 <button
                                     onClick={handleSave}
                                     disabled={isSaving}
-                                    className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded-none transition-colors disabled:opacity-50"
                                 >
                                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                     Simpan
@@ -922,12 +922,12 @@ const KonsumenBooking = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                            className="bg-white rounded-none shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-none flex items-center justify-center">
                                         <FileSpreadsheet size={24} />
                                     </div>
                                     <div>
@@ -935,14 +935,14 @@ const KonsumenBooking = () => {
                                         <p className="text-xs text-gray-500">Update data survey dan konsumen via Excel</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors">
+                                <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-gray-100 rounded-none text-gray-400 transition-colors">
                                     <X size={20} />
                                 </button>
                             </div>
 
-                            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                            <div className="p-6 overflow-y-auto flex-1 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {/* Instructions & Template */}
-                                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between gap-4">
+                                <div className="bg-blue-50 border border-blue-100 rounded-none p-4 flex items-center justify-between gap-4">
                                     <div className="flex items-start gap-3">
                                         <div className="mt-1 text-blue-600">
                                             <Download size={18} />
@@ -954,7 +954,7 @@ const KonsumenBooking = () => {
                                     </div>
                                     <button 
                                         onClick={downloadTemplate}
-                                        className="px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
+                                        className="px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-none text-xs font-bold hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
                                     >
                                         Unduh Excel
                                     </button>
@@ -962,14 +962,14 @@ const KonsumenBooking = () => {
 
                                 {/* File Dropzone */}
                                 {uploadPreview.length === 0 ? (
-                                    <div className="relative border-2 border-dashed border-gray-200 rounded-3xl p-12 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 hover:border-blue-400 transition-all group">
+                                    <div className="relative border-2 border-dashed border-gray-200 rounded-none p-12 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 hover:border-blue-400 transition-all group">
                                         <input 
                                             type="file" 
                                             accept=".xlsx, .xls, .csv" 
                                             onChange={handleFileUpload}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         />
-                                        <div className="w-16 h-16 bg-white shadow-sm rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-blue-500 mb-4 transition-colors">
+                                        <div className="w-16 h-16 bg-white shadow-sm rounded-none flex items-center justify-center text-gray-400 group-hover:text-blue-500 mb-4 transition-colors">
                                             <UploadCloud size={32} />
                                         </div>
                                         <h4 className="font-bold text-gray-900">Pilih file Excel Anda</h4>
@@ -987,7 +987,7 @@ const KonsumenBooking = () => {
                                                 Hapus & Ulangi
                                             </button>
                                         </div>
-                                        <div className="border border-gray-100 rounded-xl overflow-hidden max-h-60 overflow-y-auto shadow-inner bg-gray-50/30">
+                                        <div className="border border-gray-100 rounded-none overflow-hidden max-h-60 overflow-y-auto shadow-inner bg-gray-50/30 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                             <table className="w-full text-xs text-left">
                                                 <thead className="bg-white border-b border-gray-100 sticky top-0">
                                                     <tr>
@@ -1024,7 +1024,7 @@ const KonsumenBooking = () => {
                                 <button
                                     onClick={handleBulkUpload}
                                     disabled={isProcessing || uploadPreview.length === 0}
-                                    className="flex items-center gap-2 px-8 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all disabled:opacity-50 disabled:grayscale shadow-lg shadow-blue-500/20 active:scale-95"
+                                    className="flex items-center gap-2 px-8 py-3 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-none transition-all disabled:opacity-50 disabled:grayscale shadow-lg shadow-blue-500/20 active:scale-95"
                                 >
                                     {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                                     Upload Data
@@ -1043,10 +1043,10 @@ const KonsumenBooking = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden"
+                            className="bg-white rounded-none shadow-2xl w-full max-w-sm overflow-hidden"
                         >
                             <div className="p-8 flex flex-col items-center text-center">
-                                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${
+                                <div className={`w-20 h-20 rounded-none flex items-center justify-center mb-6 ${
                                     alertConfig.type === 'success' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'
                                 }`}>
                                     {alertConfig.type === 'success' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <AlertCircle size={48} strokeWidth={1.5} />}
@@ -1056,7 +1056,7 @@ const KonsumenBooking = () => {
                                 <p className="text-gray-500 text-sm leading-relaxed mb-6">{alertConfig.message}</p>
 
                                 {alertConfig.results && (
-                                    <div className="w-full grid grid-cols-3 gap-2 mb-8 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <div className="w-full grid grid-cols-3 gap-2 mb-8 p-3 bg-gray-50 rounded-none border border-gray-100">
                                         <div className="text-center">
                                             <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Survey</span>
                                             <span className="text-lg font-bold text-blue-600">+{alertConfig.results.updated_survey}</span>
@@ -1074,7 +1074,7 @@ const KonsumenBooking = () => {
 
                                 <button
                                     onClick={() => setShowAlert(false)}
-                                    className={`w-full py-4 rounded-2xl font-bold text-white transition-all shadow-lg active:scale-95 ${
+                                    className={`w-full py-4 rounded-none font-bold text-white transition-all shadow-lg active:scale-95 ${
                                         alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
                                     }`}
                                 >
@@ -1090,3 +1090,5 @@ const KonsumenBooking = () => {
 };
 
 export default KonsumenBooking;
+
+

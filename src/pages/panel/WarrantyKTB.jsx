@@ -100,7 +100,7 @@ const DetailKonsumenModal = ({ isOpen, data, onClose, setWarrantyData, onNext })
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Detail Konsumen</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1">
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col">
@@ -479,7 +479,7 @@ const WarrantyKTB = () => {
                     <div className="col-span-2">Status / Umur</div>
                     <div className="col-span-2 text-right">Action</div>
                 </div>
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div></div>
                     ) : surveys.length === 0 ? (

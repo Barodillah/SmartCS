@@ -205,7 +205,7 @@ const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter, isAlreadyCl
                         }
                     }
                 })
-                .catch(() => {});
+                .catch(() => { });
         }
     }, [isOpen, item?.plate, item?.rangka]);
 
@@ -458,7 +458,7 @@ const PotensiBooking = () => {
     const [cleanFilterSA, setCleanFilterSA] = useState('');
     const [cleanFilterStatus, setCleanFilterStatus] = useState('');
     const [isLoadingClean, setIsLoadingClean] = useState(false);
-    
+
     // Booking Form Modal states
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [bookingFormData, setBookingFormData] = useState(null);
@@ -486,7 +486,7 @@ const PotensiBooking = () => {
     ];
 
     useEffect(() => {
-        if (mainFilter !== 'clean') return;
+        if (mainFilter !== 'clean' && mainFilter !== 'report') return;
         const fetchCleanData = async () => {
             setIsLoadingClean(true);
             try {
@@ -551,8 +551,8 @@ const PotensiBooking = () => {
     }, []);
 
     const baseData = mainFilter === 'clean' ? cleanData : (data[mainFilter]?.[activeTab] || []);
-    const currentData = mainFilter === 'clean' 
-        ? baseData 
+    const currentData = mainFilter === 'clean'
+        ? baseData
         : baseData.filter(item => {
             const plate = (item.plate || item.nopol || '').replace(/\s/g, '').toUpperCase();
             return !allCleanNopols.has(plate);
@@ -644,7 +644,7 @@ const PotensiBooking = () => {
             if (result.status) {
                 const typeLabels = { dwindo: 'Service Dwindo', other: 'Other Dealer', invalid: 'Invalid Data' };
                 showToast(result.message || `${typeLabels[type] || type} berhasil diproses`);
-                
+
                 // Hide from list immediately
                 const cleanPlate = (item.plate || item.nopol || '').replace(/\s/g, '').toUpperCase();
                 setAllCleanNopols(prev => {
@@ -683,7 +683,7 @@ const PotensiBooking = () => {
                         body: JSON.stringify({ id: selectedItem.id, status: 'BOOKING' })
                     });
                     setCleanData(prev => prev.map(item => item.id === selectedItem.id ? { ...item, status: 'BOOKING' } : item));
-                    
+
                     // Karena sudah BOOKING, maka jangan sembunyikan lagi dari list utama
                     const plate = (selectedItem.plate || selectedItem.nopol || '').replace(/\s/g, '').toUpperCase();
                     setAllCleanNopols(prev => {
@@ -750,10 +750,20 @@ const PotensiBooking = () => {
                 >
                     Clean Data
                 </button>
+                <button
+                    onClick={() => {
+                        setMainFilter('report');
+                        setActiveTab('');
+                    }}
+                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'report' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
+                    style={mainFilter === 'report' ? { clipPath: ANGULAR_CLIP } : {}}
+                >
+                    Report
+                </button>
             </div>
 
             {/* Sub Tabs or Filters */}
-            {mainFilter !== 'clean' ? (
+            {mainFilter !== 'clean' && mainFilter !== 'report' ? (
                 <div className="flex overflow-x-auto pb-2 gap-2 mb-6 scrollbar-hide">
                     {(mainFilter === 'booking' ? bookingTabs : pktTabs).map((tab) => (
                         <button
@@ -765,177 +775,259 @@ const PotensiBooking = () => {
                         </button>
                     ))}
                 </div>
-            ) : (
+            ) : mainFilter === 'clean' ? (
                 <div className="flex gap-4 mb-6">
                     <div className="w-56">
                         <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Filter SA</label>
-                        <CustomSelect 
+                        <CustomSelect
                             value={cleanFilterSA}
                             onChange={(val) => setCleanFilterSA(val)}
                             options={[
-                                {value: '', label: 'Semua SA'},
-                                {value: 'Dimas', label: 'Dimas'},
-                                {value: 'Ipral', label: 'Ipral'},
-                                {value: 'Muti', label: 'Muti'},
-                                {value: 'Rudi', label: 'Rudi'},
-                                {value: 'Yuda', label: 'Yuda'},
-                                {value: 'Ilham', label: 'Ilham'},
+                                { value: '', label: 'Semua SA' },
+                                { value: 'Dimas', label: 'Dimas' },
+                                { value: 'Ipral', label: 'Ipral' },
+                                { value: 'Muti', label: 'Muti' },
+                                { value: 'Rudi', label: 'Rudi' },
+                                { value: 'Yuda', label: 'Yuda' },
+                                { value: 'Ilham', label: 'Ilham' },
                             ]}
                             placeholder="Semua SA"
                         />
                     </div>
                     <div className="w-56">
                         <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Filter Status</label>
-                        <CustomSelect 
+                        <CustomSelect
                             value={cleanFilterStatus}
                             onChange={(val) => setCleanFilterStatus(val)}
                             options={[
-                                {value: '', label: 'Semua Status'},
-                                {value: 'NEW', label: 'Belum Follow Up (NEW)'},
-                                {value: 'FOLLOW_UP', label: 'Sudah Follow Up'},
-                                {value: 'BOOKING', label: 'Success Booking'},
-                                {value: 'INVALID', label: 'Invalid'},
+                                { value: '', label: 'Semua Status' },
+                                { value: 'NEW', label: 'Belum Follow Up (NEW)' },
+                                { value: 'FOLLOW_UP', label: 'Sudah Follow Up' },
+                                { value: 'BOOKING', label: 'Success Booking' },
+                                { value: 'INVALID', label: 'Invalid' },
                             ]}
                             placeholder="Semua Status"
                         />
                     </div>
                 </div>
-            )}
+            ) : null}
 
-            {/* Data Table */}
-            <div className="bg-white border border-[#E5E5E5] overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-[#F9F9F9] border-b border-[#E5E5E5]">
-                                {mainFilter === 'clean' ? (
-                                    <>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi & Tanggal</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">SA & Status</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
-                                    </>
-                                ) : (
-                                    <>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">{mainFilter === 'booking' ? 'Service Terakhir' : 'Warranty Date'}</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi</th>
-                                        <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
-                                    </>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E5E5E5]">
-                            {isLoadingClean && mainFilter === 'clean' ? (
-                                <tr>
-                                    <td colSpan={5} className="py-12 text-center text-gray-500">Loading data...</td>
-                                </tr>
-                            ) : currentData.length > 0 ? (
-                                currentData.map((item) => (
-                                    <tr
-                                        key={item.id || item.plate || item.nopol}
-                                        onClick={() => {
-                                            setSelectedItem(item);
-                                            setShowDetailModal(true);
-                                        }}
-                                        className="hover:bg-gray-50 transition-colors group cursor-pointer"
-                                    >
-                                        {mainFilter === 'clean' ? (
-                                            <>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
-                                                            <User size={14} />
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-bold text-[#111111]">{item.nama}</div>
-                                                            <div className="text-[11px] text-gray-500 font-medium">{item.telp}</div>
-                                                        </div>
+            {/* Data Table or Report View */}
+            {mainFilter === 'report' ? (
+                <div className="bg-white border border-[#E5E5E5] p-6 rounded-xl shadow-sm mb-6">
+                    <h3 className="font-bold text-[#111111] uppercase tracking-wider text-sm mb-6">Report Follow Up SA</h3>
+
+                    {isLoadingClean ? (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
+                        </div>
+                    ) : (
+                        (() => {
+                            const reportData = {};
+                            cleanData.forEach(item => {
+                                const sa = item.sa || 'Belum Diatur';
+                                if (!reportData[sa]) {
+                                    reportData[sa] = { NEW: 0, FOLLOW_UP: 0, BOOKING: 0, INVALID: 0, total: 0 };
+                                }
+                                const status = item.status || 'NEW';
+                                if (reportData[sa][status] !== undefined) {
+                                    reportData[sa][status]++;
+                                    reportData[sa].total++;
+                                }
+                            });
+
+                            const saList = Object.keys(reportData).sort((a, b) => reportData[b].total - reportData[a].total);
+                            if (saList.length === 0) {
+                                return <div className="h-64 flex items-center justify-center text-sm text-gray-400 border border-dashed rounded-lg">Tidak ada data</div>;
+                            }
+
+                            const maxCount = Math.max(...saList.map(sa => reportData[sa].total), 10);
+
+                            return (
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex items-end gap-2 w-full h-80 border-b border-l border-gray-200 p-4 pt-8">
+                                        {saList.map((sa, idx) => {
+                                            const data = reportData[sa];
+                                            const newHeight = `${(data.NEW / maxCount) * 100}%`;
+                                            const followUpHeight = `${(data.FOLLOW_UP / maxCount) * 100}%`;
+                                            const bookingHeight = `${(data.BOOKING / maxCount) * 100}%`;
+                                            const invalidHeight = `${(data.INVALID / maxCount) * 100}%`;
+
+                                            return (
+                                                <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative">
+                                                    <div className="w-full max-w-[24px] sm:max-w-[40px] flex flex-col justify-end h-full group-hover:opacity-80 transition-opacity mx-auto">
+                                                        {data.INVALID > 0 && <div className="w-full bg-red-500 rounded-t-sm mb-px" style={{ height: invalidHeight }}></div>}
+                                                        {data.NEW > 0 && <div className="w-full bg-amber-400 rounded-t-sm mb-px" style={{ height: newHeight }}></div>}
+                                                        {data.FOLLOW_UP > 0 && <div className="w-full bg-blue-500 rounded-t-sm mb-px" style={{ height: followUpHeight }}></div>}
+                                                        {data.BOOKING > 0 && <div className="w-full bg-green-500 rounded-t-sm" style={{ height: bookingHeight }}></div>}
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-bold text-[#111111]">{item.nopol}</div>
-                                                    <div className="text-[11px] text-gray-500">{item.kendaraan}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-bold text-[#111111]">{item.potensi_service}</div>
-                                                    <div className="text-[11px] text-gray-500">{item.expected_date}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-bold text-[#111111]">{item.sa}</div>
-                                                    <div className="text-[10px] font-bold mt-1 inline-block px-2 py-0.5 rounded-full" style={{
-                                                        backgroundColor: item.status === 'NEW' ? '#FFFBEB' : item.status === 'FOLLOW_UP' ? '#EFF6FF' : item.status === 'BOOKING' ? '#ECFDF5' : '#FEF2F2',
-                                                        color: item.status === 'NEW' ? '#D97706' : item.status === 'FOLLOW_UP' ? '#3B82F6' : item.status === 'BOOKING' ? '#10B981' : '#EF4444'
-                                                    }}>
-                                                        {item.status}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="text-[11px] text-gray-500">{item.time}</div>
-                                                    {item.note && <div className="text-[10px] text-red-500 mt-1 truncate max-w-[120px] ml-auto">{item.note}</div>}
-                                                </td>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
-                                                            <User size={14} />
+                                                    <span className="text-[10px] text-gray-500 font-bold mt-2 text-center truncate w-full px-1">{sa}</span>
+
+                                                    {/* Tooltip */}
+                                                    <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg transition-opacity pointer-events-none z-10 shadow-xl border border-gray-700 w-max min-w-[140px] left-1/2 transform -translate-x-1/2">
+                                                        <div className="font-bold mb-1.5 border-b border-gray-700 pb-1.5 text-center text-gray-300">SA: {sa}</div>
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="flex justify-between items-center gap-4"><span className="text-green-400 font-bold">Booking:</span><span className="font-mono">{data.BOOKING}</span></div>
+                                                            <div className="flex justify-between items-center gap-4"><span className="text-blue-400 font-bold">Follow Up:</span><span className="font-mono">{data.FOLLOW_UP}</span></div>
+                                                            <div className="flex justify-between items-center gap-4"><span className="text-amber-400 font-bold">New:</span><span className="font-mono">{data.NEW}</span></div>
+                                                            <div className="flex justify-between items-center gap-4"><span className="text-red-400 font-bold">Invalid:</span><span className="font-mono">{data.INVALID}</span></div>
                                                         </div>
-                                                        <div>
-                                                            <div className="text-sm font-bold text-[#111111]">{item.name}</div>
-                                                            <div className="text-[11px] text-gray-500 font-medium">{item.phone}</div>
+                                                        <div className="mt-1.5 pt-1.5 border-t border-gray-700 font-bold flex justify-between items-center">
+                                                            <span>Total:</span> <span className="font-mono">{data.total}</span>
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-bold text-[#111111]">{item.plate}</div>
-                                                    <div className="text-[11px] text-gray-500">{item.model}</div>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar size={14} className="text-gray-400" />
-                                                        {item.last_service || item.warranty_date}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-blue-100">
-                                                        {item.potential}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedItem(item);
-                                                            setShowModal(true);
-                                                        }}
-                                                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#111111] text-white text-[11px] font-bold uppercase tracking-wider rounded-sm hover:bg-[#E60012] transition-colors"
-                                                    >
-                                                        <Wrench size={12} />
-                                                        Proses
-                                                    </button>
-                                                </td>
-                                            </>
-                                        )}
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="px-6 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-2 opacity-30">
-                                            <Search size={48} />
-                                            <p className="font-bold uppercase tracking-widest text-xs">Belum ada data untuk kategori ini</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Legend */}
+                                    <div className="flex flex-wrap justify-center gap-6 mt-4">
+                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">BOOKING</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">FOLLOW UP</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-400 rounded-sm"></div><span className="text-xs font-bold text-gray-600">NEW</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">INVALID</span></div>
+                                    </div>
+                                </div>
+                            );
+                        })()
+                    )}
                 </div>
-            </div>
+            ) : (
+                <div className="bg-white border border-[#E5E5E5] overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-[#F9F9F9] border-b border-[#E5E5E5]">
+                                    {mainFilter === 'clean' ? (
+                                        <>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi & Tanggal</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">SA & Status</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Customer</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Kendaraan</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">{mainFilter === 'booking' ? 'Service Terakhir' : 'Warranty Date'}</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500">Potensi</th>
+                                            <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-500 text-right">Aksi</th>
+                                        </>
+                                    )}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E5E5E5]">
+                                {isLoadingClean && mainFilter === 'clean' ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-12 text-center text-gray-500">Loading data...</td>
+                                    </tr>
+                                ) : currentData.length > 0 ? (
+                                    currentData.map((item) => (
+                                        <tr
+                                            key={item.id || item.plate || item.nopol}
+                                            onClick={() => {
+                                                setSelectedItem(item);
+                                                setShowDetailModal(true);
+                                            }}
+                                            className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                                        >
+                                            {mainFilter === 'clean' ? (
+                                                <>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                                                                <User size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-bold text-[#111111]">{item.nama}</div>
+                                                                <div className="text-[11px] text-gray-500 font-medium">{item.telp}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-[#111111]">{item.nopol}</div>
+                                                        <div className="text-[11px] text-gray-500">{item.kendaraan}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-[#111111]">{item.potensi_service}</div>
+                                                        <div className="text-[11px] text-gray-500">{item.expected_date}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-[#111111]">{item.sa}</div>
+                                                        <div className="text-[10px] font-bold mt-1 inline-block px-2 py-0.5 rounded-full" style={{
+                                                            backgroundColor: item.status === 'NEW' ? '#FFFBEB' : item.status === 'FOLLOW_UP' ? '#EFF6FF' : item.status === 'BOOKING' ? '#ECFDF5' : '#FEF2F2',
+                                                            color: item.status === 'NEW' ? '#D97706' : item.status === 'FOLLOW_UP' ? '#3B82F6' : item.status === 'BOOKING' ? '#10B981' : '#EF4444'
+                                                        }}>
+                                                            {item.status}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="text-[11px] text-gray-500">{item.time}</div>
+                                                        {item.note && <div className="text-[10px] text-red-500 mt-1 truncate max-w-[120px] ml-auto">{item.note}</div>}
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#E60012]/10 group-hover:text-[#E60012] transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                                                                <User size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-bold text-[#111111]">{item.name}</div>
+                                                                <div className="text-[11px] text-gray-500 font-medium">{item.phone}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-bold text-[#111111]">{item.plate}</div>
+                                                        <div className="text-[11px] text-gray-500">{item.model}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar size={14} className="text-gray-400" />
+                                                            {item.last_service || item.warranty_date}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider rounded-sm border border-blue-100">
+                                                            {item.potential}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedItem(item);
+                                                                setShowModal(true);
+                                                            }}
+                                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#111111] text-white text-[11px] font-bold uppercase tracking-wider rounded-sm hover:bg-[#E60012] transition-colors"
+                                                        >
+                                                            <Wrench size={12} />
+                                                            Proses
+                                                        </button>
+                                                    </td>
+                                                </>
+                                            )}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-2 opacity-30">
+                                                <Search size={48} />
+                                                <p className="font-bold uppercase tracking-widest text-xs">Belum ada data untuk kategori ini</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             <AnimatePresence>
                 {showModal && (
@@ -949,52 +1041,57 @@ const PotensiBooking = () => {
                     />
                 )}
                 {showDetailModal && (
-                  <DetailModal
-                      isOpen={showDetailModal}
-                      onClose={() => setShowDetailModal(false)}
-                      item={selectedItem}
-                      mainFilter={mainFilter}
-                      onProcess={() => {
-                          setShowDetailModal(false);
-                          setShowModal(true);
-                      }}
-                      onWhatsapp={() => {
-                          const p = selectedItem;
-                          let phone = (p.phone || p.telp || '').replace(/\D/g, '');
-                          if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-                          const message = `Halo Bapak/Ibu ${p.name || p.nama},\n\nKami ingin menginformasikan bahwa kendaraan *${p.model || p.kendaraan}* (${p.plate || p.nopol}) Anda sudah waktunya untuk melakukan *${p.potential || p.potensi_service}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service?`;
-                          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                    <DetailModal
+                        isOpen={showDetailModal}
+                        onClose={() => setShowDetailModal(false)}
+                        item={selectedItem}
+                        mainFilter={mainFilter}
+                        onProcess={() => {
+                            setShowDetailModal(false);
+                            setShowModal(true);
+                        }}
+                        onWhatsapp={() => {
+                            const p = selectedItem;
+                            let phone = (p.phone || p.telp || '').replace(/\D/g, '');
+                            if (phone.startsWith('0')) phone = '62' + phone.substring(1);
 
-                          if (p.id) {
-                              fetch('https://csdwindo.com/api/potensi_service.php', {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: p.id, status: 'FOLLOW_UP' })
-                              }).then(() => {
-                                  setCleanData(prev => prev.map(item => item.id === p.id ? { ...item, status: 'FOLLOW_UP' } : item));
-                              });
-                          }
-                      }}
-                      onBooking={() => {
-                          setShowDetailModal(false);
-                          setBookingFormData({
-                              nopol: selectedItem.plate || selectedItem.nopol,
-                              nama: selectedItem.name || selectedItem.nama,
-                              telp: selectedItem.phone || selectedItem.telp,
-                              kendaraan: selectedItem.model || selectedItem.kendaraan,
-                              jenis: selectedItem.potential || selectedItem.potensi_service,
-                              user: 'CUSTOMER',
-                              jam: '10:00'
-                          });
-                          setShowBookingForm(true);
-                      }}
-                      onNext={() => {
-                          const idx = currentData.findIndex(i => (i.id || i.plate || i.nopol) === (selectedItem.id || selectedItem.plate || selectedItem.nopol));
-                          if (idx >= 0 && idx < currentData.length - 1) {
-                              setSelectedItem(currentData[idx + 1]);
-                          }
-                      }}
-                  />
+                            const user = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
+                            const userName = user.name || user.nama || 'Staff';
+                            const message = `Halo Bapak/Ibu ${p.name || p.nama},\n\nPerkenalkan saya ${userName} dari Mitsubishi Bintaro.\n\nKami ingin menginformasikan bahwa kendaraan *${p.model || p.kendaraan}* (${p.plate || p.nopol}) Anda sudah waktunya untuk melakukan Service Rutin *${p.potential || p.potensi_service}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nJika Bapak/Ibu ingin melakukan booking langsung, bisa melalui link berikut: https://booking.csdwindo.com\n\nTerima kasih.\n\nSalam,\n${userName}\nMitsubishi Bintaro`;
+
+                            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+
+                            if (p.id) {
+                                fetch('https://csdwindo.com/api/potensi_service.php', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: p.id, status: 'FOLLOW_UP' })
+                                }).then(() => {
+                                    setCleanData(prev => prev.map(item => item.id === p.id ? { ...item, status: 'FOLLOW_UP' } : item));
+                                    setSelectedItem(prev => ({ ...prev, status: 'FOLLOW_UP' }));
+                                });
+                            }
+                        }}
+                        onBooking={() => {
+                            setShowDetailModal(false);
+                            setBookingFormData({
+                                nopol: selectedItem.plate || selectedItem.nopol,
+                                nama: selectedItem.name || selectedItem.nama,
+                                telp: selectedItem.phone || selectedItem.telp,
+                                kendaraan: selectedItem.model || selectedItem.kendaraan,
+                                jenis: selectedItem.potential || selectedItem.potensi_service,
+                                user: 'CUSTOMER',
+                                jam: '10:00'
+                            });
+                            setShowBookingForm(true);
+                        }}
+                        onNext={() => {
+                            const idx = currentData.findIndex(i => (i.id || i.plate || i.nopol) === (selectedItem.id || selectedItem.plate || selectedItem.nopol));
+                            if (idx >= 0 && idx < currentData.length - 1) {
+                                setSelectedItem(currentData[idx + 1]);
+                            }
+                        }}
+                    />
                 )}
                 {showBookingForm && (
                     <LegacyFormModal

@@ -1,11 +1,11 @@
 {
-  "name": "Dwindo SA Dashboard",
-  "short_name": "Dwindo SA",
-  "description": "Dashboard Khusus Service Advisor Mitsubishi Dwindo Bintaro",
-  "start_url": "/sa",
+  "name": "Panel CSDwindo",
+  "short_name": "CSDwindo",
+  "description": "Dashboard Admin CSDwindo",
+  "start_url": "/panel",
   "display": "standalone",
   "background_color": "#111111",
-  "theme_color": "#E60012",
+  "theme_color": "#111111",
   "icons": [
     {
       "src": "/apps.png",

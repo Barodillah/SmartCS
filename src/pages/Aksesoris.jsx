@@ -202,7 +202,7 @@ const Aksesoris = () => {
                                     <X size={24} />
                                 </button>
                                 
-                                <div className="flex flex-col md:flex-row h-full max-h-[85vh] overflow-y-auto custom-scrollbar">
+                                <div className="flex flex-col md:flex-row h-full max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                     <div className="w-full md:w-3/5 bg-[#1A1A1A] flex items-center justify-center p-8 md:p-12 relative min-h-[40vh]">
                                         {/* Background gradient effect */}
                                         <div className="absolute inset-0 bg-gradient-to-br from-[#E60012]/10 to-transparent opacity-50"></div>

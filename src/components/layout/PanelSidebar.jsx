@@ -87,12 +87,19 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                 const chatRes = await fetch('https://csdwindo.com/api/chat/session.php?action=admin_list');
                 const chatData = await chatRes.json();
 
+                // Fetch dissatisfaction new count
+                const disRes = await fetch('https://csdwindo.com/api/panel/data_dissatisfaction.php?filter_new=true');
+                const disData = await disRes.json();
+
                 let newCounts = {};
                 if (data.status) {
                     newCounts = { ...data.data };
                 }
                 if (waData.status) {
                     newCounts['whatsapp'] = waData.data ? waData.data.length : 0;
+                }
+                if (disData.status) {
+                    newCounts['dissatisfaction'] = disData.new_count || 0;
                 }
 
                 if (chatData.status && chatData.data) {
@@ -124,6 +131,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'Data Booking', label: 'data_booking', path: '/panel/data-booking', icon: <Database size={18} /> },
         { name: 'Konsumen Booking', path: '/panel/konsumen-booking', icon: <Users size={18} /> },
         { name: 'Potensi Booking', path: '/panel/potensi-booking', icon: <TrendingUp size={18} />, roles: ['admin'], division: 'service' },
+        { name: 'Service Dissatisfaction', label: 'dissatisfaction', path: '/panel/dissatisfaction', icon: <ShieldAlert size={18} />, roles: ['admin'], division: 'service' },
         { name: 'Test Drive', label: 'test_drive', path: '/panel/test-drive', icon: <CarFront size={18} />, roles: ['admin'], division: 'sales', group: 'lead' },
         { name: 'Prospect', label: 'prospect', path: '/panel/prospect', icon: <Users size={18} />, roles: ['admin'], division: 'sales', group: 'lead' },
         { name: 'Emergency', label: 'emergency', path: '/panel/emergency', icon: <AlertTriangle size={18} />, roles: ['admin'], division: 'service', group: 'lead' },
@@ -196,11 +204,11 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
 
     return (
         <aside
-            className={`fixed inset-y-0 left-0 z-[999] lg:z-[999] lg:relative ${sidebarWidth} bg-[#111111] text-gray-300 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
+            className={`fixed inset-y-0 left-0 z-[999] lg:z-[999] lg:relative lg:h-screen ${sidebarWidth} bg-[#111111] text-gray-300 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                } flex flex-col`}
         >
             {/* Sidebar Header */}
-            <div className={`h-16 flex items-center ${effectiveIsMinimized ? 'justify-center' : 'justify-between'} px-4 lg:px-6 border-b border-white/10 transition-all duration-300 overflow-hidden`}>
+            <div className={`shrink-0 h-16 flex items-center ${effectiveIsMinimized ? 'justify-center' : 'justify-between'} px-4 lg:px-6 border-b border-white/10 transition-all duration-300 overflow-hidden`}>
                 {!effectiveIsMinimized && (
                     <div className="flex items-center gap-3">
                         <div className="min-w-8 w-8 h-8 bg-[#E60012] flex items-center justify-center text-white font-display font-bold" style={{ clipPath: ANGULAR_CLIP }}>
@@ -220,8 +228,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
             </div>
 
             {/* Sidebar Links */}
-            <div className="h-[calc(100vh-4rem)] flex flex-col">
-                <div className={`py-6 px-4 flex-1 ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'} space-y-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent`}>
+            <div className={`py-6 px-4 flex-1 ${effectiveIsMinimized ? 'overflow-visible' : 'overflow-y-auto'} space-y-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent`}>
                     {filteredNavigations.filter(item => !(user?.role === 'admin' && item.group === 'lead')).map((item) => (
                         <NavLink
                             key={item.name}
@@ -537,7 +544,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                     )}
                 </div>
 
-                <div className="p-4 border-t border-white/10 bg-[#111111] shrink-0">
+                <div className="shrink-0 p-4 border-t border-white/10 bg-[#111111]">
                     <button
                         onClick={() => {
                             sessionStorage.removeItem('admin_token');
@@ -559,7 +566,6 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                         )}
                     </button>
                 </div>
-            </div>
         </aside>
     );
 };

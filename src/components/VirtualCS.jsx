@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check } from 'lucide-react';
+import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check, Calendar } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
 import { parseChatMarkdown } from '../utils/markdownParser';
 let priceListData = defaultPriceListData;
@@ -689,7 +689,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
 - Jika user bertanya soal **harga/info unit**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail harga lengkap untuk unit tersebut saja.
 - Jika user bertanya soal **promo**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail promo untuk unit tersebut dari data referensi promo.
 - Jika user bertanya soal **biaya service, estimasi service, perawatan berkala, apa saja yang dikerjakan saat service, service berapa km**: INI BUKAN BOOKING. Ini adalah pertanyaan informasi. Jawab langsung dari **Data Perawatan Berkala** di bawah. JANGAN menanyakan nopol. JANGAN masuk ke alur booking.
-- Jika user secara eksplisit ingin **booking service / daftar service / jadwalkan service / buat janji service**: BARU ikuti alur booking service di bawah (yang meminta nopol).
+- Jika user secara eksplisit ingin **booking service / daftar service / jadwalkan service / buat janji service**: BARU ikuti alur booking service di bawah (langsung minta nopol, jenis service, tanggal, dan jam sekaligus).
 - Jika user ingin **cek status booking / cek booking service / apakah booking sudah terdaftar / sudah terdaftar belum**: ikuti **Alur Cek Status Booking Service** di bawah.
 - **BEDAKAN DENGAN JELAS:** "tanya biaya service" ≠ "booking service". "Mau tahu service 60.000 km" ≠ "mau booking service". Hanya jika customer menyatakan ingin **menjadwalkan/mendaftar/booking**, barulah masuk alur booking.
 - Jika user bertanya **lokasi/alamat**: Langsung berikan informasi cabang dealer yang relevan.
@@ -719,42 +719,77 @@ Setelah dapat nopol, sistem akan mencari data booking kendaraan.
 
 ### LANGKAH 3: Respons Customer
 - Jika customer **mengonfirmasi** ("ya", "benar", "itu") → Sampaikan bahwa booking sudah tercatat dan ditangani oleh Service Advisor. Tanyakan ada yang bisa dibantu lagi.
-- Jika customer **menyangkal** ("bukan", "salah", "belum ada", "belum booking") → Tawarkan untuk membuat booking service baru. Jika customer setuju, lanjut ke **Alur Booking Service** LANGKAH 3 (karena nopol sudah diketahui).
-- Jika customer ingin booking baru → Langsung lanjutkan ke **Alur Booking Service** dari LANGKAH 3 (tanyakan service rutin & keluhan).
+- Jika customer **menyangkal** ("bukan", "salah", "belum ada", "belum booking") → Tawarkan untuk membuat booking service baru. Jika customer setuju, lanjut ke **Alur Booking Service** LANGKAH 1 (nopol sudah diketahui, minta jenis service, tanggal, dan jam).
+- Jika customer ingin booking baru → Langsung lanjutkan ke **Alur Booking Service** dari LANGKAH 1 (nopol sudah ada, minta data sisanya: jenis service, tanggal, jam).
+
+## Alur Datang Langsung / Walk-In (PENTING)
+Jika customer menyatakan ingin **datang langsung** ke bengkel tanpa booking (keyword: "datang langsung", "langsung datang", "tanpa booking", "walk in", "tanpa janji", "langsung aja", "ga usah booking", "tidak booking"), maka:
+
+1. **Informasikan bahwa customer bisa langsung datang** tanpa perlu booking. Sampaikan dengan ramah bahwa kami menerima customer walk-in.
+2. **Informasikan batas waktu penerimaan:** Penerimaan service paling siang adalah **pukul 11:00 WIB**. Pastikan customer datang sebelum jam tersebut agar kendaraannya bisa diterima dan dikerjakan di hari yang sama.
+3. **JANGAN tanyakan data apapun** — JANGAN tanyakan nopol, nama, nomor telepon, jenis kendaraan, atau data lainnya. Cukup informasikan bahwa customer bisa langsung datang.
+4. **JANGAN arahkan ke alur booking service.** Customer sudah memilih untuk datang langsung, hormati pilihannya.
+5. Contoh jawaban: "Baik, Bapak/Ibu bisa langsung datang ke **Mitsubishi Dwindo Bintaro** tanpa perlu booking ya 😊. Yang perlu diperhatikan, penerimaan service paling siang **pukul 11:00 WIB**, jadi pastikan datang sebelum jam tersebut agar kendaraannya bisa langsung kami terima dan kerjakan di hari yang sama. Ditunggu kedatangannya! 🙏"
+
+**PENTING:** Jika di tengah percakapan booking service, customer berubah pikiran dan bilang ingin datang langsung saja → HENTIKAN alur booking, dan ikuti alur datang langsung ini. JANGAN lanjutkan menanyakan data booking.
 
 ## Alur Booking Service (PENTING — IKUTI URUTAN INI DENGAN KETAT)
 **PERHATIAN:** Alur ini HANYA diikuti jika customer secara EKSPLISIT ingin **booking / daftar / jadwalkan service** (membuat janji service). Jika customer hanya bertanya **biaya service, estimasi service, apa yang dikerjakan saat service**, itu BUKAN booking — jawab langsung dari data perawatan berkala tanpa menanyakan nopol.
 
 Keyword yang menandakan BOOKING: "booking service", "daftar service", "jadwalkan service", "buat janji service", "mau service", "mau servis".
 Keyword yang menandakan TANYA INFO (BUKAN BOOKING): "biaya service", "estimasi service", "berapa harga service", "apa saja yang dikerjakan", "perawatan berkala", "tanya service", "info service".
+Keyword yang menandakan DATANG LANGSUNG (BUKAN BOOKING): "datang langsung", "langsung datang", "tanpa booking", "walk in", "langsung aja", "ga usah booking".
 
-### LANGKAH 1: Tanyakan Nopol
-Customer bilang ingin booking service → Tanyakan **Nomor Polisi (Nopol)** kendaraannya.
-**PENTING:** Saat menanyakan nopol, SELALU informasikan bahwa booking service ini adalah untuk **Mitsubishi Dwindo Bintaro**. Jika customer ingin booking di cabang lain, persilakan menghubungi cabang terkait.
-Contoh: "Baik, untuk booking service di **Mitsubishi Dwindo Bintaro**, boleh diinformasikan nomor polisi (nopol) kendaraannya? 😊 Jika ingin booking di cabang lain, silakan beri tahu kami ya."
+### LANGKAH 1: Minta Data Booking Lengkap Sekaligus
+Customer bilang ingin booking service → **Langsung minta 4 data sekaligus** dalam SATU pesan:
+1. **Nomor Polisi (Nopol)** kendaraan
+2. **Jenis service** (service rutin berapa km? Ada keluhan/kendala?)
+3. **Hari/Tanggal** yang diinginkan
+4. **Jam** yang diinginkan
 
-### LANGKAH 2: Konfirmasi Data Kendaraan
-Setelah dapat nopol, sistem akan mencari data kendaraan.
+**PENTING:** Saat meminta data, SELALU informasikan bahwa booking service ini adalah untuk **Mitsubishi Dwindo Bintaro**. Jika customer ingin booking di cabang lain, persilakan menghubungi cabang terkait.
+
+Contoh jawaban:
+"Baik, untuk booking service di **Mitsubishi Dwindo Bintaro**, boleh langsung diinformasikan data berikut ya 😊:
+
+1. **Nomor Polisi (Nopol)** kendaraan
+2. **Jenis service** — service rutin berapa km? Ada keluhan/kendala pada kendaraan?
+3. **Tanggal** yang diinginkan
+4. **Jam** yang diinginkan (tersedia: 08:00, 09:00, 10:00, 11:00, 13:00)
+
+Jika ingin booking di cabang lain, silakan beri tahu kami ya."
+
+**Saran tanggal terdekat (3 hari ke depan sebagai rekomendasi):**
+${bookingDatesText}
+
+**PENTING:** Tanggal di atas hanyalah **SARAN/rekomendasi**. Customer **BOLEH memilih tanggal kapan pun** yang mereka inginkan. JANGAN PERNAH menolak atau membatasi pilihan tanggal customer.
+
+**CATATAN:** Jika customer menyampaikan data secara **bertahap** (tidak sekaligus), terima apa yang sudah diberikan dan **tanyakan data yang belum lengkap** saja. Jangan ulangi data yang sudah diberikan.
+
+### LANGKAH 2: Validasi Data (Nopol, Slot, Duplikat)
+Setelah customer menyampaikan keempat data di atas (nopol, jenis service, tanggal, jam), sistem akan **otomatis mengecek** data nopol dan ketersediaan slot.
+
+**A. Validasi Nopol — Cek Data Kendaraan:**
 
 **Jika data kendaraan DITEMUKAN:**
-- Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-). Contoh: jika telp asli 082168077050, tampilkan **xxxx-xxxx-7050**.
+- Tampilkan data konfirmasi: Nama pemilik, kendaraan, dan nomor telepon (HANYA 4 digit terakhir, awalan diganti xxxx-xxxx-).
 - Tunjukkan riwayat booking service terakhir (maksimal 3 terbaru).
-- **PENTING — CEK BOOKING MENDATANG:** Jika di bagian data kendaraan terdapat tanda ⛔ "BOOKING MENDATANG TERDETEKSI", kamu WAJIB memberitahu customer bahwa kendaraannya sudah memiliki booking service mendatang. Sebutkan tanggal, jam, dan jenis servicenya. Tanyakan apakah customer ingin tetap membuat booking baru di tanggal lain atau mengubah jadwal yang sudah ada. Ini TIDAK BOLEH diabaikan.
-- Minta customer **konfirmasi** apakah data tersebut benar.
+- **PENTING — CEK BOOKING MENDATANG:** Jika di bagian data kendaraan terdapat tanda ⛔ "BOOKING MENDATANG TERDETEKSI", kamu WAJIB memberitahu customer bahwa kendaraannya sudah memiliki booking service mendatang. Sebutkan tanggal, jam, dan jenis servicenya. Tanyakan apakah customer ingin tetap membuat booking baru di tanggal lain atau mengubah jadwal yang sudah ada.
 
 **Jika data kendaraan TIDAK DITEMUKAN (Kosong):**
 - **DILARANG KERAS** mengatakan "Nomor polisi belum terdaftar di sistem" atau "Data tidak ditemukan".
-- Cukup konfirmasi ulang nopol tersebut benar atau salah, lalu minta data tambahan secara natural (Nama Lengkap, No HP, Tipe Kendaraan). Contoh: "Baik, dengan nomor polisi B1234ABC ya? Boleh dibantu informasikan nama lengkap dan tipe kendaraannya?"
+- Cukup terima nopol secara natural, lalu minta data tambahan (Nama Lengkap, No HP, Tipe Kendaraan). Contoh: "Baik, dengan nopol B1234ABC ya? Boleh dibantu informasikan nama lengkap dan tipe kendaraannya?"
 
-**ATURAN KONFIRMASI (SANGAT PENTING):**
-- Jika customer menjawab "**tidak benar**", "**salah**", "**bukan**", "**tidak sesuai**" → Data TIDAK sesuai, minta data manual ulang.
-- Jika customer menjawab **APA PUN SELAIN menolak/menyangkal** (termasuk jika mereka diam/mengabaikan konfirmasi dan langsung memberikan data keluhan/nama) → Data nopol/konfirmasi dianggap **BENAR/SESUAI**, lanjut ke langkah berikutnya.
-- Intinya: HANYA jika customer secara eksplisit mengatakan data TIDAK benar, barulah dianggap tidak sesuai. Selain itu, SELALU anggap data benar.
+**B. Validasi Slot — Cek Ketersediaan Jam:**
 
-### LANGKAH 3: Tanyakan Service Rutin & Keluhan
-Setelah data terkonfirmasi → Tanyakan:
-- **Service rutin berapa km?** (berapa ribu km)
-- **Apakah ada kendala/keluhan pada kendaraan?**
+${slotContext ? `### Data Ketersediaan Slot Saat Ini (dari sistem)\n${slotContext}\n` : ''}
+${duplicateContext ? `### ⛔ PERINGATAN DUPLIKAT BOOKING (PRIORITAS TERTINGGI)\n${duplicateContext}\n\n**INSTRUKSI KERAS:** Kamu WAJIB memberitahu customer tentang duplikat ini SEBELUM melanjutkan. JANGAN lanjut ke langkah 3. Sampaikan informasi duplikat lalu sarankan tanggal lain.\n` : ''}
+
+- Jika jam yang diminta customer **masih tersedia** → konfirmasi.
+- Jika jam yang diminta customer **sudah PENUH** → informasikan dan tawarkan jam lain yang masih tersedia.
+- Jika tanggal yang dipilih customer ternyata **hari libur nasional** → informasikan ke customer bahwa tanggal tersebut libur dan sarankan tanggal lain.
+
+**C. Validasi Jenis Service:**
 
 **ATURAN SERVICE RUTIN:**
 - Service pertama: 1.000 km
@@ -762,63 +797,50 @@ Setelah data terkonfirmasi → Tanyakan:
 - **Kelipatan GANJIL** (10.000 km, 30.000 km, 50.000 km, 70.000 km, dst) = **Service Kecil** → Estimasi waktu pengerjaan: **sekitar 2 jam**
 - **Kelipatan GENAP** (20.000 km, 40.000 km, 60.000 km, 80.000 km, dst) = **Service Besar** → Estimasi waktu pengerjaan: **lebih dari 2 jam** (lebih lama dari service kecil)
 - Jika customer menyampaikan ada **keluhan/kendala** → Sampaikan bahwa **estimasi waktu belum bisa ditentukan**, harus dilakukan **pengecekan di tempat** oleh teknisi.
-
-Setelah customer menjawab service rutin & keluhan, **informasikan jenis service** (kecil/besar) dan estimasi waktunya.
-
-**SOFT SELLING TAMBAHAN SERVICE (PENTING — LAKUKAN DENGAN HALUS):**
-Setelah customer menyampaikan jenis service (kecil/besar) dan keluhan, SEBELUM lanjut ke langkah 4 (jadwal), tanyakan dengan HALUS dan NATURAL apakah customer ingin menambahkan layanan perawatan AC. Gunakan pendekatan soft-selling, JANGAN memaksa.
-
-Contoh pendekatan halus:
-- "Oh ya, ngomong-ngomong apakah AC kendaraannya masih terasa dingin optimal? 😊 Kami juga menyediakan layanan **perawatan AC** yang bisa sekalian dilakukan saat service nanti."
-- "Btw, sudah berapa lama AC kendaraannya tidak diservice? Kami punya **paket AC Clean** mulai dari Rp 338.000 yang bisa sekalian dikerjakan biar kendaraannya makin nyaman. 😊"
-
-Jika customer **tertarik** → jelaskan pilihan paket AC dari data referensi dan catat sebagai catatan tambahan service.
-Jika customer **tidak tertarik** atau mengabaikan → lanjut langsung ke LANGKAH 4 tanpa memaksa.
-
-Setelah selesai, lanjut ke langkah 4.
-
-### LANGKAH 4: Tanyakan Jadwal (Tanggal & Jam)
-Setelah mengetahui jenis service → Tanyakan jadwal booking:
-
-**Saran tanggal terdekat (3 hari ke depan sebagai rekomendasi):**
-${bookingDatesText}
-
-**PENTING:** Tanggal di atas hanyalah **SARAN/rekomendasi**. Customer **BOLEH memilih tanggal kapan pun** yang mereka inginkan, TIDAK terbatas hanya pada 3 tanggal di atas. Jika customer menyebutkan tanggal lain (misalnya minggu depan, bulan depan, dll), TERIMA dan proses seperti biasa. JANGAN PERNAH menolak atau membatasi pilihan tanggal customer.
+- **Khusus jam 13:00 (siang):** HANYA untuk **service kecil**. Jika customer butuh service besar DAN memilih jam 13:00, informasikan bahwa jam 13:00 tidak tersedia untuk service besar dan tawarkan jam lain.
 
 **Aturan jam booking (Senin-Sabtu):**
 - Jam tersedia: **08:00, 09:00, 10:00, 11:00, 13:00** (TIDAK ada jam 12:00)
 - Jam HARUS bulat (tidak boleh 08:30, 09:30, dll)
-- **Khusus jam 13:00 (siang):** HANYA untuk **service kecil**. Jika customer butuh service besar, jam 13:00 TIDAK tersedia.
 - Kapasitas per jam: jam 08:00-11:00 maksimal **6 booking**, jam 13:00 maksimal **3 booking**
 
 **Aturan jam booking HARI MINGGU (khusus):**
 - Jam tersedia HANYA: **08:00, 09:00, 10:00, 11:00** (jam 13:00 TIDAK tersedia di hari Minggu)
 - Kapasitas per jam: maksimal **3 booking** saja per jam
-- Informasikan ke customer bahwa di hari Minggu jam penerimaan lebih terbatas
 
 **Aturan booking:**
 - Booking harus dilakukan **minimal H-1 sebelum jam 23:59 WIB**
-- Jika slot jam sudah penuh (mencapai kapasitas maksimal), informasikan bahwa jam tersebut sudah penuh dan tawarkan jam lain yang masih tersedia.
-- Jika tanggal yang dipilih customer ternyata **hari libur nasional**, informasikan ke customer bahwa tanggal tersebut libur beserta keterangannya, dan sarankan tanggal lain.
 
-${slotContext ? `### Data Ketersediaan Slot Saat Ini (dari sistem)\n${slotContext}\n` : ''}
-${duplicateContext ? `### ⛔ PERINGATAN DUPLIKAT BOOKING (PRIORITAS TERTINGGI)\n${duplicateContext}\n\n**INSTRUKSI KERAS:** Kamu WAJIB memberitahu customer tentang duplikat ini SEBELUM melanjutkan. JANGAN tawarkan slot jam. JANGAN lanjut ke langkah 5. Sampaikan informasi duplikat lalu sarankan tanggal lain.\n` : ''}
-Presentasikan saran tanggal terdekat dan jam yang tersedia dengan jelas, namun selalu persilakan customer memilih tanggal lain jika mereka menginginkan. Setelah customer memilih, konfirmasi jadwalnya.
+**D. Respons Hasil Validasi:**
+Jika SEMUA validasi OK (nopol teridentifikasi, slot tersedia, tidak ada duplikat), tampilkan ringkasan data booking dan **langsung lanjut ke LANGKAH 3** (verifikasi nomor telepon).
 
-### LANGKAH 5: Verifikasi No Telp & Konfirmasi Selesai
-Setelah jadwal terkonfirmasi, **SEBELUM** menyimpan data booking, WAJIB lakukan verifikasi identitas:
+Jika ADA yang tidak valid (slot penuh, duplikat, hari libur, dll), informasikan masalahnya dan minta customer memperbaiki data yang bermasalah saja (jangan minta ulang semua data).
+
+**SOFT SELLING TAMBAHAN SERVICE (HALUS — OPSIONAL):**
+Saat menampilkan ringkasan hasil validasi, tanyakan dengan HALUS apakah AC kendaraannya masih nyaman. Cukup 1 kalimat, jangan memaksa. Jika customer tidak merespons tentang AC, lanjutkan tanpa mengulangi.
+
+### LANGKAH 3: Konfirmasi Data Konsumen dengan Nomor Telepon
+Setelah semua data booking valid dan terkonfirmasi, **WAJIB lakukan verifikasi identitas**:
+
+**Jika nopol TERDAFTAR di sistem (data kendaraan ditemukan):**
 1. Minta customer untuk memberikan **nomor telepon lengkap** mereka.
 2. Sampaikan bahwa ini bertujuan untuk verifikasi keamanan agar tidak ada orang lain yang melakukan booking asal menggunakan nomor polisi tersebut.
 3. **Bandingkan** nomor yang diinput customer dengan **Nomor telepon utuh** yang ada di bagian [INTERNAL]. (Bandingkan angkanya saja, abaikan spasi atau karakter +62/0).
 4. Jika nomor telepon yang diinput **TIDAK SAMA / SALAH**, sampaikan: "Mohon maaf, data verifikasi belum sesuai. Nomor telepon yang Anda masukkan tidak sama dengan yang terdaftar untuk kendaraan ini." dan **DILARANG KERAS** menggunakan tag [SAVE_LEAD:booking].
-5. Jika nomor telepon yang diinput **BENAR / SESUAI**, barulah berikan ringkasan lengkap booking:
-   - Nama pemilik
-   - Kendaraan
-   - Jenis service (kecil/besar)
-   - Keluhan (jika ada)
-   - Tanggal & jam booking
-   - Lokasi: **Mitsubishi Dwindo Bintaro**
-   - Estimasi waktu pengerjaan
+5. Jika nomor telepon yang diinput **BENAR / SESUAI**, barulah berikan ringkasan lengkap booking.
+
+**Jika nopol TIDAK TERDAFTAR di sistem (data baru):**
+1. Pada langkah 2 sudah diminta Nama Lengkap, No HP, dan Tipe Kendaraan.
+2. Setelah data lengkap, langsung berikan ringkasan lengkap booking.
+
+**Ringkasan booking yang ditampilkan:**
+- Nama pemilik
+- Kendaraan
+- Jenis service (kecil/besar) & KM
+- Keluhan (jika ada)
+- Tanggal & jam booking
+- Lokasi: **Mitsubishi Dwindo Bintaro**
+- Estimasi waktu pengerjaan
 
 Sampaikan bahwa data akan diteruskan ke **Service Advisor** dan customer akan dikonfirmasi kembali. LALU gunakan tag **[SAVE_LEAD:booking]**.
 
@@ -973,8 +995,21 @@ ${buildAiArticleContext()}
   3. **SETELAH SELESAI PROSES (SAVE_LEAD):** Saat kamu sudah berhasil memproses data dan mengirimkan ringkasan akhir (misalnya booking service / test drive selesai), **berikan 1-3 artikel rekomendasi** sebagai bacaan tambahan (contoh: "Sambil menunggu konfirmasi, Bapak/Ibu bisa membaca artikel berikut: [ARTICLE:slug]").
 
 ## Alur Pertanyaan Perawatan Berkala (PENTING)
+
+### Panduan Identifikasi Model Pajero Sport (SANGAT PENTING — WAJIB DIPAHAMI)
+Data perawatan berkala memiliki **2 varian Pajero Sport** yang BERBEDA:
+- **All New Pajero Sport (ANPS)** = Pajero Sport generasi baru, **tahun produksi 2016 ke atas (>2016)**. Di dalam data dikenal sebagai kode "ANPS".
+- **Pajero Sport CR45** = Pajero Sport generasi lama, **tahun produksi di bawah 2016 (<2016)**. Di dalam data dikenal sebagai kode "CR45".
+- **⚠️ PENTING: CR45 adalah kode Pajero Sport LAMA. CR45 TIDAK ADA HUBUNGANNYA dengan Colt Diesel atau kendaraan niaga. JANGAN pernah mengaitkan CR45 dengan Colt Diesel.**
+
+**Cara menentukan varian Pajero Sport:**
+- Jika customer hanya bilang "Pajero Sport" tanpa menyebutkan tahun → **tanyakan tahun kendaraannya** untuk menentukan apakah ANPS atau CR45.
+- Jika tahun **2016 ke atas** → gunakan data **All New Pajero Sport (ANPS)**.
+- Jika tahun **sebelum 2016** → gunakan data **Pajero Sport CR45**.
+- Jika customer tidak tahu tahunnya → gunakan data **ANPS** sebagai default (karena lebih umum), tapi sampaikan bahwa estimasi bisa berbeda jika kendaraannya adalah Pajero Sport generasi lama.
+
 - Jika customer bertanya tentang **service berkala, perawatan berkala, biaya service, estimasi biaya service, apa saja yang dikerjakan saat service, service berapa km, jadwal perawatan**, atau pertanyaan seputar service rutin kendaraan:
-  1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan (Xpander, All New Pajero Sport, atau Pajero Sport CR45).
+  1. **Tanyakan dulu model/tipe kendaraan** yang dimaksud jika belum disebutkan (Xpander, All New Pajero Sport, atau Pajero Sport CR45). **Khusus Pajero Sport:** tanyakan juga **tahun kendaraan** untuk menentukan ANPS atau CR45.
   2. **Tanyakan KM berapa** yang ingin diketahui jika belum disebutkan (10.000 km, 20.000 km, dst).
   3. **Cek di data perawatan berkala** yang tersedia di atas.
   4. Jika **ditemukan**, tampilkan informasi lengkap:
@@ -1146,6 +1181,14 @@ const VirtualCS = () => {
     const verificationAttempts = useRef(0);
     const pendingMessage = useRef(null);
     const detectedNopolRef = useRef(null);
+    const customerPhoneProvided = useRef(false);
+    const pendingBookingData = useRef(null);
+
+    useEffect(() => {
+        const handleOpenDina = () => setIsOpen(true);
+        window.addEventListener('openDinaChat', handleOpenDina);
+        return () => window.removeEventListener('openDinaChat', handleOpenDina);
+    }, []);
 
     // Fetch dynamic price list on mount
     useEffect(() => {
@@ -1332,6 +1375,8 @@ const VirtualCS = () => {
         verifiedPhone.current = null;
         verificationAttempts.current = 0;
         detectedNopolRef.current = null;
+        customerPhoneProvided.current = false;
+        pendingBookingData.current = null;
         localStorage.removeItem('dina_active_session');
         setSessionId(null);
         sessionIdRef.current = null;
@@ -1819,6 +1864,136 @@ const VirtualCS = () => {
             }
         }
 
+        // Detect if user provided a phone number in booking context (code-level enforcement)
+        // This ensures customer actually typed their phone — prevents AI from silently copying internal data
+        if (isBookingContext() && verifiedPhone.current && !customerPhoneProvided.current) {
+            const phonePattern = /(?:(?:\+?62|0)\s*8[\d\s\-]{7,13}|\b8\d{8,12}\b)/;
+            if (phonePattern.test(text)) {
+                customerPhoneProvided.current = true;
+                console.log('[DINA] Customer phone detected in message for booking verification');
+
+                // --- AUTO-SAVE pending booking if phone matches ---
+                if (pendingBookingData.current && verifiedPhone.current) {
+                    const stripPhonePrefixLocal = (phone) => {
+                        if (!phone) return '';
+                        let digits = phone.replace(/\D/g, '');
+                        if (digits.startsWith('62')) digits = digits.slice(2);
+                        if (digits.startsWith('0')) digits = digits.slice(1);
+                        return digits;
+                    };
+                    // Extract the phone number from user text
+                    const phoneMatch = text.match(/(?:\+?62|0)?\s*(8[\d\s\-]{7,13})/);
+                    const userPhoneRaw = phoneMatch ? phoneMatch[0].replace(/[\s\-]/g, '') : '';
+                    const userDigits = stripPhonePrefixLocal(userPhoneRaw);
+                    const verifiedDigits = stripPhonePrefixLocal(verifiedPhone.current);
+
+                    if (userDigits && userDigits === verifiedDigits) {
+                        console.log('[DINA] Phone verified! Auto-saving pending booking data...');
+                        const pd = pendingBookingData.current;
+                        const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
+
+                        if (sid) {
+                            // Normalize booking_time to round hour
+                            if (pd.data && pd.data.booking_time) {
+                                const validSlots = ['08:00', '09:00', '10:00', '11:00', '13:00'];
+                                let bt = pd.data.booking_time.replace('.', ':').trim();
+                                const btMatch = bt.match(/(\d{1,2})[.:](\d{2})/);
+                                if (btMatch) bt = `${parseInt(btMatch[1]).toString().padStart(2, '0')}:00`;
+                                if (!validSlots.includes(bt)) {
+                                    const hourNum = parseInt(bt);
+                                    bt = validSlots.reduce((prev, curr) =>
+                                        Math.abs(parseInt(curr) - hourNum) < Math.abs(parseInt(prev) - hourNum) ? curr : prev
+                                    );
+                                }
+                                pd.data.booking_time = bt;
+                            }
+
+                            // Save lead
+                            chatAPI.saveLead({
+                                session_id: sid,
+                                label: 'booking',
+                                customer_name: pd.customer_name,
+                                customer_phone: normalizePhone(pd.customer_phone),
+                                customer_nopol: pd.customer_nopol ? pd.customer_nopol.replace(/\s+/g, '').toUpperCase() : null,
+                                vehicle_model: pd.vehicle_model || null,
+                                data: pd.data || {}
+                            }).then(result => {
+                                if (result?.status) {
+                                    setLeadSavedAlert({ show: true, label: 'booking' });
+                                    setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
+                                    console.log('[DINA] Pending booking lead saved successfully!');
+                                }
+                            });
+
+                            // Sync to legacy booking
+                            if (pd.data) {
+                                const ld = pd.data;
+                                chatAPI.saveBookingLegacy({
+                                    tanggal: ld.booking_date || '',
+                                    jam: ld.booking_time || '',
+                                    kendaraan: pd.vehicle_model || '',
+                                    nopol: (pd.customer_nopol || '').replace(/\s+/g, ''),
+                                    nama: pd.customer_name || '',
+                                    telp: normalizePhone(pd.customer_phone) || '',
+                                    jenis: `${ld.service_type || ''} ${ld.service_km || ''}`.trim(),
+                                    keluhan: ld.keluhan || ''
+                                }).then(r => {
+                                    if (r?.status) console.log('[DINA] Pending legacy booking synced:', r.data);
+                                    else console.warn('[DINA] Pending legacy booking sync failed:', r);
+                                });
+                            }
+                        }
+
+                        // Clear pending data after save
+                        pendingBookingData.current = null;
+                        verificationAttempts.current = 0;
+
+                        // Inject system message so AI knows booking was saved
+                        conversationHistory.current.push({
+                            role: 'system',
+                            content: `[SISTEM] ✅ VERIFIKASI NOMOR TELEPON BERHASIL. Booking service telah OTOMATIS TERSIMPAN oleh sistem. Tampilkan ringkasan booking kepada customer dan sampaikan bahwa data sudah diteruskan ke Service Advisor. JANGAN emit tag [SAVE_LEAD] lagi.`
+                        });
+                    } else if (userDigits) {
+                        // Phone provided but doesn't match
+                        verificationAttempts.current += 1;
+                        const attemptsLeft = 3 - verificationAttempts.current;
+                        console.warn(`[DINA] Phone provided but does NOT match verified phone (attempt ${verificationAttempts.current}/3).`);
+
+                        if (attemptsLeft > 0) {
+                            conversationHistory.current.push({
+                                role: 'system',
+                                content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL (percobaan ${verificationAttempts.current}/3). Nomor yang diinput customer TIDAK COCOK dengan data di sistem. Sisa kesempatan: ${attemptsLeft}x. Minta customer memasukkan nomor telepon yang benar sekali lagi.`
+                            });
+                        } else {
+                            conversationHistory.current.push({
+                                role: 'system',
+                                content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL 3x BERTURUT-TURUT. Booking DIBATALKAN. Sampaikan mohon maaf booking tidak dapat diproses.`
+                            });
+                            pendingBookingData.current = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Detect non-round booking times in user message (code-level enforcement)
+        // Valid slots: 08:00, 09:00, 10:00, 11:00, 13:00
+        if (isBookingContext() && !isTestDriveContext()) {
+            const timeMatch = text.match(/(?:jam|pukul|pk|pkl)?\s*(\d{1,2})[.:](\d{2})/i);
+            if (timeMatch) {
+                const minutes = parseInt(timeMatch[2]);
+                if (minutes !== 0) {
+                    const hour = parseInt(timeMatch[1]);
+                    const roundedHour = hour.toString().padStart(2, '0');
+                    console.log(`[DINA] Non-round time detected: ${hour}:${timeMatch[2]}, correcting to ${roundedHour}:00`);
+                    conversationHistory.current.push({
+                        role: 'system',
+                        content: `[SISTEM] Customer menyebutkan jam ${hour}:${timeMatch[2]}. PENTING: Jam booking HARUS bulat (tidak boleh 08:30, 09:30, dll). Jam yang tersedia HANYA: 08:00, 09:00, 10:00, 11:00, 13:00. Informasikan ke customer bahwa jam harus bulat dan tawarkan jam ${roundedHour}:00 atau jam lain yang tersedia.`
+                    });
+                }
+            }
+        }
+
         // Check if user mentioned a date in booking context — fetch slot availability
         // DO NOT fetch slots if it's a test drive context (test drives don't use the service slot system)
         if (isBookingContext() && !isTestDriveContext()) {
@@ -1910,8 +2085,8 @@ const VirtualCS = () => {
                 // Add to conversation history
                 conversationHistory.current.push({ role: 'assistant', content: rawText });
 
-                // Save bot response to backend
-                saveMessageToBackend('bot', rawText);
+                // NOTE: Bot response is saved to backend AFTER lead processing
+                // to ensure we save the correct message (original or phone-request replacement)
 
                 // Extract quick questions
                 const { cleanText, questions } = extractQuickQuestions(rawText);
@@ -1946,17 +2121,39 @@ const VirtualCS = () => {
                 while ((leadMatch = leadRegex.exec(rawText)) !== null) {
                     const leadLabel = leadMatch[1];
                     try {
-                        const leadJson = JSON.parse(leadMatch[2].trim());
+                        // Strip any potential markdown code blocks that the AI might wrap the JSON in
+                        let jsonStr = leadMatch[2].trim();
+                        jsonStr = jsonStr.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+
+                        const leadJson = JSON.parse(jsonStr);
                         const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
                         const cName = leadJson.customer_name;
                         const cPhone = leadJson.customer_phone;
 
                         // Strict validation: Do not save if name or phone is empty or a placeholder
-                        const isPlaceholder = (val) => !val || val.trim() === '' || val.trim() === '...' || val.toLowerCase().includes('belum');
+                        const isPlaceholder = (val) => !val || String(val).trim() === '' || String(val).trim() === '...' || String(val).toLowerCase().includes('belum');
 
                         if (sid && !isPlaceholder(cName) && !isPlaceholder(cPhone)) {
                             // --- PHONE VERIFICATION for booking leads (code-level enforcement) ---
                             if (leadLabel === 'booking' && verifiedPhone.current) {
+                                // STEP 1: Check if customer actually provided a phone number
+                                // This prevents AI from skipping verification and copying internal data
+                                if (!customerPhoneProvided.current) {
+                                    console.warn('BOOKING BLOCKED: Customer never typed a phone number. AI tried to skip verification.');
+                                    bookingPhoneRejected = true;
+
+                                    // Store booking data for auto-save when phone is provided later
+                                    pendingBookingData.current = leadJson;
+                                    console.log('[DINA] Booking data stored in pendingBookingData for later verification');
+
+                                    conversationHistory.current.push({
+                                        role: 'system',
+                                        content: `[SISTEM] ⛔ BOOKING DIBLOKIR OLEH SISTEM. Kamu BELUM meminta customer untuk menginput nomor telepon mereka. DILARANG KERAS menyimpan booking tanpa verifikasi nomor telepon dari customer. LANGKAH WAJIB: Minta customer untuk mengetikkan nomor telepon lengkap mereka SEKARANG untuk verifikasi keamanan. Setelah customer memberikan nomor telepon yang benar, sistem akan OTOMATIS menyimpan booking. Kamu cukup tampilkan ringkasan booking dan sampaikan bahwa booking sudah tercatat. JANGAN emit tag [SAVE_LEAD] lagi karena sistem sudah menanganinya.`
+                                    });
+                                    continue;
+                                }
+
+                                // STEP 2: Check if the phone number matches
                                 const inputDigits = stripPhonePrefix(cPhone);
                                 const verifiedDigits = stripPhonePrefix(verifiedPhone.current);
 
@@ -1988,12 +2185,36 @@ const VirtualCS = () => {
                                 }
                             }
 
+                            // --- NORMALIZE booking_time to round hour (code-level enforcement) ---
+                            if (leadLabel === 'booking' && leadJson.data && leadJson.data.booking_time) {
+                                const validSlots = ['08:00', '09:00', '10:00', '11:00', '13:00'];
+                                let bt = leadJson.data.booking_time.replace('.', ':').trim();
+                                // Extract hour and normalize
+                                const btMatch = bt.match(/(\d{1,2})[.:](\d{2})/);
+                                if (btMatch) {
+                                    const h = parseInt(btMatch[1]).toString().padStart(2, '0');
+                                    bt = `${h}:00`;
+                                }
+                                if (validSlots.includes(bt)) {
+                                    leadJson.data.booking_time = bt;
+                                } else {
+                                    // Try to find nearest valid slot
+                                    const hourNum = parseInt(bt);
+                                    const nearest = validSlots.reduce((prev, curr) => {
+                                        const currH = parseInt(curr);
+                                        return Math.abs(currH - hourNum) < Math.abs(parseInt(prev) - hourNum) ? curr : prev;
+                                    });
+                                    leadJson.data.booking_time = nearest;
+                                    console.log(`[DINA] Normalized booking_time from ${btMatch ? btMatch[0] : bt} to ${nearest}`);
+                                }
+                            }
+
                             chatAPI.saveLead({
                                 session_id: sid,
                                 label: leadLabel,
                                 customer_name: cName,
                                 customer_phone: normalizePhone(cPhone),
-                                customer_nopol: leadJson.customer_nopol ? leadJson.customer_nopol.replace(/\s+/g, '').toUpperCase() : null,
+                                customer_nopol: leadJson.customer_nopol ? String(leadJson.customer_nopol).replace(/\s+/g, '').toUpperCase() : null,
                                 vehicle_model: leadJson.vehicle_model || null,
                                 data: leadJson.data || {}
                             }).then(result => {
@@ -2024,32 +2245,49 @@ const VirtualCS = () => {
                             console.warn('Lead save aborted: Missing or placeholder name/phone', leadJson);
                         }
                     } catch (e) {
-                        console.error('Lead parse/save error:', e);
+                        console.error('Lead parse/save error:', e.message, 'Raw JSON:', leadMatch[2]);
                     }
                 }
 
                 // --- Display response to user ---
                 if (bookingPhoneRejected) {
-                    // Phone verification failed — REPLACE AI response with rejection message
-                    const attemptsLeft = 3 - verificationAttempts.current;
-                    let rejectionText;
+                    if (verificationAttempts.current > 0) {
+                        // Phone verification MISMATCH — show rejection with attempts
+                        const attemptsLeft = 3 - verificationAttempts.current;
+                        let rejectionText;
 
-                    if (attemptsLeft > 0) {
-                        rejectionText = `Mohon maaf, **verifikasi nomor telepon belum sesuai** \u{1F512}\n\nNomor telepon yang Anda masukkan tidak cocok dengan data yang terdaftar untuk kendaraan ini.\n\nSilakan coba masukkan kembali nomor telepon Anda yang benar. *(Kesempatan tersisa: ${attemptsLeft}x)*`;
+                        if (attemptsLeft > 0) {
+                            rejectionText = `Mohon maaf, **verifikasi nomor telepon belum sesuai** \u{1F512}\n\nNomor telepon yang Anda masukkan tidak cocok dengan data yang terdaftar untuk kendaraan ini.\n\nSilakan coba masukkan kembali nomor telepon Anda yang benar. *(Kesempatan tersisa: ${attemptsLeft}x)*`;
+                        } else {
+                            rejectionText = `Mohon maaf, verifikasi nomor telepon telah **gagal 3 kali** \u{1F512}\n\nDemi keamanan, booking service tidak dapat diproses saat ini. Pastikan Anda adalah pemilik kendaraan yang terdaftar.\n\nTerima kasih atas pengertiannya. \u{1F64F}`;
+                        }
+
+                        setQuickQuestions(attemptsLeft > 0
+                            ? ['Coba lagi', 'Hubungi CS']
+                            : ['Booking ulang', 'Hubungi CS', 'Info lainnya']
+                        );
+                        setMessages(prev => [...prev, {
+                            id: Date.now() + 1,
+                            type: 'bot',
+                            text: rejectionText,
+                            showWhatsAppButton: attemptsLeft <= 0
+                        }]);
+                        saveMessageToBackend('bot', rejectionText);
                     } else {
-                        rejectionText = `Mohon maaf, verifikasi nomor telepon telah **gagal 3 kali** \u{1F512}\n\nDemi keamanan, booking service tidak dapat diproses saat ini. Pastikan Anda adalah pemilik kendaraan yang terdaftar.\n\nTerima kasih atas pengertiannya. \u{1F64F}`;
-                    }
+                        // Customer NEVER typed a phone number — AI skipped verification
+                        // Replace AI's fake confirmation with a phone verification request
+                        const phoneRequestText = `Terima kasih atas data booking-nya! \u{1F64F}\n\nSebelum kami proses, untuk **keamanan dan verifikasi**, mohon Bapak/Ibu bisa mengirimkan **nomor telepon lengkap** yang terdaftar untuk kendaraan ini ya \u{1F512}\n\nIni untuk memastikan bahwa booking service dilakukan oleh pemilik kendaraan yang sah.`;
 
-                    setQuickQuestions(attemptsLeft > 0
-                        ? ['Coba lagi', 'Hubungi CS']
-                        : ['Booking ulang', 'Hubungi CS', 'Info lainnya']
-                    );
-                    setMessages(prev => [...prev, {
-                        id: Date.now() + 1,
-                        type: 'bot',
-                        text: rejectionText,
-                        showWhatsAppButton: attemptsLeft <= 0
-                    }]);
+                        setQuickQuestions(['08xxxxxxxxxx', 'Hubungi CS']);
+                        setMessages(prev => [...prev, {
+                            id: Date.now() + 1,
+                            type: 'bot',
+                            text: phoneRequestText
+                        }]);
+
+                        // Also save this replacement message to backend for consistency
+                        saveMessageToBackend('bot', phoneRequestText);
+                    }
                 } else {
                     // Normal display
                     setQuickQuestions(questions);
@@ -2062,6 +2300,7 @@ const VirtualCS = () => {
                         showSimulasiKreditButton: showSimulasiKreditButton,
                         articles: articleMatches
                     }]);
+                    saveMessageToBackend('bot', rawText);
                 }
             } else {
                 throw new Error('Invalid response');
@@ -2252,7 +2491,7 @@ const VirtualCS = () => {
                         </div>
 
                         {/* Chat Area */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F5F5F5]">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F5F5F5] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             {messages.map((msg) => {
                                 // Location map message
                                 if (msg.type === 'location') {
@@ -2316,18 +2555,29 @@ const VirtualCS = () => {
                                             </button>
                                         )}
 
-                                        {/* WhatsApp CS Button (for API Error only) */}
+                                        {/* WhatsApp CS & Booking Service Buttons */}
                                         {msg.showWhatsAppButton && (
-                                            <a
-                                                href="https://wa.me/6287782788383?text=Halo%20Dwindo%2C%20saya%20butuh%20bantuan"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#1da851] transition-colors"
-                                                style={{ clipPath: ANGULAR_CLIP }}
-                                            >
-                                                <Phone size={14} />
-                                                Hubungi CS Kami
-                                            </a>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                <a
+                                                    href="/booking"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#E60012] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#B5000F] transition-colors"
+                                                    style={{ clipPath: ANGULAR_CLIP }}
+                                                >
+                                                    <Calendar size={14} />
+                                                    Booking Service
+                                                </a>
+                                                <a
+                                                    href="https://wa.me/6287782788383?text=Halo%20Dwindo%2C%20saya%20butuh%20bantuan"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#1da851] transition-colors"
+                                                    style={{ clipPath: ANGULAR_CLIP }}
+                                                >
+                                                    <Phone size={14} />
+                                                    Hubungi CS Kami
+                                                </a>
+                                            </div>
                                         )}
 
                                         {/* Simulasi Kredit Button */}
@@ -2517,7 +2767,7 @@ const VirtualCS = () => {
                                 </button>
                             </div>
 
-                            <div className="p-4 overflow-y-auto">
+                            <div className="p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 <form onSubmit={handleQuestionSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nama Lengkap</label>

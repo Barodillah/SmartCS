@@ -13,9 +13,8 @@ function getLegacyDB()
     if ($conn === null) {
         $conn = mysqli_connect(LEGACY_DB_HOST, LEGACY_DB_USER, LEGACY_DB_PASS, LEGACY_DB_NAME);
         if (!$conn) {
-            http_response_code(500);
-            echo json_encode(['status' => false, 'message' => 'Legacy DB connection failed']);
-            exit;
+            error_log('Legacy DB connection failed: ' . mysqli_connect_error());
+            return null;
         }
         mysqli_set_charset($conn, "utf8mb4");
     }

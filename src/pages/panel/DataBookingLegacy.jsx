@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus, Search, ShieldAlert, Check, Database, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus, Search, ShieldAlert, Check, Database, Trash2, X, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LegacyDetailModal, LegacyFormModal } from '../../components/panel/booking/LegacyBookingModals';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
 import BookingSearchModal from '../../components/panel/booking/BookingSearchModal';
+import { UploadKedatanganModal } from '../../components/panel/booking/UploadKedatanganModal';
 
 const getTimeAgo = (timestamp) => {
     if (!timestamp) return '';
@@ -67,6 +68,7 @@ const DataBookingLegacy = () => {
     const [detailModalData, setDetailModalData] = useState(null);
     const [formModalData, setFormModalData] = useState(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
     // Delete states
@@ -350,13 +352,25 @@ const DataBookingLegacy = () => {
                         </button>
                     </div>
 
-                    <button 
-                        onClick={() => { setFormModalData(null); setIsFormModalOpen(true); }}
-                        className="flex items-center gap-2 bg-[#E60012] hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold transition-colors w-full sm:w-auto justify-center h-10"
-                    >
-                        <Plus size={16} />
-                        Tambah Booking
-                    </button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        {adminUser?.role === 'admin' && (
+                            <button 
+                                onClick={() => setIsUploadModalOpen(true)}
+                                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold transition-colors flex-1 sm:flex-none justify-center h-10"
+                            >
+                                <Upload size={16} />
+                                <span className="hidden sm:inline">Upload Kedatangan</span>
+                                <span className="sm:hidden">Upload</span>
+                            </button>
+                        )}
+                        <button 
+                            onClick={() => { setFormModalData(null); setIsFormModalOpen(true); }}
+                            className="flex items-center gap-2 bg-[#E60012] hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold transition-colors flex-1 sm:flex-none justify-center h-10"
+                        >
+                            <Plus size={16} />
+                            Tambah Booking
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -380,7 +394,7 @@ const DataBookingLegacy = () => {
                     <div className="col-span-1">Status</div>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
@@ -564,6 +578,16 @@ const DataBookingLegacy = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <UploadKedatanganModal 
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+                onSuccess={(msg) => {
+                    setIsUploadModalOpen(false);
+                    showToast(msg);
+                    fetchBookings();
+                }}
+            />
         </div>
     );
 };

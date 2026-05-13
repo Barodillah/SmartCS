@@ -303,7 +303,7 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
             {/* Form Area */}
             <form className="bg-white border border-[#E5E5E5] rounded-xl flex-1 overflow-hidden flex flex-col md:flex-row">
                 {/* Main Content Area */}
-                <div className="flex-1 p-6 overflow-y-auto border-r border-[#E5E5E5]">
+                <div className="flex-1 p-6 overflow-y-auto border-r border-[#E5E5E5] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="space-y-6">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Judul Artikel <span className="text-red-500">*</span></label>
@@ -384,7 +384,7 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                 </div>
 
                 {/* Sidebar Config Area */}
-                <div className="w-full md:w-80 p-6 bg-[#FAFAFA] overflow-y-auto space-y-6">
+                <div className="w-full md:w-80 p-6 bg-[#FAFAFA] overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div>
                         <h3 className="font-display font-bold text-[#111111] uppercase text-xs tracking-wider mb-4 pb-2 border-b border-[#E5E5E5]">Publishing</h3>
 

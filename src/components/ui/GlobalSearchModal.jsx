@@ -180,7 +180,7 @@ const GlobalSearchModal = ({ isOpen, onClose }) => {
 
                     {/* Results Area */}
                     {query.trim().length >= 3 && (
-                        <div className="overflow-y-auto flex-1 p-2 custom-scrollbar border-t border-white/5">
+                        <div className="overflow-y-auto flex-1 p-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent border-t border-white/5">
                             {!loading && results.length === 0 && (
                                 <div className="p-8 text-center text-gray-500">
                                     Tidak ada hasil ditemukan untuk "{query}"

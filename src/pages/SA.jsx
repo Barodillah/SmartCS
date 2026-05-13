@@ -79,7 +79,7 @@ const SA = () => {
             setSaSetupData(parsed);
             return;
           }
-        } catch(e) {}
+        } catch (e) { }
       }
 
       const savedName = localStorage.getItem('saved_sa_name');
@@ -97,7 +97,7 @@ const SA = () => {
   const handleSaChange = async (val) => {
     setSaName(val);
     if (!val) return;
-    
+
     setIsCheckingPin(true);
     try {
       const res = await fetch(`https://csdwindo.com/api/panel/sa_auth.php?action=check&name=${encodeURIComponent(val)}`);
@@ -231,7 +231,7 @@ const SA = () => {
       if (konfirmasiSearchQuery.length >= 3) {
         url = `https://csdwindo.com/api/panel/data_booking.php?search=${encodeURIComponent(konfirmasiSearchQuery)}`;
       }
-      
+
       const res = await fetch(url);
       const data = await res.json();
       if (data.status) {
@@ -319,10 +319,15 @@ const SA = () => {
 
       const systemPrompt = `Kamu adalah Service Advisor untuk dealer mobil Mitsubishi Dwindo.
 Nama kamu adalah ${saSetupData?.name || 'SA'}.
-Tugasmu adalah membuat draft pesan WhatsApp (text siap kirim) kepada konsumen berdasarkan instruksi dari Service Advisor di bawah ini.
-Gunakan bahasa Indonesia yang sopan, formal, to the point, tapi tetap friendly.
-Jangan gunakan markdown bintang (**) berlebihan. Akhiri dengan "Salam, ${saSetupData?.name || 'SA'} - Service Advisor Mitsubishi Dwindo".
-Gunakan data booking di bawah sebagai referensi jika relevan dengan pesan yang diminta.
+Tugasmu adalah membuat pesan WhatsApp (text siap kirim) kepada konsumen berdasarkan instruksi dari Service Advisor di bawah ini.
+
+ATURAN PENTING:
+1. Output HANYA berisi pesan WhatsApp yang siap kirim. DILARANG KERAS menambahkan kalimat pembuka seperti "Berikut draft pesan...", "Okay siap!", "Ini pesannya:", atau penjelasan apapun. Langsung tulis pesannya saja.
+2. Deteksi bahasa instruksi dari Service Advisor. Jika instruksi ditulis dalam bahasa selain Indonesia (misal: Inggris, Jawa, Sunda, Bali, dll), maka buat pesan WhatsApp dalam bahasa tersebut. Jika instruksi dalam bahasa Indonesia, gunakan bahasa Indonesia.
+3. Gunakan gaya bahasa yang sopan, formal, to the point, tapi tetap friendly.
+4. Jangan gunakan markdown bintang (**) berlebihan.
+5. Akhiri dengan "Salam, ${saSetupData?.name || 'SA'} - Service Advisor Mitsubishi Dwindo".
+6. Gunakan data booking di bawah sebagai referensi jika relevan dengan pesan yang diminta.
 
 Instruksi / Pesan yang ingin disampaikan Service Advisor:
 ${waContextInput || 'Sampaikan informasi umum terkait booking.'}
@@ -330,7 +335,7 @@ ${waContextInput || 'Sampaikan informasi umum terkait booking.'}
 Data Booking Konsumen (sebagai referensi):
 ${bookingContext}
 
-Buatkan draft pesannya sekarang:`;
+Tulis pesan WhatsApp-nya langsung:`;
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -439,29 +444,30 @@ Buatkan draft pesannya sekarang:`;
     setIsUpdatingNumber(true);
     try {
       const payload = {
-        ...selectedKonfirmasi,
+        action: 'update_telp',
+        booking_id: selectedKonfirmasi.id,
         user: saSetupData?.name || 'SA',
         telp: otherNumberInput
       };
 
       const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      
+
       if (data.status) {
         showToast('Nomor telepon berhasil diperbarui');
         const updatedKonfirmasi = { ...selectedKonfirmasi, telp: otherNumberInput };
         setSelectedKonfirmasi(updatedKonfirmasi);
-        
+
         setShowOtherNumberModal(false);
         setShowWaModal(false);
         setOtherNumberInput('');
         await recordWhatsAppAction();
         directWhatsApp(otherNumberInput, waGeneratedText);
-        
+
         fetchBookings();
       } else {
         showToast(data.message || 'Gagal memperbarui nomor telepon', 'error');
@@ -828,7 +834,7 @@ Buatkan draft pesannya sekarang:`;
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-2 overflow-y-auto">
+            <div className="p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
               {isLoadingKonfirmasi ? (
                 <div className="p-8 text-center text-[#E60012]">
                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#E60012] border-t-transparent mx-auto mb-2"></div>
@@ -914,7 +920,7 @@ Buatkan draft pesannya sekarang:`;
                     const saName = saSetupData?.name || 'SA';
                     let phone = (p.telp || '').replace(/\D/g, '');
                     if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-                    const message = `Halo Bapak/Ibu ${p.nama},\n\nPerkenalkan saya ${saName}, Service Advisor dari Mitsubishi Dwindo.\n\nKami ingin menginformasikan bahwa kendaraan *${p.kendaraan}* (${p.nopol}) Anda sudah waktunya untuk melakukan *${p.potensiNextService}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nOh ya, perkenalkan juga DINA layanan 24/7 dari kami https://csdwindo.com, Bapak/Ibu bisa booking service dan lainnya melalui link tersebut.\n\nTerima kasih.\n\nSalam,\n${saName} - Service Advisor\nMitsubishi Dwindo`;
+                    const message = `Halo Bapak/Ibu ${p.nama},\n\nPerkenalkan saya ${saName}, Service Advisor dari Mitsubishi Bintaro.\n\nKami ingin menginformasikan bahwa kendaraan *${p.kendaraan}* (${p.nopol}) Anda sudah waktunya untuk melakukan Service Rutin *${p.potensiNextService}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nJika Bapak/Ibu ingin melakukan booking langsung, bisa melalui link berikut: https://booking.csdwindo.com\n\nTerima kasih.\n\nSalam,\n${saName} - Service Advisor\nMitsubishi Bintaro`;
                     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
                   }}>
                     HUBUNGI ULANG
@@ -922,16 +928,16 @@ Buatkan draft pesannya sekarang:`;
                   <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-1 text-xs" onClick={() => {
                     const kmMatch = selectedPotensi.potensiNextService.match(/([\d\.]+)\s*KM/i);
                     const parsedKm = kmMatch ? parseInt(kmMatch[1].replace(/\./g, '')).toString() : '';
-                    navigate('/booking', { 
-                      state: { 
-                        step: 2, 
+                    navigate('/booking', {
+                      state: {
+                        step: 2,
                         nopol: selectedPotensi.nopol,
                         nopolFound: true,
                         nama: selectedPotensi.nama,
                         kendaraan: selectedPotensi.kendaraan,
                         telp: selectedPotensi.telp,
                         km: parsedKm
-                      } 
+                      }
                     });
                   }}>
                     BOOKING
@@ -943,11 +949,11 @@ Buatkan draft pesannya sekarang:`;
                   const saName = saSetupData?.name || 'SA';
                   let phone = (p.telp || '').replace(/\D/g, '');
                   if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-  
-                  const message = `Halo Bapak/Ibu ${p.nama},\n\nPerkenalkan saya ${saName}, Service Advisor dari Mitsubishi Dwindo.\n\nKami ingin menginformasikan bahwa kendaraan *${p.kendaraan}* (${p.nopol}) Anda sudah waktunya untuk melakukan *${p.potensiNextService}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nOh ya, perkenalkan juga DINA layanan 24/7 dari kami https://csdwindo.com, Bapak/Ibu bisa booking service dan lainnya melalui link tersebut.\n\nTerima kasih.\n\nSalam,\n${saName} - Service Advisor\nMitsubishi Dwindo`;
-  
+
+                  const message = `Halo Bapak/Ibu ${p.nama},\n\nPerkenalkan saya ${saName}, Service Advisor dari Mitsubishi Bintaro.\n\nKami ingin menginformasikan bahwa kendaraan *${p.kendaraan}* (${p.nopol}) Anda sudah waktunya untuk melakukan Service Rutin *${p.potensiNextService}*.\n\nApakah Bapak/Ibu berkenan untuk booking jadwal service? Kami siap membantu menjadwalkan waktu yang paling nyaman untuk Anda.\n\nJika Bapak/Ibu ingin melakukan booking langsung, bisa melalui link berikut: https://booking.csdwindo.com\n\nTerima kasih.\n\nSalam,\n${saName} - Service Advisor\nMitsubishi Bintaro`;
+
                   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  
+
                   // Update status to FOLLOW_UP
                   if (p.id) {
                     try {
@@ -956,7 +962,7 @@ Buatkan draft pesannya sekarang:`;
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id: p.id, status: 'FOLLOW_UP' })
                       });
-                      
+
                       // Force refresh page so status change is immediately visible
                       window.location.reload();
                     } catch (err) {
@@ -1035,7 +1041,7 @@ Buatkan draft pesannya sekarang:`;
               <AngularButton variant="primary" className="w-full !flex !items-center !justify-center !gap-2 !bg-[#25D366] hover:!bg-[#1ebd5a]" onClick={openChatFlow}>
                 <Bot className="w-4 h-4" /> Whatsapp Konfirmasi
               </AngularButton>
-              <AngularButton 
+              <AngularButton
                 variant="danger"
                 onClick={() => setShowKomplenConfirm(true)}
                 className="w-full !flex !items-center !justify-center !gap-2"
@@ -1070,7 +1076,7 @@ Buatkan draft pesannya sekarang:`;
                 </button>
               </div>
 
-              <div className="p-4 flex-1 overflow-y-auto">
+              <div className="p-4 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 {waModalStep === 1 ? (
                   <>
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-4">
@@ -1185,8 +1191,8 @@ Buatkan draft pesannya sekarang:`;
                   {authStep === 'SELECT_SA' ? <UserRound className="text-white" /> : <Lock className="text-white" />}
                 </div>
                 <h3 className="font-display font-bold uppercase tracking-wider text-white text-lg">
-                  {authStep === 'SELECT_SA' ? 'Service Advisor' : 
-                   authStep === 'ENTER_PIN' ? 'Verifikasi PIN' : 'Setting PIN Baru'}
+                  {authStep === 'SELECT_SA' ? 'Service Advisor' :
+                    authStep === 'ENTER_PIN' ? 'Verifikasi PIN' : 'Setting PIN Baru'}
                 </h3>
                 {authStep !== 'SELECT_SA' && (
                   <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mt-1">SA: {saName}</p>
@@ -1248,15 +1254,15 @@ Buatkan draft pesannya sekarang:`;
                     </div>
 
                     <div className="flex flex-col gap-3 pt-2">
-                      <AngularButton 
-                        variant="primary" 
-                        type="submit" 
+                      <AngularButton
+                        variant="primary"
+                        type="submit"
                         disabled={isCheckingPin || saPin.length !== 4 || (authStep === 'CREATE_PIN' && pinConfirm.length !== 4)}
                         className="w-full !py-4 !flex !items-center !justify-center !gap-2 !text-xs !tracking-[0.2em]"
                       >
                         {isCheckingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : 'MASUK SEKARANG'}
                       </AngularButton>
-                      
+
                       <button
                         type="button"
                         onClick={() => {
@@ -1272,7 +1278,7 @@ Buatkan draft pesannya sekarang:`;
                     </div>
                   </>
                 )}
-                
+
                 {authStep === 'SELECT_SA' && isCheckingPin && (
                   <div className="flex justify-center py-2">
                     <Loader2 className="w-5 h-5 animate-spin text-[#E60012]" />
@@ -1356,13 +1362,13 @@ Buatkan draft pesannya sekarang:`;
                   Yakin konsumen <strong className="text-gray-900">{selectedKonfirmasi.nama}</strong> berindikasi komplen? Status booking ini akan diubah.
                 </p>
                 <div className="flex gap-3">
-                  <button 
+                  <button
                     onClick={() => setShowKomplenConfirm(false)}
                     className="flex-1 py-3 text-[11px] font-bold uppercase tracking-widest text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
                   >
                     Batal
                   </button>
-                  <button 
+                  <button
                     onClick={handleIndikasiKomplen}
                     disabled={isKomplenLoading}
                     className="flex-1 py-3 text-[11px] font-bold uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-600/30"
@@ -1405,7 +1411,10 @@ Buatkan draft pesannya sekarang:`;
                     required
                     value={otherNumberInput}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val && !val.startsWith('0')) {
+                        val = '0' + val;
+                      }
                       setOtherNumberInput(val);
                     }}
                     placeholder="08xxxxxxxxxx"

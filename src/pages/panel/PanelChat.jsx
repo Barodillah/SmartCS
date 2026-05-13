@@ -345,7 +345,7 @@ const PanelChat = () => {
                 </div>
 
                 {/* Table Body */}
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {loading ? (
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
@@ -458,7 +458,7 @@ const PanelChat = () => {
                         </div>
 
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto bg-[#F5F5F5] p-6 space-y-6">
+                        <div className="flex-1 overflow-y-auto bg-[#F5F5F5] p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             {loadingMessages ? (
                                 <div className="flex items-center justify-center h-40">
                                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>

@@ -88,7 +88,7 @@ export const CustomSelect = ({ value, onChange, options, placeholder, allowCusto
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
+                        className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded shadow-xl max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent"
                     >
                         <div className="py-1">
                             {options.map((opt) => (
@@ -420,7 +420,7 @@ Buatkan draft pesannya sekarang:`;
                                                 <p className="text-xs">Mengambil riwayat...</p>
                                             </div>
                                         ) : logs.length > 0 ? (
-                                            <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar py-2">
+                                            <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent py-2">
                                                 {logs.map((log, index) => (
                                                     <div key={log.id} className="relative pl-6 pb-2 group/log">
                                                         {/* Timeline Line */}
@@ -515,7 +515,7 @@ Buatkan draft pesannya sekarang:`;
                                     </button>
                                 </div>
 
-                                <div className="p-4 flex-1 overflow-y-auto">
+                                <div className="p-4 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                     {waModalStep === 1 ? (
                                         <>
                                             <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-4">
@@ -632,6 +632,7 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
     const duplicateCheckRef = useRef(null);
     const [slotData, setSlotData] = useState({});
     const [isSlotLoading, setIsSlotLoading] = useState(false);
+    const [consumerInfo, setConsumerInfo] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -644,7 +645,10 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
     }, []);
 
     useEffect(() => {
-        if (!formData.nopol || formData.nopol.length < 3) return;
+        if (!formData.nopol || formData.nopol.length < 3) {
+            setConsumerInfo(null);
+            return;
+        }
 
         const delayDebounceFn = setTimeout(async () => {
             setIsFetchingNopol(true);
@@ -658,6 +662,13 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                         nama: data.data.nama || prev.nama,
                         telp: data.data.telp || prev.telp
                     }));
+                    setConsumerInfo({
+                        prioritas: parseInt(data.data.prioritas || 1),
+                        lastServiceJenis: data.data.last_service_jenis,
+                        lastServiceTanggal: data.data.last_service_tanggal
+                    });
+                } else {
+                    setConsumerInfo(null);
                 }
             } catch (err) {
                 console.error(err);
@@ -768,6 +779,7 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
             setOriginalData(null);
             setUbahStatus(false);
             setDuplicateAlert(null);
+            setConsumerInfo(null);
         }
     }, [initialData, isOpen]);
 
@@ -847,7 +859,40 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
                         </button>
                     </div>
 
-                    <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                    <div className="p-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                        {!initialData && consumerInfo && (
+                            <div className={`mb-6 p-4 rounded-lg border-l-4 shadow-sm flex items-start gap-3 ${
+                                consumerInfo.prioritas === 3 ? 'bg-red-50 border-red-500' :
+                                consumerInfo.prioritas === 2 ? 'bg-green-50 border-green-500' :
+                                'bg-blue-50 border-blue-500'
+                            }`}>
+                                <User size={20} className={`shrink-0 mt-0.5 ${
+                                    consumerInfo.prioritas === 3 ? 'text-red-600' :
+                                    consumerInfo.prioritas === 2 ? 'text-green-600' :
+                                    'text-blue-600'
+                                }`} />
+                                <div>
+                                    <h4 className={`font-bold mb-1 ${
+                                        consumerInfo.prioritas === 3 ? 'text-red-800' :
+                                        consumerInfo.prioritas === 2 ? 'text-green-800' :
+                                        'text-blue-800'
+                                    }`}>
+                                        Info Konsumen: {
+                                            consumerInfo.prioritas === 3 ? 'Perlu Perhatian Khusus' :
+                                            consumerInfo.prioritas === 2 ? 'Loyal' : 'Biasa'
+                                        }
+                                    </h4>
+                                    {consumerInfo.lastServiceJenis ? (
+                                        <p className="text-sm text-gray-700">
+                                            Service Terakhir: <span className="font-bold">{consumerInfo.lastServiceJenis}</span> 
+                                            {consumerInfo.lastServiceTanggal && ` (${new Date(consumerInfo.lastServiceTanggal).toLocaleDateString('id-ID')})`}
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm text-gray-600 italic">Belum ada riwayat service kedatangan.</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         <form id="legacy-booking-form" onSubmit={handleSubmit} className="space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="relative" ref={datePickerRef}>

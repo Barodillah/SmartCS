@@ -486,7 +486,7 @@ const PanelPriceList = () => {
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Kategori Utama</label>
                                 <select 

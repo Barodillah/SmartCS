@@ -191,7 +191,7 @@ const ArticleManager = () => {
                     <div className="col-span-2">Tanggal</div>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {filteredArticles.length === 0 ? (
                         <div className="text-center py-20">
                             <Edit3 size={32} className="mx-auto text-gray-300 mb-4" />
@@ -271,7 +271,7 @@ const ArticleManager = () => {
                                 <button onClick={() => setSelectedArticle(null)} className="text-gray-400 hover:text-[#E60012]"><X size={24} /></button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {/* Preview */}
                                 {selectedArticle.image && (
                                     <div className="w-full h-48 rounded-lg overflow-hidden">

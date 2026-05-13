@@ -87,7 +87,7 @@ const SurveySearchModal = ({ isOpen, onClose, onSelect, onSearchSubmit, apiBase 
 
                     {/* Results */}
                     {query.trim().length >= 3 && (
-                        <div className="overflow-y-auto flex-1 p-2 custom-scrollbar">
+                        <div className="overflow-y-auto flex-1 p-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             {!loading && results.length === 0 && (
                                 <div className="p-8 text-center text-gray-500 text-sm">Tidak ada data survey ditemukan untuk "{query}"</div>
                             )}

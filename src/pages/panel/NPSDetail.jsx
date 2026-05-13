@@ -253,7 +253,7 @@ const NPSDetail = () => {
 
             {/* Main Content Area */}
             <div className="flex-1 bg-white rounded-xl border border-[#E5E5E5] shadow-sm flex flex-col min-h-0 overflow-hidden relative">
-                <div className="overflow-auto flex-1 custom-scrollbar relative">
+                <div className="overflow-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent relative">
                     <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 bg-gray-50 z-10 shadow-sm">
                             <tr className="text-sm font-black uppercase tracking-wider">

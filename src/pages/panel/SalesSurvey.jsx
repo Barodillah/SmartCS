@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRight, Calendar, BarChart3 } from 'lucide-react';
+import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRight, ChevronDown, Calendar, BarChart3, MessageCircle, Copy, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import SurveySearchModal from '../../components/panel/survey/SurveySearchModal';
 
 const API_BASE = 'https://csdwindo.com/api/panel/sales_survey.php';
 
-const displayStatus = (status) => status === 'PKT' ? 'PERLU FOLLOW UP' : status;
+const displayStatus = (status) => {
+    if (status === 'PKT') return 'PERLU FOLLOW UP';
+    if (status === 'SURVEY_WA') return 'SURVEY WA';
+    return status;
+};
 
 const getBadgeColor = (status) => {
     const s = displayStatus(status);
@@ -17,6 +21,7 @@ const getBadgeColor = (status) => {
         case 'TIDAK PUAS': case 'KOMPLEN': case 'DETRACTOR': return 'bg-red-100 text-red-700';
         case 'TIDAK DIANGKAT': case 'NOMOR SALAH': case 'SALAH SAMBUNG': case 'PASSIVER': return 'bg-gray-100 text-gray-700';
         case 'PERJANJIAN': case 'DITOLAK/REJECT': return 'bg-orange-100 text-orange-700';
+        case 'SURVEY WA': return 'bg-purple-100 text-purple-700';
         default: return 'bg-gray-100 text-gray-700';
     }
 };
@@ -33,11 +38,75 @@ const calculateWaAge = (waDate) => {
     return { text: `${diffDays} hari`, days: diffDays };
 };
 
+const getSalam = () => {
+    const nowJakarta = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    const jam = nowJakarta.getHours();
+    if (jam < 11) return 'Selamat Pagi';
+    if (jam < 15) return 'Selamat Siang';
+    if (jam < 18) return 'Selamat Sore';
+    return 'Selamat Malam';
+};
+
+const guessGender = async (name) => {
+    try {
+        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+        if (!apiKey) return "Bapak/Ibu";
+
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "~google/gemini-flash-latest",
+                messages: [
+                    { role: "system", content: "Tebak gender dari nama orang Indonesia. Balas HANYA dengan satu kata: Bapak atau Ibu. Jika tidak yakin balas Bapak/Ibu." },
+                    { role: "user", content: name }
+                ],
+                temperature: 0,
+                max_tokens: 50
+            })
+        });
+
+        if (!res.ok) return "Bapak/Ibu";
+
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content?.trim();
+
+        if (reply) {
+            if (reply.includes("Bapak") && !reply.includes("Ibu")) return "Bapak";
+            if (reply.includes("Ibu") && !reply.includes("Bapak")) return "Ibu";
+            if (reply === "Bapak" || reply === "Ibu") return reply;
+        }
+        return "Bapak/Ibu";
+    } catch (err) {
+        console.error("Gender guess error:", err);
+        return "Bapak/Ibu";
+    }
+};
+
 const getWaAgeColor = (days) => {
     if (days > 10) return 'text-red-600 font-bold';
     if (days > 7) return 'text-orange-500 font-bold';
     if (days >= 3) return 'text-green-600 font-bold';
     return 'text-gray-400';
+};
+
+const formatWIB = (dateStr) => {
+    if (!dateStr) return '';
+    // Format is "YYYY-MM-DD HH:mm:ss" in UTC 0
+    const utcDate = new Date(dateStr.replace(' ', 'T') + 'Z');
+    if (isNaN(utcDate.getTime())) return dateStr;
+
+    return utcDate.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).replace(/\./g, ':') + ' WIB';
 };
 
 const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
@@ -66,7 +135,7 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Follow Up Survey</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="overflow-y-auto p-6 flex-1 bg-[#FAFAFA]">
+                <div className="overflow-y-auto p-6 flex-1 bg-[#FAFAFA] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-900">
                         <p className="mb-2"><strong>Script Follow Up:</strong></p>
                         <p>Perkenalkan saya dari Mitsubishi Bintaro, benar saya bicara dengan Bapak/Ibu <strong>{data.nama}</strong>?</p>
@@ -116,11 +185,10 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
                                                     key={num}
                                                     type="button"
                                                     onClick={() => setEst(isSelected ? '' : String(num))}
-                                                    className={`flex-1 h-8 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold transition-all border ${
-                                                        isSelected 
-                                                        ? 'bg-[#E60012] text-white border-[#E60012] shadow-md scale-105' 
+                                                    className={`flex-1 h-8 sm:h-10 rounded-md sm:rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold transition-all border ${isSelected
+                                                        ? 'bg-[#E60012] text-white border-[#E60012] shadow-md scale-105'
                                                         : 'bg-white text-gray-600 border-gray-300 hover:border-[#E60012] hover:text-[#E60012]'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {num}
                                                 </button>
@@ -149,11 +217,71 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
     );
 };
 
-const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, onEdit }) => {
+const SurveyLinkModal = ({ isOpen, data, link, onClose }) => {
+    const [sapaan, setSapaan] = useState("Bapak/Ibu");
+
+    useEffect(() => {
+        if (isOpen && data?.nama) {
+            guessGender(data.nama).then(res => setSapaan(res));
+        }
+    }, [isOpen, data]);
+
+    if (!isOpen || !data || !link) return null;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(link);
+        alert('Link disalin ke clipboard!');
+    };
+
+    const handleWA = () => {
+        const salam = getSalam();
+        const sapaanLower = sapaan.toLowerCase();
+
+        let message = `${salam} ${sapaan} ${data.nama},\n\n`;
+        message += `Perkenalkan dari Customer Service Mitsubishi Bintaro, ucapan terima kasih telah melakukan pembelian untuk kendaraan ${data.kendaraan} dengan nomor rangka ${data.rangka || '-'}.\n\n`;
+        message += `Kami sudah mencoba menghubungi ${sapaanLower} dari nomor 021 754 3271, tapi belum ada respon.\n\n`;
+        message += `Kami hanya ingin menanyakan pelayanan sales kami? Apakah ${sapaanLower} merasa puas dan terbantu? Atau ada hal lainnya?\n\n`;
+        message += `${sapaan} bisa menyampaikan dengan menjawab pesan ini, atau menjawab 2 pertanyaan melalui link berikut:\n`;
+        message += `${link}\n\n`;
+        message += `Terima kasih, kami sangat senang jika ${sapaanLower} memberikan respon atas pelayanan sales kami.`;
+
+        window.open(`https://wa.me/62${data.telp}?text=${encodeURIComponent(message)}`, '_blank');
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-[150] backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="bg-[#25D366] px-6 py-4 flex items-center justify-between text-white shrink-0">
+                    <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><MessageCircle size={20} />Kirim Link Survey</h2>
+                    <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
+                </div>
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                    <p className="text-sm text-gray-600">Link survey untuk konsumen <strong>{data.nama}</strong> telah berhasil dibuat. Link ini akan kedaluwarsa dalam 3 hari.</p>
+                    <div className="bg-white border border-gray-200 rounded p-3 flex items-center justify-between gap-2">
+                        <span className="text-xs font-mono text-gray-500 truncate">{link}</span>
+                        <button onClick={handleCopy} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded transition-colors shrink-0" title="Copy Link"><Copy size={16} /></button>
+                    </div>
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Tutup</button>
+                    <button onClick={handleWA}
+                        className="px-6 py-2 bg-[#25D366] text-white text-sm font-bold rounded shadow-md hover:bg-[#128C7E] transition-colors flex items-center gap-2">
+                        <ExternalLink size={16} /> Buka WhatsApp
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, onEdit, onGenerateLink }) => {
     const [logs, setLogs] = useState([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
     const [npsData, setNpsData] = useState(null);
     const [loadingNps, setLoadingNps] = useState(false);
+    const [isLogOpen, setIsLogOpen] = useState(false);
 
     useEffect(() => {
         if (data?.id) {
@@ -213,7 +341,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Detail Survey</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1">
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col">
@@ -232,7 +360,14 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                         </div>
                         <div className="flex flex-col">
                             <span className="text-gray-500 text-xs">No. Telp / WhatsApp</span>
-                            <span className="font-medium">0{data.telp}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium">0{data.telp}</span>
+                                {['TIDAK DIANGKAT', 'DITOLAK/REJECT', 'SURVEY_WA'].includes(data.status) && (
+                                    <button onClick={() => onGenerateLink(data)} className="text-[#25D366] hover:text-[#128C7E] bg-green-50 hover:bg-green-100 p-1 rounded transition-colors" title="Generate Link Survey via WhatsApp">
+                                        <MessageCircle size={16} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col"><span className="text-gray-500 text-xs">Kendaraan</span><span className="font-medium">{data.kendaraan}</span></div>
@@ -290,29 +425,48 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                             );
                         })()}
                         <div className="mt-6 border-t border-gray-200 pt-4">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Log Tindak Lanjut</h3>
-                            {loadingLogs ? (
-                                <div className="flex justify-center py-4"><div className="animate-spin rounded-full h-5 w-5 border-2 border-[#E60012] border-t-transparent"></div></div>
-                            ) : logs.length > 0 ? (
-                                <div className="space-y-4">
-                                    {logs.map((log, index) => (
-                                        <div key={log.id || index} className="flex gap-3 text-xs relative">
-                                            {index !== logs.length - 1 && <div className="absolute left-1 top-4 bottom-[-16px] w-[1px] bg-gray-200"></div>}
-                                            <div className="w-2 h-2 mt-1 rounded-full bg-[#E60012] shrink-0 relative z-10"></div>
-                                            <div className="flex-1 pb-1">
-                                                <div className="flex justify-between items-start mb-0.5">
-                                                    <span className="font-bold text-gray-800">{displayStatus(log.status)}</span>
-                                                    <span className="text-gray-400 text-[10px]">{log.date}</span>
+                            <button
+                                onClick={() => setIsLogOpen(!isLogOpen)}
+                                className="w-full flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 hover:text-gray-700 transition-colors"
+                            >
+                                <span>Log Tindak Lanjut</span>
+                                {isLogOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </button>
+                            <AnimatePresence>
+                                {isLogOpen && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="pt-2">
+                                            {loadingLogs ? (
+                                                <div className="flex justify-center py-4"><div className="animate-spin rounded-full h-5 w-5 border-2 border-[#E60012] border-t-transparent"></div></div>
+                                            ) : logs.length > 0 ? (
+                                                <div className="space-y-4">
+                                                    {logs.map((log, index) => (
+                                                        <div key={log.id || index} className="flex gap-3 text-xs relative">
+                                                            {index !== logs.length - 1 && <div className="absolute left-1 top-4 bottom-[-16px] w-[1px] bg-gray-200"></div>}
+                                                            <div className="w-2 h-2 mt-1 rounded-full bg-[#E60012] shrink-0 relative z-10"></div>
+                                                            <div className="flex-1 pb-1">
+                                                                <div className="flex justify-between items-start mb-0.5">
+                                                                    <span className="font-bold text-gray-800">{displayStatus(log.status)}</span>
+                                                                    <span className="text-gray-400 text-[10px]">{formatWIB(log.date)}</span>
+                                                                </div>
+                                                                {log.pkt && log.pkt !== 'No' && <div className="text-green-600 text-[10px] mb-1">PKT: {log.pkt}</div>}
+                                                                {log.note && <div className="text-gray-600 text-[10px] italic leading-relaxed bg-gray-50 rounded px-2 py-1 mt-1 border border-gray-100">"{log.note}"</div>}
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                                {log.pkt && log.pkt !== 'No' && <div className="text-green-600 text-[10px] mb-1">PKT: {log.pkt}</div>}
-                                                {log.note && <div className="text-gray-600 text-[10px] italic leading-relaxed bg-gray-50 rounded px-2 py-1 mt-1 border border-gray-100">"{log.note}"</div>}
-                                            </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-500 italic bg-gray-50 p-3 rounded border border-gray-100 text-center">Belum ada riwayat follow up.</p>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-xs text-gray-500 italic bg-gray-50 p-3 rounded border border-gray-100 text-center">Belum ada riwayat follow up.</p>
-                            )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
@@ -358,7 +512,7 @@ const EditSurveyModal = ({ isOpen, data, onClose, onSave, isLoading }) => {
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Edit Data Survey</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 space-y-4">
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 space-y-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
@@ -462,6 +616,7 @@ const SalesSurvey = () => {
     const [detailData, setDetailData] = useState(null);
     const [followUpData, setFollowUpData] = useState(null);
     const [editingData, setEditingData] = useState(null);
+    const [generatedLinkData, setGeneratedLinkData] = useState({ show: false, data: null, link: '' });
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -520,7 +675,7 @@ const SalesSurvey = () => {
                         const resPkt = await fetch(`${API_BASE}?action=list&filter=pkt`);
                         const dataPkt = await resPkt.json();
                         if (dataPkt.status) {
-                            const pktItems = (dataPkt.data || []).filter(item => item.status === 'PKT' || item.status === 'PERLU FOLLOW UP');
+                            const pktItems = (dataPkt.data || []).filter(item => item.status === 'PKT' || item.status === 'PERLU FOLLOW UP' || item.status === 'SURVEY_WA');
                             const combined = [...pktItems, ...fetchedData];
 
                             // Remove duplicates by id
@@ -530,8 +685,8 @@ const SalesSurvey = () => {
 
                             // Sort PKT to top
                             fetchedData.sort((a, b) => {
-                                const isAPkt = a.status === 'PKT' || a.status === 'PERLU FOLLOW UP';
-                                const isBPkt = b.status === 'PKT' || b.status === 'PERLU FOLLOW UP';
+                                const isAPkt = a.status === 'PKT' || a.status === 'PERLU FOLLOW UP' || a.status === 'SURVEY_WA';
+                                const isBPkt = b.status === 'PKT' || b.status === 'PERLU FOLLOW UP' || b.status === 'SURVEY_WA';
                                 if (isAPkt && !isBPkt) return -1;
                                 if (!isAPkt && isBPkt) return 1;
                                 return new Date(b.time) - new Date(a.time);
@@ -615,6 +770,29 @@ const SalesSurvey = () => {
         }
     };
 
+    const handleGenerateLink = async (item) => {
+        setIsSaving(true);
+        try {
+            const res = await fetch(`https://csdwindo.com/api/panel/sales_survey_link.php?action=generate_link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unit_id: item.id })
+            });
+            const data = await res.json();
+            if (data.status) {
+                setGeneratedLinkData({ show: true, data: item, link: data.link });
+                setDetailData(null); // Close detail modal
+            } else {
+                showToast(data.message || 'Gagal membuat link', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
         <div className="animate-in fade-in duration-300 flex flex-col h-[calc(100vh-8rem)] text-[#111111]">
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
@@ -679,7 +857,7 @@ const SalesSurvey = () => {
                     <div className="col-span-3">Nama</div><div className="col-span-2">No. Telp</div>
                     <div className="col-span-3">Kendaraan / Rangka</div><div className="col-span-2">Sales / SPV</div><div className="col-span-2">Status</div>
                 </div>
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div></div>
                     ) : surveys.length === 0 ? (
@@ -736,7 +914,7 @@ const SalesSurvey = () => {
 
             <AnimatePresence>
                 {detailData && <SalesSurveyDetailModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)}
-                    onFollowUp={(d) => { setDetailData(null); setFollowUpData(d); }} adminUser={adminUser} onEdit={(d) => { setDetailData(null); setEditingData(d); }} />}
+                    onFollowUp={(d) => { setDetailData(null); setFollowUpData(d); }} adminUser={adminUser} onEdit={(d) => { setDetailData(null); setEditingData(d); }} onGenerateLink={handleGenerateLink} />}
             </AnimatePresence>
             <AnimatePresence>
                 {editingData && <EditSurveyModal isOpen={!!editingData} data={editingData} onClose={() => setEditingData(null)} onSave={handleEditSave} isLoading={isSaving} />}
@@ -744,6 +922,9 @@ const SalesSurvey = () => {
             <AnimatePresence>
                 {followUpData && <SalesSurveyFollowUpModal isOpen={!!followUpData} data={followUpData} onClose={() => setFollowUpData(null)}
                     onSave={handleSave} isLoading={isSaving} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {generatedLinkData.show && <SurveyLinkModal isOpen={generatedLinkData.show} data={generatedLinkData.data} link={generatedLinkData.link} onClose={() => setGeneratedLinkData({ show: false, data: null, link: '' })} />}
             </AnimatePresence>
 
             <SurveySearchModal

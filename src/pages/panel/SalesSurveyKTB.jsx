@@ -52,7 +52,7 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose }) => {
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Follow Up Survey KTB</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="overflow-y-auto p-6 flex-1 bg-[#FAFAFA]">
+                <div className="overflow-y-auto p-6 flex-1 bg-[#FAFAFA] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-900">
                         <p className="mb-2"><strong>Script Follow Up:</strong></p>
                         <p>Perkenalkan saya dari Mitsubishi Bintaro, benar saya bicara dengan Bapak/Ibu <strong>{data.nama}</strong>?</p>
@@ -88,7 +88,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                     <h2 className="font-display font-bold text-lg tracking-wide flex items-center gap-2"><FileText size={20} />Detail Survey KTB</h2>
                     <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20} /></button>
                 </div>
-                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1">
+                <div className="p-6 bg-[#FAFAFA] overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="space-y-4 text-sm">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col">
@@ -461,7 +461,7 @@ const SalesSurveyKTB = () => {
                     <div className="col-span-3">Nama</div><div className="col-span-2">No. Telp</div>
                     <div className="col-span-3">Kendaraan / Rangka</div><div className="col-span-2">Sales / SPV</div><div className="col-span-2">Status</div>
                 </div>
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40"><div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div></div>
                     ) : surveys.length === 0 ? (

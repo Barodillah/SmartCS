@@ -480,6 +480,31 @@ const PanelWhatsapp = () => {
         }
     };
 
+    const handleReschedule = async (item) => {
+        setUpdatingIds(prev => new Set(prev).add(item.id));
+        try {
+            const salam = getSalam();
+            const sapaan = await guessGender(item.nama);
+            let pesan = `${salam} ${sapaan} *${item.nama}*,\n\n`;
+            pesan += `Kami dari Mitsubishi Bintaro ingin mengkonfirmasi ketidakhadiran ${sapaan} untuk Booking Service hari ini.\n\n`;
+            pesan += `Apakah ada rencana *Reschedule* atau bagaimana kelanjutannya?\n`;
+            pesan += `Jika ingin melakukan booking kembali, ${sapaan} bisa mengunjungi https://booking.csdwindo.com atau membalas pesan ini.\n\n`;
+            pesan += `Terima kasih!`;
+
+            openWhatsapp(item.telp, pesan);
+            showToast(`WA Reschedule dikirim ke ${item.nama}`);
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal memproses pesan WA', 'error');
+        } finally {
+            setUpdatingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
     const handlePkt = async (item) => {
         setUpdatingIds(prev => new Set(prev).add(item.id));
         try {
@@ -713,7 +738,7 @@ const PanelWhatsapp = () => {
                 </div>
 
                 {/* Content */}
-                <div className="overflow-y-auto flex-1 p-2 md:p-0">
+                <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
@@ -766,6 +791,7 @@ const PanelWhatsapp = () => {
                                 const isUpdating = updatingIds.has(item.id);
                                 const nowJakartaRender = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
                                 const isEarly = activeTab === 'H-1' && nowJakartaRender.getHours() < 15;
+                                const isPast15 = nowJakartaRender.getHours() >= 15;
                                 const isPktTab = activeTab === 'H+2 PKT';
                                 const isStnkTab = activeTab === 'Pajak STNK';
                                 const isBpkbTab = activeTab === 'BPKB Ready';
@@ -891,8 +917,22 @@ const PanelWhatsapp = () => {
                                             )}
                                         </div>
                                         <div className="flex items-center justify-end gap-2 mt-2 md:mt-0 pt-3 md:pt-0 border-t border-[#E5E5E5] md:border-none w-full">
-                                            {passed ? (
+                                            {passed && (!isPast15 || activeTab !== 'H-30 Menit') ? (
                                                 <span className="text-xs text-red-400 font-bold">Jam Lewat</span>
+                                            ) : passed && isPast15 && activeTab === 'H-30 Menit' ? (
+                                                <button
+                                                    onClick={() => handleReschedule(item)}
+                                                    disabled={isUpdating}
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2 px-4 py-2 font-bold text-xs tracking-wide uppercase transition-colors disabled:opacity-50"
+                                                    style={{ clipPath: ANGULAR_CLIP }}
+                                                >
+                                                    {isUpdating ? (
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                                    ) : (
+                                                        <WhatsappIcon size={14} />
+                                                    )}
+                                                    Reschedule
+                                                </button>
                                             ) : tooEarly ? (
                                                 <span className="text-xs text-gray-400 font-bold">Belum Waktunya</span>
                                             ) : (

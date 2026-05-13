@@ -22,6 +22,17 @@ if ($method === 'GET') {
         $res = mysqli_query($conn, "SELECT * FROM konsumen WHERE nopol = '$nopol'");
         if (mysqli_num_rows($res) > 0) {
             $data = mysqli_fetch_assoc($res);
+            
+            $lastBookingRes = mysqli_query($conn, "SELECT jenis, tanggal FROM booking WHERE nopol = '$nopol' AND status IN ('DATANG', 'WALK IN') ORDER BY tanggal DESC LIMIT 1");
+            if ($lastBookingRes && mysqli_num_rows($lastBookingRes) > 0) {
+                $lastBooking = mysqli_fetch_assoc($lastBookingRes);
+                $data['last_service_jenis'] = $lastBooking['jenis'];
+                $data['last_service_tanggal'] = $lastBooking['tanggal'];
+            } else {
+                $data['last_service_jenis'] = null;
+                $data['last_service_tanggal'] = null;
+            }
+
             echo json_encode(['status' => true, 'data' => $data]);
         } else {
             echo json_encode(['status' => false, 'message' => 'Not found']);
@@ -103,6 +114,47 @@ if ($method === 'GET') {
             http_response_code(400);
             echo json_encode(['status' => false, 'message' => 'Invalid booking ID']);
         }
+        exit;
+    }
+
+    // Action: update_telp — Update phone number only (booking + konsumen), record in booking_record, WITHOUT changing booking status
+    if (isset($body['action']) && $body['action'] === 'update_telp') {
+        $id = (int)($body['booking_id'] ?? 0);
+        $user = mysqli_real_escape_string($conn, $body['user'] ?? 'SA');
+        $newTelp = mysqli_real_escape_string($conn, $body['telp'] ?? '');
+
+        if ($id <= 0 || empty($newTelp)) {
+            http_response_code(400);
+            echo json_encode(['status' => false, 'message' => 'Booking ID dan nomor telepon wajib diisi']);
+            exit;
+        }
+
+        // Get old booking data
+        $oldQuery = mysqli_query($conn, "SELECT * FROM booking WHERE id = $id");
+        $oldData = mysqli_fetch_assoc($oldQuery);
+        if (!$oldData) {
+            http_response_code(404);
+            echo json_encode(['status' => false, 'message' => 'Data booking tidak ditemukan']);
+            exit;
+        }
+
+        $oldTelp = $oldData['telp'];
+        $nopol = $oldData['nopol'];
+
+        // Update telp in booking table (status NOT changed)
+        mysqli_query($conn, "UPDATE booking SET telp = '$newTelp' WHERE id = $id");
+
+        // Update telp in konsumen table
+        $checkKonsumen = mysqli_query($conn, "SELECT id FROM konsumen WHERE nopol = '$nopol'");
+        if (mysqli_num_rows($checkKonsumen) > 0) {
+            mysqli_query($conn, "UPDATE konsumen SET telp = '$newTelp' WHERE nopol = '$nopol'");
+        }
+
+        // Record in booking_record
+        mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
+                             VALUES ($id, '$user', 'UPDATE_TELP', '$oldTelp', '$newTelp')");
+
+        echo json_encode(['status' => true, 'message' => 'Nomor telepon berhasil diperbarui']);
         exit;
     }
     

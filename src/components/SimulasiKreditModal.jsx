@@ -94,7 +94,7 @@ const SimulasiKreditModal = ({ isOpen, onClose }) => {
                         </div>
                         
                         {/* Body */}
-                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
+                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                             <div className="space-y-6">
                                 
                                 {/* Model & Varian Section */}
