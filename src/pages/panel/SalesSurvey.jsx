@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRight, ChevronDown, Calendar, BarChart3, MessageCircle, Copy, ExternalLink } from 'lucide-react';
+import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRight, ChevronDown, Calendar, BarChart3, MessageCircle, Copy, ExternalLink, BrainCircuit, RefreshCw, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import SurveySearchModal from '../../components/panel/survey/SurveySearchModal';
+import { parseChatMarkdown } from '../../utils/markdownParser';
 
 const API_BASE = 'https://csdwindo.com/api/panel/sales_survey.php';
 
@@ -283,6 +284,12 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
     const [loadingNps, setLoadingNps] = useState(false);
     const [isLogOpen, setIsLogOpen] = useState(false);
 
+    const [isInsightOpen, setIsInsightOpen] = useState(false);
+    const [insightResult, setInsightResult] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [showRegenModal, setShowRegenModal] = useState(false);
+    const [regenContext, setRegenContext] = useState('');
+
     useEffect(() => {
         if (data?.id) {
             setLoadingLogs(true);
@@ -330,7 +337,78 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
         }
     };
 
+    const generateInsight = async (context = '') => {
+        setIsGenerating(true);
+        setShowRegenModal(false);
+        try {
+            const systemPrompt = `Anda adalah AI asisten Customer Satisfaction Manager.
+Tugas Anda adalah memberikan "Rekomendasi Tindak lanjut", cara penanganan komplain, perbaikan, dan hal lain yang relevan berdasarkan data komplain/survey pelanggan berikut.
+Berikan jawaban yang singkat, profesional, dan gunakan Markdown untuk formatting.`;
+
+            let userMsg = `Data Pelanggan:
+Nama: ${data.nama || '-'}
+Telepon: 0${data.telp || '-'}
+Rangka: ${data.rangka || '-'}
+Kendaraan: ${data.kendaraan || '-'}
+Sales / SPV: ${data.sales || '-'} / ${data.spv || '-'}
+
+Detail Survey:
+Status Terakhir: ${data.status || 'NEW'}
+Estimasi Nilai: ${data.est || '-'}
+Catatan/Note: ${data.note || '-'}`;
+
+            if (npsData) {
+                userMsg += `\n\nHasil NPS:
+Score NPS: ${npsData.score}
+Status NPS: ${npsData.status_nps}
+Catatan NPS: ${npsData.note || '-'}`;
+            }
+
+            if (context) {
+                userMsg += `\n\nKonteks tambahan dari user: ${context}`;
+            }
+
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "xiaomi/mimo-v2-flash",
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userMsg }
+                    ]
+                })
+            });
+            const result = await res.json();
+            if (result.choices?.[0]?.message?.content) {
+                let content = result.choices[0].message.content;
+                content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                setInsightResult(content);
+                localStorage.setItem(`ai_insight_salessurvey_${data.id}`, content);
+            } else {
+                throw new Error('No response content');
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Gagal men-generate AI Insight");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleOpenInsight = () => {
+        setIsInsightOpen(true);
+        const cached = localStorage.getItem(`ai_insight_salessurvey_${data.id}`);
+        if (cached) {
+            setInsightResult(cached);
+        } else {
+            generateInsight();
+        }
+    };
+
     if (!isOpen || !data) return null;
+
+    const shouldShowInsight = ['TIDAK PUAS', 'KOMPLEN', 'SARAN', 'BIASA SAJA'].includes(data.status?.toUpperCase()) || npsData?.status_nps?.toUpperCase() === 'DETRACTOR';
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -470,9 +548,14 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                         </div>
                     </div>
                 </div>
-                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white items-center">
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white items-center flex-wrap">
                     {adminUser?.role === 'admin' && (
                         <button onClick={() => onEdit(data)} className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm mr-auto transition-colors">Edit</button>
+                    )}
+                    {shouldShowInsight && (
+                        <button onClick={handleOpenInsight} className="px-4 py-2 bg-[#00B2A9] hover:bg-teal-600 text-white font-bold rounded shadow-md transition-colors text-sm flex items-center gap-2">
+                            <BrainCircuit size={16} /> AI Insight
+                        </button>
                     )}
                     <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Tutup</button>
                     {!['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'NOMOR SALAH', 'SALAH SAMBUNG'].includes(data.status) && (
@@ -483,6 +566,66 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, adminUser, 
                     )}
                 </div>
             </motion.div>
+
+            {/* AI Insight Modal Overlay */}
+            {isInsightOpen && (
+                <div className="absolute inset-0 bg-black/60 z-[130] flex items-center justify-center p-4 rounded-xl backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="bg-gradient-to-r from-[#00B2A9] to-teal-700 px-6 py-4 flex items-center justify-between border-b rounded-t-lg shrink-0">
+                            <h3 className="font-bold text-white flex items-center gap-2"><BrainCircuit size={18} /> AI Insight - Rekomendasi Tindak Lanjut</h3>
+                            <button onClick={() => setIsInsightOpen(false)} className="text-white/80 hover:text-white"><X size={18} /></button>
+                        </div>
+                        <div className="p-6 overflow-y-auto bg-[#F8FAFA] flex-1">
+                            {isGenerating ? (
+                                <div className="flex flex-col items-center justify-center py-10 text-center">
+                                    <Loader2 size={32} className="animate-spin text-[#00B2A9] mb-4" />
+                                    <p className="font-bold text-gray-700">AI sedang memproses...</p>
+                                    <p className="text-sm text-gray-500">Menganalisis case komplain ini</p>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-gray-800" dangerouslySetInnerHTML={{ __html: parseChatMarkdown(insightResult) }} />
+                            )}
+                        </div>
+                        <div className="px-6 py-4 border-t bg-white flex justify-between gap-3 shrink-0 rounded-b-lg">
+                            <button onClick={() => setShowRegenModal(true)} disabled={isGenerating} className="px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 font-bold rounded-lg transition-colors text-sm flex items-center gap-2 disabled:opacity-50">
+                                <RefreshCw size={14} /> Generate Ulang
+                            </button>
+                            <button onClick={() => setIsInsightOpen(false)} className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors text-sm">Tutup</button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Regenerate Confirmation Modal Overlay */}
+            {showRegenModal && (
+                <div className="absolute inset-0 bg-black/60 z-[140] flex items-center justify-center p-4 rounded-xl backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+                        <div className="bg-gray-100 px-4 py-3 flex items-center justify-between border-b rounded-t-lg">
+                            <h3 className="font-bold text-gray-800">Generate Ulang Insight</h3>
+                            <button onClick={() => setShowRegenModal(false)} className="text-gray-500 hover:text-gray-800"><X size={18} /></button>
+                        </div>
+                        <div className="p-4 space-y-4 bg-white">
+                            <p className="text-sm text-gray-600">Anda dapat memberikan konteks tambahan kepada AI untuk fokus ke hal tertentu, atau biarkan kosong untuk default.</p>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Konteks Tambahan (Opsional)</label>
+                                <textarea
+                                    rows="3"
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00B2A9] resize-none"
+                                    value={regenContext}
+                                    onChange={e => setRegenContext(e.target.value)}
+                                    placeholder="Contoh: Fokus ke ganti rugi, dll..."
+                                ></textarea>
+                            </div>
+                        </div>
+                        <div className="px-4 py-3 border-t bg-gray-50 flex justify-end gap-2 rounded-b-lg">
+                            <button onClick={() => setShowRegenModal(false)} className="px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">Batal</button>
+                            <button onClick={() => generateInsight(regenContext)} className="px-4 py-2 text-sm font-bold bg-[#00B2A9] text-white hover:bg-teal-600 rounded-lg transition-colors flex items-center gap-2">
+                                <RefreshCw size={14} /> Generate
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </motion.div>
     );
 };

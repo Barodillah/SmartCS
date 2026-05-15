@@ -1,27 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrainCircuit, ShieldAlert, Check, RefreshCw, AlertTriangle, Loader2, Send, Download, FileDown } from 'lucide-react';
+import { BrainCircuit, ShieldAlert, Check, RefreshCw, AlertTriangle, Loader2, Send, Download, FileDown, Settings, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseChatMarkdown } from '../../utils/markdownParser';
+import { CATEGORIES, SUB_PARAMS, fetchBookingData, fetchKonsumenData, fetchPotensiData, fetchDissatisfactionData, fetchSalesSurveyData, fetchSurveyKTBData, getSystemPrompt } from './commandCenterConfig';
 
-const BOOKING_API = 'https://csdwindo.com/api/panel/data_booking.php';
-const SURVEY_API = 'https://csdwindo.com/api/panel/sales_survey.php';
 const AI_MODEL = 'qwen/qwen3-235b-a22b-2507';
 const CACHE_KEY = 'ai_insight_conv';
 const CACHE_TIME_KEY = 'ai_insight_time';
-
-const SYSTEM_PROMPT = `Anda adalah AI asisten Customer Satisfaction Manager di dealer resmi Mitsubishi Motors Dwindo Bintaro.
-Tugas Anda adalah menganalisis data operasional dealer dan memberikan insight strategis.
-Anda akan menerima 3 jenis data:
-1. **Trend Booking Service 14 hari terakhir**
-2. **Distribusi Respons Survey 30 hari terakhir**
-3. **30 Catatan/Feedback Terakhir dari Konsumen**
-Berikan analisis dalam format Markdown. Bahasa Indonesia profesional. Jelas dan actionable.
-Struktur output:
-### 📊 Ringkasan Performa Operasional
-### 📋 Analisis Kepuasan Pelanggan
-### 💬 Insight dari Feedback Konsumen
-### ⚠️ Area yang Perlu Perhatian
-### ✅ Rekomendasi Tindakan`;
 
 const FOLLOWUP_SYSTEM = `Anda adalah AI asisten Customer Satisfaction Manager di dealer resmi Mitsubishi Motors Dwindo Bintaro.
 Anda sudah pernah memberikan analisis sebelumnya. Sekarang CS Manager ingin bertanya lebih lanjut.
@@ -34,7 +19,13 @@ const markdownClasses = "prose-sm [&_h1]:font-display [&_h1]:font-bold [&_h1]:te
 const ChurnPrediction = () => {
     const [user, setUser] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [conversation, setConversation] = useState([]); // [{role:'user'|'assistant', content:''}]
+    const [conversation, setConversation] = useState([]);
+    const [showParamModal, setShowParamModal] = useState(false);
+    
+    // Parameter Modal State
+    const [modalStep, setModalStep] = useState(1);
+    const [analysisParams, setAnalysisParams] = useState({ category: '', depth: 'Standar' });
+    
     const [lastUpdated, setLastUpdated] = useState(null);
     const [loadingStatus, setLoadingStatus] = useState('');
     const [followUpInput, setFollowUpInput] = useState('');
@@ -79,46 +70,41 @@ const ChurnPrediction = () => {
         throw new Error('No AI response');
     };
 
-    // ── Fetch all data & generate initial insight ──
     const generateInsight = async () => {
+        setShowParamModal(false);
         setIsGenerating(true);
         try {
-            setLoadingStatus('Mengambil data booking 14 hari terakhir...');
-            const promises = [];
-            const days = [];
-            for (let i = 13; i >= 0; i--) {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                const ds = d.toISOString().split('T')[0];
-                days.push(ds);
-                promises.push(fetch(`${BOOKING_API}?date=${ds}`).then(r => r.json()).catch(() => ({ status: false })));
+            setLoadingStatus(`Mengambil data ${CATEGORIES.find(c => c.id === analysisParams.category)?.label || ''}...`);
+            let userMsg = '';
+            
+            if (analysisParams.category === 'booking' || analysisParams.category === 'semua') {
+                setLoadingStatus('Mengambil data Booking & Kapasitas...');
+                userMsg += await fetchBookingData(analysisParams) + '\\n\\n';
             }
-            const results = await Promise.all(promises);
-            const bookingCtx = days.map((date, i) => {
-                const r = results[i]; let b = 0, dt = 0, c = 0, t = 0;
-                if (r?.status && r.data) { t = r.data.length; r.data.forEach(x => { const s = (x.status || '').toUpperCase(); if (s === 'BOOKING') b++; if (s === 'DATANG') dt++; if (s === 'CANCEL' || s === 'BATAL') c++; }); }
-                return `${date}: Total=${t}, Booking=${b}, Datang=${dt}, Cancel=${c}`;
-            }).join('\n');
-
-            setLoadingStatus('Mengambil data survey respons...');
-            const sRes = await fetch(`${SURVEY_API}?action=list`);
-            const sData = await sRes.json();
-            const cats = ['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'KOMPLEN', 'SARAN', 'TIDAK DIANGKAT', 'NOMOR SALAH', 'DITOLAK/REJECT', 'PERJANJIAN', 'SALAH SAMBUNG'];
-            const counts = {}; cats.forEach(c => counts[c] = 0);
-            let allItems = [];
-            if (sData.status && sData.data) {
-                allItems = sData.data;
-                const ago30 = new Date(); ago30.setDate(ago30.getDate() - 30);
-                sData.data.forEach(x => { const w = x.wa_date ? new Date(x.wa_date) : null; if (w && w >= ago30 && counts[(x.status || '').toUpperCase()] !== undefined) counts[(x.status || '').toUpperCase()]++; });
+            if (analysisParams.category === 'konsumen' || analysisParams.category === 'semua') {
+                setLoadingStatus('Mengambil data Konsumen...');
+                userMsg += await fetchKonsumenData(analysisParams) + '\\n\\n';
             }
-            const surveyCtx = Object.entries(counts).map(([s, c]) => `${s}: ${c}`).join('\n');
+            if (analysisParams.category === 'potensi' || analysisParams.category === 'semua') {
+                setLoadingStatus('Mengambil data Potensi Service...');
+                userMsg += await fetchPotensiData(analysisParams) + '\\n\\n';
+            }
+            if (analysisParams.category === 'dissatisfaction' || analysisParams.category === 'semua') {
+                setLoadingStatus('Mengambil data Dissatisfaction...');
+                userMsg += await fetchDissatisfactionData(analysisParams) + '\\n\\n';
+            }
+            if (analysisParams.category === 'sales_survey' || analysisParams.category === 'semua') {
+                setLoadingStatus('Mengambil data Sales Survey...');
+                userMsg += await fetchSalesSurveyData(analysisParams) + '\\n\\n';
+            }
+            if (analysisParams.category === 'survey_ktb' || analysisParams.category === 'semua') {
+                setLoadingStatus('Mengambil data Survey KTB...');
+                userMsg += await fetchSurveyKTBData(analysisParams) + '\\n\\n';
+            }
 
-            setLoadingStatus('Mengambil catatan feedback konsumen...');
-            const notes = allItems.filter(x => x.note?.trim()).sort((a, b) => new Date(b.wa_date || b.time || 0) - new Date(a.wa_date || a.time || 0)).slice(0, 30);
-            const notesCtx = notes.map((x, i) => `${i + 1}. [${x.status}] ${x.nama} (${x.kendaraan}, Sales: ${x.sales}): "${x.note}"`).join('\n');
-
-            setLoadingStatus('AI sedang menganalisis semua data...');
-            const userMsg = `=== TREND BOOKING (14 HARI) ===\n${bookingCtx}\n\n=== SURVEY RESPONS (30 HARI) ===\n${surveyCtx}\n\n=== 30 FEEDBACK TERAKHIR ===\n${notesCtx || '(Kosong)'}`;
-            const aiReply = await callAI([{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: userMsg }]);
+            setLoadingStatus('AI sedang menganalisis data...');
+            const sysPrompt = getSystemPrompt(analysisParams.category, analysisParams);
+            const aiReply = await callAI([{ role: 'system', content: sysPrompt }, { role: 'user', content: userMsg }]);
             const newConv = [{ role: 'assistant', content: aiReply }];
             setConversation(newConv);
             saveConversation(newConv);
@@ -129,7 +115,6 @@ const ChurnPrediction = () => {
         } finally { setIsGenerating(false); setLoadingStatus(''); }
     };
 
-    // ── Follow-up message ──
     const sendFollowUp = async () => {
         const msg = followUpInput.trim();
         if (!msg || isSendingFollowUp) return;
@@ -149,19 +134,16 @@ const ChurnPrediction = () => {
         } finally { setIsSendingFollowUp(false); }
     };
 
-    // ── Export PDF (direct download via html2canvas + jsPDF) ──
     const exportPDF = async () => {
         showToast('Menyiapkan PDF...');
         const container = document.createElement('div');
         container.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;padding:40px;background:#fff;font-family:Segoe UI,Tahoma,sans-serif;color:#222;font-size:13px;line-height:1.7;z-index:-1;';
 
-        // Header
         container.innerHTML = `<div style="border-bottom:3px solid #00B2A9;padding-bottom:12px;margin-bottom:24px">
             <h1 style="font-size:22px;margin:0 0 4px;color:#111">AI Insights Report</h1>
             <p style="font-size:11px;color:#888;margin:0">Mitsubishi Motors Dwindo Bintaro — ${lastUpdated || new Date().toLocaleString('id-ID')}</p>
         </div>`;
 
-        // Style tag for inner HTML
         const styleTag = `<style>
             h1,h2,h3,h4,h5,h6{color:#00B2A9;margin-top:18px;margin-bottom:8px}
             h3{font-size:16px;border-bottom:1px solid #eee;padding-bottom:6px}
@@ -202,14 +184,13 @@ const ChurnPrediction = () => {
             const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             document.body.removeChild(container);
 
-            const pdfW = 210; // A4 mm
+            const pdfW = 210;
             const pdfH = 297;
             const marginX = 5;
             const marginY = 15;
             const contentW = pdfW - marginX * 2;
             const contentH = pdfH - marginY * 2;
 
-            // Calculate how many pixels of the canvas fit per page
             const pxPerMm = canvas.width / contentW;
             const pageHeightPx = Math.floor(contentH * pxPerMm);
             const totalPages = Math.ceil(canvas.height / pageHeightPx);
@@ -218,8 +199,6 @@ const ChurnPrediction = () => {
 
             for (let page = 0; page < totalPages; page++) {
                 if (page > 0) doc.addPage();
-
-                // Slice canvas for this page
                 const sliceY = page * pageHeightPx;
                 const sliceH = Math.min(pageHeightPx, canvas.height - sliceY);
 
@@ -245,9 +224,20 @@ const ChurnPrediction = () => {
         }
     };
 
-    // ── Regen confirmation handler ──
     const handleRegenClick = () => {
-        if (conversation.length > 0) { setShowRegenModal(true); } else { generateInsight(); }
+        if (conversation.length > 0) { setShowRegenModal(true); } else { setModalStep(1); setShowParamModal(true); }
+    };
+
+    const handleCategorySelect = (id) => {
+        const subParams = SUB_PARAMS[id];
+        let newParams = { category: id, depth: 'Standar' };
+        if (subParams) {
+            subParams.forEach(p => {
+                newParams[p.key] = typeof p.default === 'function' ? p.default() : p.default;
+            });
+        }
+        setAnalysisParams(newParams);
+        setModalStep(2);
     };
 
     if (user && user.role !== 'admin') {
@@ -262,13 +252,12 @@ const ChurnPrediction = () => {
 
     return (
         <div className="animate-in fade-in duration-300 flex flex-col h-[calc(100vh-8rem)] text-[#111111]">
-            {/* Header */}
             <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-gradient-to-br from-[#00B2A9] to-teal-700 text-white rounded-lg shadow-lg"><BrainCircuit size={24} /></div>
                     <div>
-                        <h1 className="font-display font-bold text-[24px] text-[#111111] uppercase tracking-wide">AI Insights</h1>
-                        <p className="text-gray-500 text-sm mt-1">Analisis performa booking, survey kepuasan, dan feedback konsumen.</p>
+                        <h1 className="font-display font-bold text-[24px] text-[#111111] uppercase tracking-wide">Smart Command Center</h1>
+                        <p className="text-gray-500 text-sm mt-1">Pusat analisis AI terintegrasi dari seluruh data operasional.</p>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center justify-end">
@@ -280,12 +269,11 @@ const ChurnPrediction = () => {
                     )}
                     <button onClick={handleRegenClick} disabled={isGenerating}
                         className="flex items-center gap-2 bg-[#00B2A9] hover:bg-teal-600 text-white px-5 py-2.5 rounded shadow-md text-sm font-bold transition-colors disabled:opacity-50">
-                        {isGenerating ? <><Loader2 size={16} className="animate-spin" />Menganalisis...</> : <><BrainCircuit size={16} />{conversation.length > 0 ? 'Generate Ulang' : 'Generate AI Insight'}</>}
+                        {isGenerating ? <><Loader2 size={16} className="animate-spin" />Menganalisis...</> : <><BrainCircuit size={16} />{conversation.length > 0 ? 'Generate Ulang' : 'Mulai Analisis'}</>}
                     </button>
                 </div>
             </div>
 
-            {/* Chat Area */}
             <div className="bg-white border border-[#E5E5E5] flex-1 overflow-y-auto rounded-lg shadow-sm relative flex flex-col min-h-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {isGenerating && conversation.length === 0 && (
@@ -299,9 +287,9 @@ const ChurnPrediction = () => {
                     {conversation.length === 0 && !isGenerating && (
                         <div className="flex flex-col items-center justify-center h-full text-center py-20">
                             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4"><BrainCircuit size={40} className="text-gray-300" /></div>
-                            <h3 className="font-bold text-lg text-gray-600 mb-2">Belum Ada Data Insight</h3>
-                            <p className="text-sm text-gray-500 max-w-md mb-1">Klik <strong>"Generate AI Insight"</strong> untuk menganalisis data dealer.</p>
-                            <p className="text-xs text-gray-400 max-w-sm">Trend booking 14 hari, distribusi survey 30 hari, dan 30 feedback konsumen terakhir.</p>
+                            <h3 className="font-bold text-lg text-gray-600 mb-2">Pusat Analisis Terintegrasi</h3>
+                            <p className="text-sm text-gray-500 max-w-md mb-1">Klik <strong>"Mulai Analisis"</strong> untuk memilih kategori data.</p>
+                            <p className="text-xs text-gray-400 max-w-sm">Ditenagai oleh AI untuk insight mendalam & komprehensif.</p>
                         </div>
                     )}
 
@@ -333,7 +321,6 @@ const ChurnPrediction = () => {
                     <div ref={chatEndRef} />
                 </div>
 
-                {/* Follow-up Input */}
                 {conversation.length > 0 && (
                     <div className="shrink-0 border-t border-[#E5E5E5] p-4 bg-white rounded-b-lg">
                         <form onSubmit={(e) => { e.preventDefault(); sendFollowUp(); }} className="flex gap-3">
@@ -349,7 +336,6 @@ const ChurnPrediction = () => {
                 )}
             </div>
 
-            {/* Regenerate Confirmation Modal */}
             <AnimatePresence>
                 {showRegenModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -365,9 +351,9 @@ const ChurnPrediction = () => {
                                     className="px-4 py-2.5 rounded font-bold text-sm bg-[#111111] text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
                                     <Download size={16} />Download PDF Dulu
                                 </button>
-                                <button onClick={() => { setShowRegenModal(false); setConversation([]); generateInsight(); }}
+                                <button onClick={() => { setShowRegenModal(false); setModalStep(1); setShowParamModal(true); }}
                                     className="px-4 py-2.5 rounded font-bold text-sm bg-[#00B2A9] text-white hover:bg-teal-600 transition-colors flex items-center justify-center gap-2">
-                                    <RefreshCw size={16} />Ya, Generate Ulang
+                                    <RefreshCw size={16} />Ya, Lanjut
                                 </button>
                             </div>
                         </motion.div>
@@ -375,7 +361,94 @@ const ChurnPrediction = () => {
                 )}
             </AnimatePresence>
 
-            {/* Toast */}
+            <AnimatePresence>
+                {showParamModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/40 z-[130] backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowParamModal(false)}>
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            className={`bg-white rounded-xl shadow-2xl w-full overflow-hidden flex flex-col ${modalStep === 1 ? 'max-w-4xl max-h-[90vh]' : 'max-w-md'}`} onClick={e => e.stopPropagation()}>
+                            
+                            {modalStep === 1 ? (
+                                <>
+                                    <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+                                        <div>
+                                            <h3 className="font-display font-bold text-xl text-[#111111]">Pilih Kategori Analisis</h3>
+                                            <p className="text-sm text-gray-500">Pilih modul data yang ingin dianalisis oleh AI</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {CATEGORIES.map(cat => {
+                                                const Icon = cat.icon;
+                                                return (
+                                                    <div key={cat.id} onClick={() => handleCategorySelect(cat.id)}
+                                                        className="border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-[#00B2A9] hover:shadow-md transition-all group flex flex-col gap-3">
+                                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br ${cat.color} text-white shadow-sm`}>
+                                                            <Icon size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold text-[#111111] group-hover:text-[#00B2A9] transition-colors flex items-center justify-between">
+                                                                {cat.label}
+                                                                <ChevronRight size={16} className="text-gray-300 group-hover:text-[#00B2A9] transition-colors" />
+                                                            </h4>
+                                                            <p className="text-xs text-gray-500 mt-1">{cat.desc}</p>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end shrink-0">
+                                        <button onClick={() => setShowParamModal(false)} className="px-5 py-2.5 rounded font-bold text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors">Batal</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="p-6">
+                                    <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4">
+                                        <button onClick={() => setModalStep(1)} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition-colors"><ChevronRight size={18} className="rotate-180" /></button>
+                                        <h3 className="font-display font-bold text-lg text-[#111111]">Parameter Detail</h3>
+                                    </div>
+                                    
+                                    <div className="space-y-4 mb-6">
+                                        {SUB_PARAMS[analysisParams.category]?.map(param => (
+                                            <div key={param.key}>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">{param.label}</label>
+                                                {param.type === 'select' ? (
+                                                    <select value={analysisParams[param.key]} onChange={e => setAnalysisParams({...analysisParams, [param.key]: e.target.value})}
+                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00B2A9]">
+                                                        {param.options.map(opt => <option key={opt.v} value={opt.v}>{opt.l}</option>)}
+                                                    </select>
+                                                ) : param.type === 'month' ? (
+                                                    <input type="month" value={analysisParams[param.key]} onChange={e => setAnalysisParams({...analysisParams, [param.key]: e.target.value})}
+                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00B2A9]" />
+                                                ) : null}
+                                            </div>
+                                        ))}
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Kedalaman Analisis</label>
+                                            <select value={analysisParams.depth} onChange={e => setAnalysisParams({...analysisParams, depth: e.target.value})}
+                                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00B2A9]">
+                                                <option value="Standar">Standar (Ringkasan Eksekutif)</option>
+                                                <option value="Mendalam">Mendalam (Detail & Komprehensif)</option>
+                                                <option value="Pencarian Solusi">Fokus Pemecahan Masalah/Solusi</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                        <button onClick={() => setShowParamModal(false)} className="px-4 py-2 rounded font-bold text-sm text-gray-500 hover:bg-gray-100 transition-colors">Batal</button>
+                                        <button onClick={() => { setConversation([]); generateInsight(); }}
+                                            className="px-6 py-2 rounded font-bold text-sm bg-[#00B2A9] text-white hover:bg-teal-600 transition-colors flex items-center gap-2">
+                                            <BrainCircuit size={16} /> Mulai Analisis
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <AnimatePresence>
                 {toast.show && (
                     <motion.div initial={{ opacity: 0, y: 50, x: '-50%' }} animate={{ opacity: 1, y: 0, x: '-50%' }} exit={{ opacity: 0, y: 50, x: '-50%' }}

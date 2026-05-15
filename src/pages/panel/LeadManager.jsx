@@ -66,7 +66,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
         if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser));
-            } catch (e) {}
+            } catch (e) { }
         }
     }, []);
 
@@ -259,14 +259,14 @@ const LeadManager = ({ label, title, desc, icon }) => {
         setAiGenerating(true);
         setAiModalStep(2);
         setAiGeneratedText('');
-        
+
         try {
             const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
             const leadContext = formatWhatsAppText(selectedLead);
             const recentMessages = selectedLead.recent_messages && selectedLead.recent_messages.length > 0
                 ? selectedLead.recent_messages.map(m => `${m.sender_type === 'user' ? 'Konsumen' : 'DINA (Bot)'}: ${m.message}`).join('\n')
                 : 'Tidak ada riwayat chat.';
-            
+
             const systemPrompt = `Kamu adalah Customer Service Assistant untuk dealer mobil Mitsubishi.
 Tugasmu adalah membuat draft balasan WhatsApp (text siap kirim) untuk merespon konsumen (Lead) ini.
 Gunakan bahasa Indonesia yang sopan, formal, to the point, tapi tetap friendly.
@@ -298,7 +298,7 @@ Buatkan draft balasan pesannya sekarang:`;
                     temperature: 0.7
                 })
             });
-            
+
             const data = await res.json();
             if (data.choices && data.choices[0] && data.choices[0].message) {
                 setAiGeneratedText(data.choices[0].message.content);
@@ -609,11 +609,11 @@ Buatkan draft balasan pesannya sekarang:`;
                                                 <div className="bg-gray-50 px-3 py-2 text-[10px] font-bold uppercase text-gray-500 border-b border-gray-200">
                                                     Konteks Chat Terakhir
                                                 </div>
-                                                <div className="p-3 text-[11px] space-y-2 overflow-y-auto max-h-48 bg-white scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                                                <div className="p-3 text-[11px] space-y-2 overflow-y-auto bg-white scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                                     {selectedLead.recent_messages && selectedLead.recent_messages.length > 0 ? (
                                                         selectedLead.recent_messages.slice(-5).map((m, i) => (
                                                             <div key={i} className={`p-1.5 rounded ${m.sender_type === 'user' ? 'bg-gray-100 text-gray-800' : 'bg-[#E60012]/10 text-[#E60012]'}`}>
-                                                                <span className="font-bold">{m.sender_type === 'user' ? 'Konsumen' : 'Bot'}: </span>
+                                                                <span className="font-bold">{m.sender_type === 'user' ? 'Konsumen' : 'Dina'}: </span>
                                                                 {m.message.length > 60 ? m.message.substring(0, 60) + '...' : m.message}
                                                             </div>
                                                         ))
@@ -719,7 +719,7 @@ Buatkan draft balasan pesannya sekarang:`;
                                 {aiModalStep === 1 ? (
                                     <>
                                         <p className="text-sm text-gray-600 mb-3">Berikan konteks atau poin utama yang ingin Anda sampaikan ke konsumen. AI akan merangkainya menjadi bahasa yang formal dan sopan.</p>
-                                        <textarea 
+                                        <textarea
                                             value={aiContextInput}
                                             onChange={(e) => setAiContextInput(e.target.value)}
                                             className="w-full h-32 p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
@@ -729,14 +729,14 @@ Buatkan draft balasan pesannya sekarang:`;
                                 ) : (
                                     <>
                                         <p className="text-xs text-gray-500 mb-2">Draft balasan ini dibuat berdasarkan konteks lead dan riwayat chat. Silakan edit jika diperlukan sebelum menyalin atau mengirim.</p>
-                                        
+
                                         {aiGenerating ? (
                                             <div className="flex flex-col items-center justify-center py-10 text-gray-400 space-y-4">
                                                 <Loader2 size={32} className="animate-spin text-blue-500" />
                                                 <p className="text-sm">Menyusun jawaban...</p>
                                             </div>
                                         ) : (
-                                            <textarea 
+                                            <textarea
                                                 value={aiGeneratedText}
                                                 onChange={(e) => setAiGeneratedText(e.target.value)}
                                                 className="w-full h-48 p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none font-mono"
