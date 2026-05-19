@@ -16,7 +16,7 @@ const NPSReport = () => {
     const [prevQuarterData, setPrevQuarterData] = useState([]);
     const [fyData, setFyData] = useState([]);
     const [fyPrevData, setFyPrevData] = useState([]);
-    const [summary, setSummary] = useState({ promoters: 0, passives: 0, detractors: 0, total: 0, nps: 0 });
+    const [summary, setSummary] = useState({ promoters: 0, passives: 0, detractors: 0, total: 0, nps: 0, lastUpdate: null });
     const [loading, setLoading] = useState(false);
     const [copiedLabel, setCopiedLabel] = useState(null);
     const monthPickerRef = useRef(null);
@@ -113,7 +113,8 @@ const NPSReport = () => {
                         label: r.cabang,
                         promoters: r.promoters,
                         passives: r.passives,
-                        detractors: r.detractors
+                        detractors: r.detractors,
+                        lastUpdate: r.last_update
                     }));
 
                     if (cabang === 'All') {
@@ -130,10 +131,10 @@ const NPSReport = () => {
                     const sumRow = cabang === 'All' ? rows.find(r => r.label === 'Dwindo') || rows[rows.length - 1] : rows[0];
                     const total = sumRow.promoters + sumRow.passives + sumRow.detractors;
                     const nps = total > 0 ? Math.round(((sumRow.promoters - sumRow.detractors) / total) * 100) : 0;
-                    setSummary({ promoters: sumRow.promoters, passives: sumRow.passives, detractors: sumRow.detractors, total, nps });
+                    setSummary({ promoters: sumRow.promoters, passives: sumRow.passives, detractors: sumRow.detractors, total, nps, lastUpdate: sumRow.lastUpdate });
                 } else {
                     setChartData([]);
-                    setSummary({ promoters: 0, passives: 0, detractors: 0, total: 0, nps: 0 });
+                    setSummary({ promoters: 0, passives: 0, detractors: 0, total: 0, nps: 0, lastUpdate: null });
                 }
 
                 // Process Prev Month Data
@@ -223,6 +224,13 @@ const NPSReport = () => {
     };
 
     const maxTotal = Math.max(...chartData.map(d => d.promoters + d.passives + d.detractors), 1);
+    const targetNPS = divisi === 'Sales' ? 84 : 82;
+    const currentMonthStr = new Date().toISOString().slice(0, 7);
+    const isCurrentMonth = month === currentMonthStr;
+    let requiredPromoters = 0;
+    if (isCurrentMonth && summary.nps < targetNPS) {
+        requiredPromoters = Math.ceil((targetNPS * summary.total / 100 - summary.promoters + summary.detractors) / (1 - targetNPS / 100));
+    }
 
     return (
         <div className="animate-in fade-in duration-300 flex flex-col h-[calc(100vh-8rem)] text-[#111111]">
@@ -318,9 +326,12 @@ const NPSReport = () => {
                         <div className="absolute top-0 right-0 w-16 h-16 bg-[#E60012]/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
                         <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Total NPS</div>
                         <div className="flex items-end gap-2">
-                            <div className={`text-3xl font-black ${summary.nps > 0 ? 'text-green-600' : summary.nps < 0 ? 'text-red-600' : 'text-gray-700'}`}>{summary.nps}%</div>
+                            <div className={`text-3xl font-black ${summary.nps >= targetNPS ? 'text-green-600' : 'text-red-600'}`}>{summary.nps}%</div>
                             <div className="text-sm text-gray-400 font-medium pb-1">dari {summary.total}</div>
                         </div>
+                        {isCurrentMonth && summary.lastUpdate && (
+                            <div className="text-[10px] text-gray-400 font-medium mt-1">Last Update: {new Date(new Date(summary.lastUpdate).getTime() + (7 * 60 * 60 * 1000)).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+                        )}
                     </div>
                     <div className="bg-white rounded-xl p-4 border border-green-200 shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
@@ -329,6 +340,11 @@ const NPSReport = () => {
                             <div className="text-3xl font-black text-green-700">{summary.promoters}</div>
                             <div className="text-sm text-green-600 font-medium pb-1 bg-green-100 px-1.5 rounded">{summary.total > 0 ? Math.round((summary.promoters / summary.total) * 100) : 0}%</div>
                         </div>
+                        {requiredPromoters > 0 && (
+                            <div className="text-[10px] text-red-500 font-bold mt-1 bg-red-50 px-1.5 py-0.5 rounded w-fit">
+                                Kurang {requiredPromoters} untuk target {targetNPS}%
+                            </div>
+                        )}
                     </div>
                     <div className="bg-white rounded-xl p-4 border border-amber-200 shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-16 h-16 bg-amber-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>

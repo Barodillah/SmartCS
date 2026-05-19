@@ -155,7 +155,7 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                 method: "POST",
                 headers: { "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "xiaomi/mimo-v2-flash",
+                    model: "anthropic/claude-3.5-haiku",
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userMsg }
@@ -205,7 +205,7 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                         <p className="text-gray-500 text-sm mt-1">NPS {divisi} Cabang {cabang === 'All' ? 'Semua' : cabang} - {getMonthLabel()}</p>
                     </div>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center">
                     <button
                         onClick={() => setIsSearchOpen(true)}
@@ -351,8 +351,8 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                                 </tr>
                             ) : (
                                 listData.filter(item => !statusFilter || item.status_nps === statusFilter).map((item, idx) => (
-                                    <tr 
-                                        key={item.id || idx} 
+                                    <tr
+                                        key={item.id || idx}
                                         onClick={() => setSelectedDetail(item)}
                                         className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-red-50/50 transition-colors cursor-pointer group`}
                                     >
@@ -385,9 +385,9 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
             </div>
 
             {/* Search Modal */}
-            <NPSSearchModal 
-                isOpen={isSearchOpen} 
-                onClose={() => setIsSearchOpen(false)} 
+            <NPSSearchModal
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
                 filters={{ bulan: month, divisi, cabang }}
                 onSelect={handleSelectResult}
                 onSearchSubmit={handleSearchSubmit}
@@ -411,15 +411,15 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                             <div className="bg-gray-50 border-b border-[#E5E5E5] px-6 py-4 flex items-center justify-between">
                                 <h3 className="font-display font-bold text-lg text-[#111111]">Detail Penilaian NPS</h3>
                                 <button onClick={() => setSelectedDetail(null)} className="text-gray-400 hover:text-[#E60012] transition-colors p-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                                 </button>
                             </div>
                             <div className="p-6 space-y-5">
                                 <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black border-4 shadow-inner
-                                        ${selectedDetail.score >= 9 ? 'bg-green-100 text-green-700 border-green-200' : 
-                                          selectedDetail.score >= 7 ? 'bg-amber-100 text-amber-700 border-amber-200' : 
-                                          'bg-red-100 text-red-700 border-red-200'}`}
+                                        ${selectedDetail.score >= 9 ? 'bg-green-100 text-green-700 border-green-200' :
+                                            selectedDetail.score >= 7 ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                                'bg-red-100 text-red-700 border-red-200'}`}
                                     >
                                         {selectedDetail.score}
                                     </div>
@@ -433,25 +433,25 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><User size={12}/> Nama Konsumen</div>
+                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><User size={12} /> Nama Konsumen</div>
                                         <div className="font-bold text-[#111111]">{selectedDetail.nama || '-'}</div>
                                     </div>
                                     <div className="space-y-1">
-                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><FileText size={12}/> Rangka</div>
+                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><FileText size={12} /> Rangka</div>
                                         <div className="font-bold text-[#111111] text-sm break-all">{selectedDetail.rangka || '-'}</div>
                                     </div>
                                     <div className="space-y-1">
-                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><Car size={12}/> Kendaraan</div>
+                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><Car size={12} /> Kendaraan</div>
                                         <div className="font-bold text-[#111111]">{selectedDetail.kendaraan || '-'}</div>
                                     </div>
                                     <div className="space-y-1">
-                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><Info size={12}/> Cabang</div>
+                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><Info size={12} /> Cabang</div>
                                         <div className="font-bold text-[#111111]">{selectedDetail.cabang}</div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-1 pt-2 border-t border-gray-100">
-                                    <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><FileText size={12}/> Catatan / Note</div>
+                                    <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><FileText size={12} /> Catatan / Note</div>
                                     <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 whitespace-pre-wrap min-h-[60px] border border-gray-200">
                                         {selectedDetail.note || <span className="text-gray-400 italic">Tidak ada catatan</span>}
                                     </div>

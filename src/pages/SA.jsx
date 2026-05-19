@@ -15,9 +15,24 @@ const SA_OPTIONS = [
   { value: 'Ilham', label: 'Ilham' },
 ];
 
-
-
-
+const KENDARAAN_OPTIONS = [
+  { value: 'MITSUBISHI PAJERO', label: 'MITSUBISHI PAJERO' },
+  { value: 'MITSUBISHI XPANDER', label: 'MITSUBISHI XPANDER' },
+  { value: 'MITSUBISHI DESTINATOR', label: 'MITSUBISHI DESTINATOR' },
+  { value: 'MITSUBISHI XFORCE', label: 'MITSUBISHI XFORCE' },
+  { value: 'MITSUBISHI ECLIPSE CROSS', label: 'MITSUBISHI ECLIPSE CROSS' },
+  { value: 'MITSUBISHI TRITON', label: 'MITSUBISHI TRITON' },
+  { value: 'MITSUBISHI OUTLANDER', label: 'MITSUBISHI OUTLANDER' },
+  { value: 'MITSUBISHI OUTLANDER PHEV', label: 'MITSUBISHI OUTLANDER PHEV' },
+  { value: 'MITSUBISHI MIRAGE', label: 'MITSUBISHI MIRAGE' },
+  { value: 'MITSUBISHI LANCER', label: 'MITSUBISHI LANCER' },
+  { value: 'MITSUBISHI DELICA', label: 'MITSUBISHI DELICA' },
+  { value: 'MITSUBISHI GRANDIS', label: 'MITSUBISHI GRANDIS' },
+  { value: 'MITSUBISHI L300', label: 'MITSUBISHI L300' },
+  { value: 'FUSO COLT DIESEL', label: 'FUSO COLT DIESEL' },
+  { value: 'FUSO CANTER', label: 'FUSO CANTER' },
+  { value: 'MITSUBISHI COLT T120SS', label: 'MITSUBISHI COLT T120SS' },
+];
 const SA = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('potensi'); // 'potensi' | 'konfirmasi'
@@ -28,6 +43,7 @@ const SA = () => {
   const [isLoadingPotensi, setIsLoadingPotensi] = useState(false);
   const [invalidNoteModal, setInvalidNoteModal] = useState(false);
   const [invalidNote, setInvalidNote] = useState('');
+  const [potensiSearchQuery, setPotensiSearchQuery] = useState('');
 
   // State for Konfirmasi Backend
   const [konfirmasiSearchQuery, setKonfirmasiSearchQuery] = useState('');
@@ -52,6 +68,12 @@ const SA = () => {
   const [showOtherNumberModal, setShowOtherNumberModal] = useState(false);
   const [otherNumberInput, setOtherNumberInput] = useState('');
   const [isUpdatingNumber, setIsUpdatingNumber] = useState(false);
+
+  // Walk In State
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [walkInForm, setWalkInForm] = useState({ nopol: '', kendaraan: '', nama: '', telp: '' });
+  const [isWalkInLoading, setIsWalkInLoading] = useState(false);
+  const [isNopolChecking, setIsNopolChecking] = useState(false);
 
   // SA Setup State
   const [setupModalOpen, setSetupModalOpen] = useState(false);
@@ -262,12 +284,24 @@ const SA = () => {
     };
   }, [potensiData]);
 
+  // Filtered Potensi for live search
+  const filteredPotensiData = useMemo(() => {
+    if (!potensiSearchQuery) return potensiData;
+    const query = potensiSearchQuery.toLowerCase();
+    return potensiData.filter(p =>
+      (p.nopol || '').toLowerCase().includes(query) ||
+      (p.nama || '').toLowerCase().includes(query) ||
+      (p.kendaraan || '').toLowerCase().includes(query)
+    );
+  }, [potensiSearchQuery, potensiData]);
+
   // Stats for Konfirmasi
   const konfirmasiStats = useMemo(() => {
     return {
       total: bookings.length,
       booking: bookings.filter(k => k.status === 'BOOKING').length,
       datang: bookings.filter(k => k.status === 'DATANG').length,
+      walkin: bookings.filter(k => k.status === 'WALK IN').length,
       cancel: bookings.filter(k => k.status === 'CANCEL').length,
     };
   }, [bookings]);
@@ -480,6 +514,85 @@ Tulis pesan WhatsApp-nya langsung:`;
     }
   };
 
+  const handleWalkInNopolChange = (e) => {
+    const val = e.target.value.toUpperCase();
+    setWalkInForm(prev => ({ ...prev, nopol: val }));
+  };
+
+  const handleWalkInNopolBlur = async () => {
+    if (walkInForm.nopol.length < 4) return;
+    setIsNopolChecking(true);
+    try {
+      const res = await fetch(`https://csdwindo.com/api/panel/data_booking.php?nopol=${encodeURIComponent(walkInForm.nopol)}`);
+      const data = await res.json();
+      if (data.status && data.data) {
+        setWalkInForm(prev => ({
+          ...prev,
+          kendaraan: data.data.kendaraan || prev.kendaraan,
+          nama: data.data.nama || prev.nama,
+          telp: data.data.telp || prev.telp
+        }));
+        showToast('Data konsumen ditemukan', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsNopolChecking(false);
+    }
+  };
+
+  const handleWalkInSubmit = async (e) => {
+    e.preventDefault();
+    if (!walkInForm.nopol || !walkInForm.nama) return;
+
+    setIsWalkInLoading(true);
+    try {
+      const payload = {
+        user: saSetupData?.name || 'SA',
+        tanggal: currentDate,
+        jam: '10:00',
+        kendaraan: walkInForm.kendaraan,
+        nopol: walkInForm.nopol,
+        nama: walkInForm.nama,
+        telp: walkInForm.telp,
+        jenis: 'Walk In SA',
+        keluhan: '',
+        forceStatus: 'WALK IN'
+      };
+
+      const res = await fetch('https://csdwindo.com/api/panel/data_booking.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      
+      if (data.status) {
+        showToast('Walk In berhasil ditambahkan');
+        setShowWalkInModal(false);
+        setWalkInForm({ nopol: '', kendaraan: '', nama: '', telp: '' });
+        
+        // Fetch to get the new id and select it
+        const newBookingsRes = await fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${currentDate}`);
+        const newBookingsData = await newBookingsRes.json();
+        if (newBookingsData.status) {
+            setBookings(newBookingsData.data);
+            const savedItem = newBookingsData.data.find(b => b.nopol === payload.nopol && b.status === 'WALK IN');
+            if (savedItem) {
+                setSelectedKonfirmasi(savedItem);
+            }
+        }
+      } else {
+        showToast(data.message || 'Gagal menyimpan', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan jaringan', 'error');
+    } finally {
+      setIsWalkInLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-[#111111] font-sans">
       {/* Header */}
@@ -543,16 +656,39 @@ Tulis pesan WhatsApp-nya langsung:`;
               </div>
             </div>
 
+            {/* Potensi Live Search */}
+            <div className="mb-6 relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Cari Nopol, Nama, Kendaraan..."
+                value={potensiSearchQuery}
+                onChange={(e) => setPotensiSearchQuery(e.target.value)}
+                className="w-full bg-white border-2 border-transparent focus:border-gray-200 hover:border-gray-200 p-3 pl-10 pr-10 text-gray-700 outline-none transition-all shadow-sm"
+                style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}
+              />
+              {potensiSearchQuery && (
+                <button
+                  onClick={() => setPotensiSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#E60012] transition-colors z-10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
             <div className="space-y-6">
 
               {/* NEW - Belum Follow Up */}
-              {potensiData.filter(p => p.statusFollowUp === 'NEW').length > 0 && (
+              {filteredPotensiData.filter(p => p.statusFollowUp === 'NEW').length > 0 && (
                 <div>
                   <h2 className="text-[11px] font-display font-bold text-[#E60012] mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
                     <span className="w-2 h-2 bg-[#E60012]" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: BELUM FOLLOW UP
                   </h2>
                   <div className="space-y-3">
-                    {potensiData.filter(p => p.statusFollowUp === 'NEW').map((item) => (
+                    {filteredPotensiData.filter(p => p.statusFollowUp === 'NEW').map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedPotensi(item)}
@@ -579,13 +715,13 @@ Tulis pesan WhatsApp-nya langsung:`;
               )}
 
               {/* FOLLOW_UP - Sudah Follow Up */}
-              {potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').length > 0 && (
+              {filteredPotensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').length > 0 && (
                 <div>
                   <h2 className="text-[11px] font-display font-bold text-blue-600 mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
                     <span className="w-2 h-2 bg-blue-600" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: SUDAH FOLLOW UP
                   </h2>
                   <div className="space-y-3">
-                    {potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').map((item) => (
+                    {filteredPotensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedPotensi(item)}
@@ -612,13 +748,13 @@ Tulis pesan WhatsApp-nya langsung:`;
               )}
 
               {/* BOOKING - Success */}
-              {potensiData.filter(p => p.statusFollowUp === 'BOOKING').length > 0 && (
+              {filteredPotensiData.filter(p => p.statusFollowUp === 'BOOKING').length > 0 && (
                 <div>
                   <h2 className="text-[11px] font-display font-bold text-green-600 mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-600" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: SUCCESS BOOKING
                   </h2>
                   <div className="space-y-3">
-                    {potensiData.filter(p => p.statusFollowUp === 'BOOKING').map((item) => (
+                    {filteredPotensiData.filter(p => p.statusFollowUp === 'BOOKING').map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedPotensi(item)}
@@ -648,7 +784,7 @@ Tulis pesan WhatsApp-nya langsung:`;
                 <div className="flex items-center justify-center py-10">
                   <Loader2 className="w-6 h-6 animate-spin text-[#E60012]" />
                 </div>
-              ) : potensiData.length === 0 && (
+              ) : filteredPotensiData.length === 0 && (
                 <div className="text-center py-10 font-display font-bold tracking-widest text-gray-400 uppercase text-sm">Tidak ada data potensi.</div>
               )}
             </div>
@@ -659,7 +795,7 @@ Tulis pesan WhatsApp-nya langsung:`;
         {activeTab === 'konfirmasi' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Stats Cards Counter */}
-            <div className="grid grid-cols-4 gap-2 md:gap-4 mb-6">
+            <div className="grid grid-cols-5 gap-2 md:gap-4 mb-6">
               <div style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)' }} className="bg-white p-3 shadow-sm border-b-4 border-gray-300 flex flex-col items-center justify-center">
                 <p className="text-[9px] md:text-[10px] font-display font-bold tracking-widest text-gray-500 uppercase mb-1">Total</p>
                 <p className="text-xl md:text-2xl font-display font-bold text-[#111111]">{konfirmasiStats.total}</p>
@@ -671,6 +807,10 @@ Tulis pesan WhatsApp-nya langsung:`;
               <div style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)' }} className="bg-white p-3 shadow-sm border-b-4 border-green-600 flex flex-col items-center justify-center">
                 <p className="text-[9px] md:text-[10px] font-display font-bold tracking-widest text-green-600 uppercase mb-1">Datang</p>
                 <p className="text-xl md:text-2xl font-display font-bold text-[#111111]">{konfirmasiStats.datang}</p>
+              </div>
+              <div style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)' }} className="bg-white p-3 shadow-sm border-b-4 border-blue-600 flex flex-col items-center justify-center">
+                <p className="text-[9px] md:text-[10px] font-display font-bold tracking-widest text-blue-600 uppercase mb-1">Walk In</p>
+                <p className="text-xl md:text-2xl font-display font-bold text-[#111111]">{konfirmasiStats.walkin}</p>
               </div>
               <div style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%)' }} className="bg-gray-100 p-3 shadow-sm border-b-4 border-gray-400 flex flex-col items-center justify-center">
                 <p className="text-[9px] md:text-[10px] font-display font-bold tracking-widest text-gray-500 uppercase mb-1">Cancel</p>
@@ -730,6 +870,37 @@ Tulis pesan WhatsApp-nya langsung:`;
                                 <h3 className="font-display font-bold text-lg tracking-wider text-[#111111]">{row.nopol}</h3>
                               </div>
                               <p className="text-sm font-medium text-gray-600">{row.nama} <span className="text-green-600 font-bold mx-1">•</span> {row.kendaraan}</p>
+                            </div>
+                            <div className="text-gray-300 group-hover:text-[#111111] transition-colors relative z-10">
+                              <ArrowRight className="w-5 h-5" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* WALK IN */}
+                  {filteredKonfirmasi.filter(k => k.status === 'WALK IN').length > 0 && (
+                    <div>
+                      <h2 className="text-[11px] font-display font-bold text-blue-600 mb-3 uppercase tracking-[0.15em] flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-600" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}></span> Status: WALK IN
+                      </h2>
+                      <div className="space-y-3">
+                        {filteredKonfirmasi.filter(k => k.status === 'WALK IN').map(row => (
+                          <div
+                            key={row.id}
+                            onClick={() => setSelectedKonfirmasi(row)}
+                            style={{ clipPath: ANGULAR_CLIP }}
+                            className="bg-white border-l-4 border-blue-600 p-4 shadow-sm hover:shadow-md cursor-pointer transition-all flex justify-between items-center group relative overflow-hidden"
+                          >
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 transform rotate-45 translate-x-8 -translate-y-8 group-hover:bg-blue-100 transition-colors"></div>
+                            <div className="relative z-10">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-[#111111] text-white text-[10px] font-display font-bold tracking-wider px-2 py-1" style={{ clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%)' }}>{row.jam}</span>
+                                <h3 className="font-display font-bold text-lg tracking-wider text-[#111111]">{row.nopol}</h3>
+                              </div>
+                              <p className="text-sm font-medium text-gray-600">{row.nama} <span className="text-blue-600 font-bold mx-1">•</span> {row.kendaraan}</p>
                             </div>
                             <div className="text-gray-300 group-hover:text-[#111111] transition-colors relative z-10">
                               <ArrowRight className="w-5 h-5" />
@@ -807,6 +978,17 @@ Tulis pesan WhatsApp-nya langsung:`;
                       <p className="font-display font-bold tracking-widest uppercase text-sm">Tidak ada data yang ditemukan.</p>
                     </div>
                   )}
+
+                  {/* BUTTON TAMBAH WALK IN */}
+                  <div className="mt-8">
+                    <AngularButton
+                      variant="primary"
+                      className="w-full !py-4 !flex !items-center !justify-center !gap-2 !bg-blue-600 hover:!bg-blue-700"
+                      onClick={() => setShowWalkInModal(true)}
+                    >
+                      TAMBAH WALK IN
+                    </AngularButton>
+                  </div>
                 </>
               )}
             </div>
@@ -852,7 +1034,7 @@ Tulis pesan WhatsApp-nya langsung:`;
                         <p className="font-display font-bold tracking-wider text-[#111111]">{item.nopol}</p>
                         <p className="text-sm font-medium text-gray-500">{item.nama} • {item.kendaraan}</p>
                       </div>
-                      <span className={`text-[9px] font-display font-bold tracking-widest px-2 py-1 text-white uppercase ${item.status === 'BOOKING' ? 'bg-[#E60012]' : item.status === 'DATANG' ? 'bg-green-600' : 'bg-gray-500'}`} style={{ clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%)' }}>
+                      <span className={`text-[9px] font-display font-bold tracking-widest px-2 py-1 text-white uppercase ${item.status === 'BOOKING' ? 'bg-[#E60012]' : item.status === 'DATANG' ? 'bg-green-600' : item.status === 'WALK IN' ? 'bg-blue-600' : 'bg-gray-500'}`} style={{ clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%)' }}>
                         {item.status}
                       </span>
                     </div>
@@ -996,7 +1178,7 @@ Tulis pesan WhatsApp-nya langsung:`;
             <div className="p-6 space-y-4 text-sm bg-gray-50/50">
               <div className="flex justify-between items-center mb-2 pb-3 border-b border-gray-200">
                 <span className="text-gray-500 font-display font-bold tracking-widest uppercase text-xs">Status</span>
-                <span className={`px-3 py-1 text-[10px] font-display font-bold tracking-widest uppercase text-white ${selectedKonfirmasi.status === 'BOOKING' ? 'bg-[#E60012]' : selectedKonfirmasi.status === 'DATANG' ? 'bg-green-600' : 'bg-gray-500'}`} style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%)' }}>
+                <span className={`px-3 py-1 text-[10px] font-display font-bold tracking-widest uppercase text-white ${selectedKonfirmasi.status === 'BOOKING' ? 'bg-[#E60012]' : selectedKonfirmasi.status === 'DATANG' ? 'bg-green-600' : selectedKonfirmasi.status === 'WALK IN' ? 'bg-blue-600' : 'bg-gray-500'}`} style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%)' }}>
                   {selectedKonfirmasi.status}
                 </span>
               </div>
@@ -1437,6 +1619,95 @@ Tulis pesan WhatsApp-nya langsung:`;
                     {isUpdatingNumber ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send size={16} />}
                     Update & Kirim
                   </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Tambah Walk In */}
+      <AnimatePresence>
+        {showWalkInModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowWalkInModal(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="bg-[#111] p-4 flex justify-between items-center text-white">
+                <h3 className="font-display font-bold uppercase tracking-wider text-sm">Tambah Walk In</h3>
+                <button onClick={() => setShowWalkInModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleWalkInSubmit} className="p-5 flex flex-col gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    No. Polisi {isNopolChecking && <Loader2 className="w-3 h-3 animate-spin inline ml-2 text-blue-600" />}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={walkInForm.nopol}
+                    onChange={handleWalkInNopolChange}
+                    onBlur={handleWalkInNopolBlur}
+                    placeholder="B1234XYZ"
+                    className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Kendaraan</label>
+                  <CustomSelect
+                    value={walkInForm.kendaraan}
+                    onChange={(val) => setWalkInForm(prev => ({ ...prev, kendaraan: val }))}
+                    options={KENDARAAN_OPTIONS}
+                    placeholder="Pilih atau Ketik Kendaraan"
+                    allowCustom={true}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Nama Konsumen</label>
+                  <input
+                    type="text"
+                    required
+                    value={walkInForm.nama}
+                    onChange={(e) => setWalkInForm(prev => ({ ...prev, nama: e.target.value }))}
+                    placeholder="Nama lengkap"
+                    className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Nomor Telepon</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={walkInForm.telp}
+                    onChange={(e) => setWalkInForm(prev => ({ ...prev, telp: e.target.value.replace(/\D/g, '') }))}
+                    placeholder="08xxxxxxxxxx"
+                    className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
+                
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowWalkInModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <AngularButton
+                    variant="primary"
+                    type="submit"
+                    className="!px-6 !py-2 !text-sm !font-bold !bg-blue-600 hover:!bg-blue-700"
+                    disabled={isWalkInLoading}
+                  >
+                    {isWalkInLoading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : 'SIMPAN WALK IN'}
+                  </AngularButton>
                 </div>
               </form>
             </motion.div>

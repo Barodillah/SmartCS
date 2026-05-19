@@ -144,6 +144,12 @@ const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
 
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    };
+
     // Todo List State
     const [isTodoOpen, setIsTodoOpen] = useState(false);
     const [todos, setTodos] = useState(() => {
@@ -814,6 +820,21 @@ const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
                 isLoading={isSubmitting}
                 isNewBooking={true}
             />
+
+            {/* Custom Toast */}
+            <AnimatePresence>
+                {toast.show && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 50, x: '-50%' }}
+                        className={`fixed bottom-6 left-1/2 z-[200] px-6 py-3 rounded-full shadow-xl font-bold text-sm text-white flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}
+                    >
+                        {toast.type === 'error' ? <ShieldAlert size={16} /> : <Check size={16} />}
+                        {toast.message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </header>
     );
 };

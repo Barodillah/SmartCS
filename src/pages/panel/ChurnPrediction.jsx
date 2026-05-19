@@ -94,7 +94,7 @@ const ChurnPrediction = () => {
                 userMsg += await fetchDissatisfactionData(analysisParams) + '\\n\\n';
             }
             if (analysisParams.category === 'sales_survey' || analysisParams.category === 'semua') {
-                setLoadingStatus('Mengambil data Sales Survey...');
+                setLoadingStatus('Mengambil data Sales Survey & Produktivitas Follow Up...');
                 userMsg += await fetchSalesSurveyData(analysisParams) + '\\n\\n';
             }
             if (analysisParams.category === 'survey_ktb' || analysisParams.category === 'semua') {

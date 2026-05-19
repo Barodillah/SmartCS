@@ -190,6 +190,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
     const salesSurveySubMenu = [
         { name: 'MMKSI', path: '/panel/sales-survey/mmksi' },
         { name: 'KTB', path: '/panel/sales-survey/ktb' },
+        { name: 'Analysis', path: '/panel/analysis/sales-survey' },
     ];
 
     const npsSubMenu = [
@@ -542,6 +543,8 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
                             )}
                         </div>
                     )}
+
+
                 </div>
 
                 <div className="shrink-0 p-4 border-t border-white/10 bg-[#111111]">

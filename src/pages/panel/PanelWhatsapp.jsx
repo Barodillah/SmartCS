@@ -82,13 +82,13 @@ const buildKonfirmasiMessage = async (item) => {
     const isUpdate = item.status === 'UBAH';
     const sapaan = await guessGender(item.nama);
 
-    let pesan = `${salam}, kami dari Mitsubishi Bintaro\n\n`;
+    let pesan = `${salam} ${sapaan} *${item.nama}*, kami dari Mitsubishi Bintaro\n\n`;
 
     if (isUpdate) {
         pesan += `*KONFIRMASI PERUBAHAN JADWAL*\n`;
-        pesan += `Booking Service Anda telah kami perbarui a/n *${item.nama}*\n\n`;
+        pesan += `Booking Service Anda telah kami perbarui.\n\n`;
     } else {
-        pesan += `Konfirmasi Booking Service a/n *${item.nama}*\n\n`;
+        pesan += `Berikut adalah Konfirmasi Booking Service Anda.\n\n`;
     }
 
     pesan += `Waktu : *${hari} ${tgl}, ${item.jam}*\n`;

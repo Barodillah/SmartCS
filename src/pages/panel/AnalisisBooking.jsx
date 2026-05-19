@@ -27,6 +27,22 @@ const AnalisisBooking = () => {
         return stored ? parseInt(stored) : 1600000;
     });
 
+    const [targetUnitEntry, setTargetUnitEntry] = useState(() => {
+        const stored = localStorage.getItem('target_unit_entry');
+        return stored ? parseInt(stored) : 783;
+    });
+
+    const handleTargetChange = (e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        if (val) {
+            setTargetUnitEntry(parseInt(val));
+            localStorage.setItem('target_unit_entry', val);
+        } else {
+            setTargetUnitEntry(0);
+            localStorage.setItem('target_unit_entry', 0);
+        }
+    };
+
     const [summary, setSummary] = useState({
         totalBooking: 0,
         totalDatang: 0,
@@ -167,6 +183,94 @@ const AnalisisBooking = () => {
         });
     };
 
+    const todayDate = new Date();
+    const isCurrentMonth = month === (todayDate.getMonth() + 1).toString().padStart(2, '0') && year === todayDate.getFullYear().toString();
+    
+    let targetInfo = null;
+    if (isCurrentMonth) {
+        const currentDay = todayDate.getDate();
+        const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
+        const remainingDays = daysInMonth - currentDay;
+
+        const totalEntryNow = summary.totalUnitEntry;
+        const targetDeficit = Math.max(0, targetUnitEntry - totalEntryNow);
+        const targetPerDay = remainingDays > 0 ? Math.ceil(targetDeficit / remainingDays) : targetDeficit;
+
+        let potensiBooking = 0;
+        data.forEach(item => {
+            if (item.tanggal) {
+                const itemDate = new Date(item.tanggal);
+                if (itemDate.getDate() > currentDay && item.booking > 0) {
+                    potensiBooking += item.booking;
+                }
+            }
+        });
+
+        const progressPercent = targetUnitEntry > 0 ? Math.min(100, (totalEntryNow / targetUnitEntry) * 100).toFixed(1) : 0;
+        const unbookedDeficit = Math.max(0, targetDeficit - potensiBooking);
+        const potensiPerDay = remainingDays > 0 ? (potensiBooking / remainingDays).toFixed(1) : potensiBooking;
+
+        targetInfo = (
+            <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm mb-8 relative overflow-hidden border border-[#E5E5E5] text-[#111111] flex flex-col md:flex-row gap-8 items-center">
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#E60012]/5 rounded-full blur-3xl"></div>
+                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
+                
+                <div className="flex-1 w-full z-10 relative">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 className="text-gray-500 font-display font-bold uppercase tracking-widest text-[11px] flex items-center gap-2">
+                                <Activity size={14} className="text-[#E60012]" /> Target Unit Entry Bulan Ini
+                            </h3>
+                            <div className="flex items-end gap-3 mt-2">
+                                <span className="text-5xl font-display font-black text-[#111111] leading-none">{totalEntryNow}</span>
+                                <span className="text-gray-300 font-bold mb-1 text-2xl">/</span>
+                                <input 
+                                    type="text" 
+                                    value={targetUnitEntry}
+                                    onChange={handleTargetChange}
+                                    className="bg-transparent text-2xl font-display font-bold text-[#E60012] border-b border-dashed border-[#E60012] focus:border-[#111111] focus:text-[#111111] focus:outline-none w-20 text-center pb-1 transition-colors"
+                                    title="Edit Target"
+                                />
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-[10px] font-bold px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 shadow-sm inline-block">
+                                Sisa {remainingDays} Hari
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div className="w-full bg-gray-100 rounded-full h-4 mt-6 mb-3 overflow-hidden border border-gray-200 shadow-inner">
+                        <div className="bg-gradient-to-r from-[#E60012] to-orange-500 h-full rounded-full transition-all duration-1000 relative" style={{ width: `${progressPercent}%` }}>
+                            <div className="absolute inset-0 bg-white/20 w-full" style={{ backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent)', backgroundSize: '1rem 1rem' }}></div>
+                        </div>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        <span className={progressPercent >= 100 ? 'text-green-600' : 'text-gray-500'}>Progress: {progressPercent}%</span>
+                        <span className="text-[#E60012]">Kurang: {targetDeficit} Unit</span>
+                    </div>
+                </div>
+
+                <div className="w-full md:w-auto flex flex-col sm:flex-row gap-4 shrink-0 z-10 relative">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex flex-col items-center justify-center min-w-[150px] shadow-sm hover:bg-gray-100 transition-colors">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest mb-2 text-center">Target Harian<br/>(Sisa Hari)</span>
+                        <span className="text-4xl font-display font-black text-yellow-500 my-1">{targetPerDay}</span>
+                        <span className="text-[9px] text-gray-500 mt-1 uppercase tracking-wider bg-white border border-gray-200 px-2 py-1 rounded shadow-sm">Unit / Hari</span>
+                    </div>
+                    
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex flex-col items-center justify-center min-w-[160px] shadow-sm hover:bg-gray-100 transition-colors">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold tracking-widest mb-2 text-center">Potensi Booking<br/>(H+1 dst)</span>
+                        <span className="text-4xl font-display font-black text-blue-500 my-1">{potensiBooking}</span>
+                        <div className="flex flex-col items-center gap-1 mt-1">
+                            <span className="text-[9px] text-gray-500 uppercase tracking-wider bg-white border border-gray-200 px-2 py-1 rounded shadow-sm">{potensiPerDay} Unit / Hari</span>
+                            <span className="text-[9px] text-[#E60012] font-bold mt-1">Sisa Target: {unbookedDeficit} Unit</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-in fade-in duration-300 flex flex-col min-h-screen pb-10 text-[#111111]">
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
@@ -302,6 +406,9 @@ const AnalisisBooking = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Target Infographic */}
+                    {targetInfo}
 
                     {/* Chart Section */}
                     <div className="bg-white p-8 border border-[#E5E5E5] rounded-xl shadow-sm mb-8">

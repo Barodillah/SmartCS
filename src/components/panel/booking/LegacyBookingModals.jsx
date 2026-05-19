@@ -785,8 +785,19 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        const newValue = name === 'nopol' ? value.toUpperCase().replace(/\s/g, '') :
-            name === 'nama' || name === 'keluhan' ? value.toUpperCase() : value;
+        let newValue = value;
+        if (name === 'nopol') {
+            newValue = value.toUpperCase().replace(/\s/g, '');
+        } else if (name === 'nama' || name === 'keluhan') {
+            newValue = value.toUpperCase();
+        } else if (name === 'telp') {
+            newValue = value.replace(/\D/g, '');
+            if (newValue.startsWith('62')) {
+                newValue = '0' + newValue.substring(2);
+            } else if (newValue.length > 0 && !newValue.startsWith('0')) {
+                newValue = '0' + newValue;
+            }
+        }
 
         setFormData(prev => {
             const updated = { ...prev, [name]: newValue };

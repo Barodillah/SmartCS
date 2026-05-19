@@ -225,11 +225,7 @@ const ProcessModal = ({ isOpen, onClose, item, onAction, mainFilter, isAlreadyCl
         { value: '30.000 KM', label: '30.000 KM' },
         { value: '40.000 KM', label: '40.000 KM' },
         { value: '50.000 KM', label: '50.000 KM' },
-        { value: '60.000 KM', label: '60.000 KM' },
-        { value: '70.000 KM', label: '70.000 KM' },
-        { value: '80.000 KM', label: '80.000 KM' },
-        { value: '90.000 KM', label: '90.000 KM' },
-        { value: '100.000 KM', label: '100.000 KM' },
+        { value: 'Perawatan Berkala', label: 'Perawatan Berkala' },
     ];
 
     const handleRangkaChange = (e) => {
@@ -804,6 +800,7 @@ const PotensiBooking = () => {
                                 { value: 'NEW', label: 'Belum Follow Up (NEW)' },
                                 { value: 'FOLLOW_UP', label: 'Sudah Follow Up' },
                                 { value: 'BOOKING', label: 'Success Booking' },
+                                { value: 'DATANG', label: 'Datang Service' },
                                 { value: 'INVALID', label: 'Invalid' },
                             ]}
                             placeholder="Semua Status"
@@ -814,85 +811,234 @@ const PotensiBooking = () => {
 
             {/* Data Table or Report View */}
             {mainFilter === 'report' ? (
-                <div className="bg-white border border-[#E5E5E5] p-6 rounded-xl shadow-sm mb-6">
-                    <h3 className="font-bold text-[#111111] uppercase tracking-wider text-sm mb-6">Report Follow Up SA</h3>
+                <>
+                    <div className="bg-white border border-[#E5E5E5] p-6 rounded-xl shadow-sm mb-6">
+                        <h3 className="font-bold text-[#111111] uppercase tracking-wider text-sm mb-6">Report Follow Up SA</h3>
 
-                    {isLoadingClean ? (
-                        <div className="flex items-center justify-center h-64">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
-                        </div>
-                    ) : (
-                        (() => {
-                            const reportData = {};
-                            cleanData.forEach(item => {
-                                const sa = item.sa || 'Belum Diatur';
-                                if (!reportData[sa]) {
-                                    reportData[sa] = { NEW: 0, FOLLOW_UP: 0, BOOKING: 0, INVALID: 0, total: 0 };
+                        {isLoadingClean ? (
+                            <div className="flex items-center justify-center h-64">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
+                            </div>
+                        ) : (
+                            (() => {
+                                const reportData = {};
+                                cleanData.forEach(item => {
+                                    const sa = item.sa || 'Belum Diatur';
+                                    if (!reportData[sa]) {
+                                        reportData[sa] = { NEW: 0, FOLLOW_UP: 0, BOOKING: 0, INVALID: 0, DATANG: 0, total: 0 };
+                                    }
+                                    const status = item.status || 'NEW';
+                                    if (reportData[sa][status] !== undefined) {
+                                        reportData[sa][status]++;
+                                        reportData[sa].total++;
+                                    }
+                                });
+
+                                const saList = Object.keys(reportData).sort((a, b) => reportData[b].total - reportData[a].total);
+                                if (saList.length === 0) {
+                                    return <div className="h-64 flex items-center justify-center text-sm text-gray-400 border border-dashed rounded-lg">Tidak ada data</div>;
                                 }
-                                const status = item.status || 'NEW';
-                                if (reportData[sa][status] !== undefined) {
-                                    reportData[sa][status]++;
-                                    reportData[sa].total++;
-                                }
-                            });
 
-                            const saList = Object.keys(reportData).sort((a, b) => reportData[b].total - reportData[a].total);
-                            if (saList.length === 0) {
-                                return <div className="h-64 flex items-center justify-center text-sm text-gray-400 border border-dashed rounded-lg">Tidak ada data</div>;
-                            }
+                                const maxCount = Math.max(...saList.map(sa => reportData[sa].total), 10);
 
-                            const maxCount = Math.max(...saList.map(sa => reportData[sa].total), 10);
+                                return (
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex items-end gap-2 w-full h-80 border-b border-l border-gray-200 p-4 pt-8">
+                                            {saList.map((sa, idx) => {
+                                                const data = reportData[sa];
+                                                const newHeight = `${(data.NEW / maxCount) * 100}%`;
+                                                const followUpHeight = `${(data.FOLLOW_UP / maxCount) * 100}%`;
+                                                const bookingHeight = `${(data.BOOKING / maxCount) * 100}%`;
+                                                const invalidHeight = `${(data.INVALID / maxCount) * 100}%`;
+                                                const datangHeight = `${(data.DATANG / maxCount) * 100}%`;
 
-                            return (
-                                <div className="flex flex-col gap-6">
-                                    <div className="flex items-end gap-2 w-full h-80 border-b border-l border-gray-200 p-4 pt-8">
-                                        {saList.map((sa, idx) => {
-                                            const data = reportData[sa];
-                                            const newHeight = `${(data.NEW / maxCount) * 100}%`;
-                                            const followUpHeight = `${(data.FOLLOW_UP / maxCount) * 100}%`;
-                                            const bookingHeight = `${(data.BOOKING / maxCount) * 100}%`;
-                                            const invalidHeight = `${(data.INVALID / maxCount) * 100}%`;
+                                                return (
+                                                    <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative">
+                                                        <div className="w-full max-w-[24px] sm:max-w-[40px] flex flex-col justify-end h-full group-hover:opacity-80 transition-opacity mx-auto">
+                                                            {data.INVALID > 0 && <div className="w-full bg-red-500 rounded-t-sm mb-px" style={{ height: invalidHeight }}></div>}
+                                                            {data.NEW > 0 && <div className="w-full bg-amber-400 rounded-t-sm mb-px" style={{ height: newHeight }}></div>}
+                                                            {data.FOLLOW_UP > 0 && <div className="w-full bg-blue-500 rounded-t-sm mb-px" style={{ height: followUpHeight }}></div>}
+                                                            {data.BOOKING > 0 && <div className="w-full bg-green-500 rounded-t-sm mb-px" style={{ height: bookingHeight }}></div>}
+                                                            {data.DATANG > 0 && <div className="w-full bg-purple-500 rounded-t-sm" style={{ height: datangHeight }}></div>}
+                                                        </div>
+                                                        <span className="text-[10px] text-gray-500 font-bold mt-2 text-center truncate w-full px-1">{sa}</span>
 
-                                            return (
-                                                <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative">
-                                                    <div className="w-full max-w-[24px] sm:max-w-[40px] flex flex-col justify-end h-full group-hover:opacity-80 transition-opacity mx-auto">
-                                                        {data.INVALID > 0 && <div className="w-full bg-red-500 rounded-t-sm mb-px" style={{ height: invalidHeight }}></div>}
-                                                        {data.NEW > 0 && <div className="w-full bg-amber-400 rounded-t-sm mb-px" style={{ height: newHeight }}></div>}
-                                                        {data.FOLLOW_UP > 0 && <div className="w-full bg-blue-500 rounded-t-sm mb-px" style={{ height: followUpHeight }}></div>}
-                                                        {data.BOOKING > 0 && <div className="w-full bg-green-500 rounded-t-sm" style={{ height: bookingHeight }}></div>}
+                                                        {/* Tooltip */}
+                                                        <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg transition-opacity pointer-events-none z-10 shadow-xl border border-gray-700 w-max min-w-[140px] left-1/2 transform -translate-x-1/2">
+                                                            <div className="font-bold mb-1.5 border-b border-gray-700 pb-1.5 text-center text-gray-300">SA: {sa}</div>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex justify-between items-center gap-4"><span className="text-purple-400 font-bold">Datang:</span><span className="font-mono">{data.DATANG}</span></div>
+                                                                <div className="flex justify-between items-center gap-4"><span className="text-green-400 font-bold">Booking:</span><span className="font-mono">{data.BOOKING}</span></div>
+                                                                <div className="flex justify-between items-center gap-4"><span className="text-blue-400 font-bold">Follow Up:</span><span className="font-mono">{data.FOLLOW_UP}</span></div>
+                                                                <div className="flex justify-between items-center gap-4"><span className="text-amber-400 font-bold">New:</span><span className="font-mono">{data.NEW}</span></div>
+                                                                <div className="flex justify-between items-center gap-4"><span className="text-red-400 font-bold">Invalid:</span><span className="font-mono">{data.INVALID}</span></div>
+                                                            </div>
+                                                            <div className="mt-1.5 pt-1.5 border-t border-gray-700 font-bold flex justify-between items-center">
+                                                                <span>Total:</span> <span className="font-mono">{data.total}</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <span className="text-[10px] text-gray-500 font-bold mt-2 text-center truncate w-full px-1">{sa}</span>
+                                                );
+                                            })}
+                                        </div>
 
-                                                    {/* Tooltip */}
-                                                    <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg transition-opacity pointer-events-none z-10 shadow-xl border border-gray-700 w-max min-w-[140px] left-1/2 transform -translate-x-1/2">
-                                                        <div className="font-bold mb-1.5 border-b border-gray-700 pb-1.5 text-center text-gray-300">SA: {sa}</div>
-                                                        <div className="flex flex-col gap-1">
-                                                            <div className="flex justify-between items-center gap-4"><span className="text-green-400 font-bold">Booking:</span><span className="font-mono">{data.BOOKING}</span></div>
-                                                            <div className="flex justify-between items-center gap-4"><span className="text-blue-400 font-bold">Follow Up:</span><span className="font-mono">{data.FOLLOW_UP}</span></div>
-                                                            <div className="flex justify-between items-center gap-4"><span className="text-amber-400 font-bold">New:</span><span className="font-mono">{data.NEW}</span></div>
-                                                            <div className="flex justify-between items-center gap-4"><span className="text-red-400 font-bold">Invalid:</span><span className="font-mono">{data.INVALID}</span></div>
+                                        {/* Legend */}
+                                        <div className="flex flex-wrap justify-center gap-6 mt-4">
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">DATANG</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">BOOKING</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">FOLLOW UP</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-400 rounded-sm"></div><span className="text-xs font-bold text-gray-600">NEW</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">INVALID</span></div>
+                                        </div>
+                                    </div>
+                                );
+                            })()
+                        )}
+                    </div>
+
+                    <div className="bg-white border border-[#E5E5E5] p-6 rounded-xl shadow-sm mb-6">
+                        <h3 className="font-bold text-[#111111] uppercase tracking-wider text-sm mb-6">Executive Summary</h3>
+                        {isLoadingClean ? (
+                            <div className="flex items-center justify-center h-64">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
+                            </div>
+                        ) : (
+                            (() => {
+                                const totalData = cleanData.length;
+                                const totalNew = cleanData.filter(d => !d.status || d.status === 'NEW').length;
+                                const totalFollowUp = cleanData.filter(d => d.status === 'FOLLOW_UP').length;
+                                const totalBooking = cleanData.filter(d => d.status === 'BOOKING').length;
+                                const totalDatang = cleanData.filter(d => d.status === 'DATANG').length;
+                                const totalInvalid = cleanData.filter(d => d.status === 'INVALID').length;
+                                const totalValid = totalData - totalInvalid;
+                                const successCount = totalBooking + totalDatang;
+                                const conversionRate = totalValid > 0 ? ((successCount / totalValid) * 100).toFixed(1) : 0;
+
+                                return (
+                                    <div className="flex flex-col gap-6">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                                                <div className="relative z-10 flex flex-col justify-between h-full gap-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Leads</span>
+                                                        <div className="p-1.5 bg-gray-200 rounded-lg group-hover:bg-gray-300 transition-colors"><Hash className="w-3.5 h-3.5 text-gray-600" /></div>
+                                                    </div>
+                                                    <div className="text-2xl font-black text-gray-800">{totalData}</div>
+                                                </div>
+                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-gray-200 rounded-full opacity-50 blur-2xl group-hover:bg-gray-300 transition-colors"></div>
+                                            </div>
+
+                                            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                                                <div className="relative z-10 flex flex-col justify-between h-full gap-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Belum Follow Up</span>
+                                                        <div className="p-1.5 bg-amber-200 rounded-lg group-hover:bg-amber-300 transition-colors"><Info className="w-3.5 h-3.5 text-amber-700" /></div>
+                                                    </div>
+                                                    <div className="text-2xl font-black text-amber-800">{totalNew}</div>
+                                                </div>
+                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-amber-200 rounded-full opacity-50 blur-2xl group-hover:bg-amber-300 transition-colors"></div>
+                                            </div>
+
+                                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-2xl border border-blue-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                                                <div className="relative z-10 flex flex-col justify-between h-full gap-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Proses Follow Up</span>
+                                                        <div className="p-1.5 bg-blue-200 rounded-lg group-hover:bg-blue-300 transition-colors"><Phone className="w-3.5 h-3.5 text-blue-700" /></div>
+                                                    </div>
+                                                    <div className="text-2xl font-black text-blue-800">{totalFollowUp}</div>
+                                                </div>
+                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-blue-200 rounded-full opacity-50 blur-2xl group-hover:bg-blue-300 transition-colors"></div>
+                                            </div>
+
+                                            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-2xl border border-green-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                                                <div className="relative z-10 flex flex-col justify-between h-full gap-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Success Booking</span>
+                                                        <div className="p-1.5 bg-green-200 rounded-lg group-hover:bg-green-300 transition-colors"><Calendar className="w-3.5 h-3.5 text-green-700" /></div>
+                                                    </div>
+                                                    <div className="text-2xl font-black text-green-800">{totalBooking}</div>
+                                                </div>
+                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-green-200 rounded-full opacity-50 blur-2xl group-hover:bg-green-300 transition-colors"></div>
+                                            </div>
+
+                                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-2xl border border-purple-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                                                <div className="relative z-10 flex flex-col justify-between h-full gap-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider">Datang Service</span>
+                                                        <div className="p-1.5 bg-purple-200 rounded-lg group-hover:bg-purple-300 transition-colors"><Wrench className="w-3.5 h-3.5 text-purple-700" /></div>
+                                                    </div>
+                                                    <div className="text-2xl font-black text-purple-800">{totalDatang}</div>
+                                                </div>
+                                                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-purple-200 rounded-full opacity-50 blur-2xl group-hover:bg-purple-300 transition-colors"></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                            <div className="col-span-1 lg:col-span-2 bg-[#F9FAFB] rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col justify-center relative overflow-hidden">
+                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Pipeline Konversi</h4>
+
+                                                <div className="space-y-5 relative z-10">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-24 text-[10px] font-bold text-gray-500 text-right uppercase tracking-wider">Semua Data</div>
+                                                        <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden relative">
+                                                            <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1 }} className="absolute top-0 left-0 h-full bg-gray-400 rounded-full"></motion.div>
                                                         </div>
-                                                        <div className="mt-1.5 pt-1.5 border-t border-gray-700 font-bold flex justify-between items-center">
-                                                            <span>Total:</span> <span className="font-mono">{data.total}</span>
+                                                        <div className="w-24 text-xs font-black text-gray-700 text-right">{totalData}</div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-24 text-[10px] font-bold text-gray-500 text-right uppercase tracking-wider">Data Valid</div>
+                                                        <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden relative">
+                                                            <motion.div initial={{ width: 0 }} animate={{ width: `${totalData ? (totalValid / totalData) * 100 : 0}%` }} transition={{ duration: 1, delay: 0.1 }} className="absolute top-0 left-0 h-full bg-blue-400 rounded-full"></motion.div>
                                                         </div>
+                                                        <div className="w-24 text-xs font-black text-gray-700 text-right">{totalValid} <span className="text-[10px] font-bold text-gray-400">({totalData ? ((totalValid / totalData) * 100).toFixed(1) : 0}%)</span></div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-24 text-[10px] font-bold text-gray-500 text-right uppercase tracking-wider">Difollow up</div>
+                                                        <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden relative">
+                                                            <motion.div initial={{ width: 0 }} animate={{ width: `${totalData ? ((totalFollowUp + successCount) / totalData) * 100 : 0}%` }} transition={{ duration: 1, delay: 0.2 }} className="absolute top-0 left-0 h-full bg-amber-400 rounded-full"></motion.div>
+                                                        </div>
+                                                        <div className="w-24 text-xs font-black text-gray-700 text-right">{totalFollowUp + successCount} <span className="text-[10px] font-bold text-gray-400">({totalData ? (((totalFollowUp + successCount) / totalData) * 100).toFixed(1) : 0}%)</span></div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-24 text-[10px] font-bold text-gray-500 text-right uppercase tracking-wider">Booking</div>
+                                                        <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden relative">
+                                                            <motion.div initial={{ width: 0 }} animate={{ width: `${totalData ? (successCount / totalData) * 100 : 0}%` }} transition={{ duration: 1, delay: 0.3 }} className="absolute top-0 left-0 h-full bg-green-500 rounded-full"></motion.div>
+                                                        </div>
+                                                        <div className="w-24 text-xs font-black text-gray-700 text-right">{successCount} <span className="text-[10px] font-bold text-gray-400">({totalData ? ((successCount / totalData) * 100).toFixed(1) : 0}%)</span></div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-24 text-[10px] font-bold text-gray-500 text-right uppercase tracking-wider">Datang</div>
+                                                        <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden relative">
+                                                            <motion.div initial={{ width: 0 }} animate={{ width: `${totalData ? (totalDatang / totalData) * 100 : 0}%` }} transition={{ duration: 1, delay: 0.4 }} className="absolute top-0 left-0 h-full bg-purple-500 rounded-full"></motion.div>
+                                                        </div>
+                                                        <div className="w-24 text-xs font-black text-gray-700 text-right">{totalDatang} <span className="text-[10px] font-bold text-gray-400">({totalData ? ((totalDatang / totalData) * 100).toFixed(1) : 0}%)</span></div>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                            </div>
 
-                                    {/* Legend */}
-                                    <div className="flex flex-wrap justify-center gap-6 mt-4">
-                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">BOOKING</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">FOLLOW UP</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-400 rounded-sm"></div><span className="text-xs font-bold text-gray-600">NEW</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div><span className="text-xs font-bold text-gray-600">INVALID</span></div>
+                                            <div className="col-span-1 bg-gradient-to-br from-[#111111] to-[#2a2a2a] rounded-2xl p-6 text-white flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-green-500 rounded-full opacity-20 blur-3xl"></div>
+                                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
+                                                <div className="relative z-10 flex flex-col items-center">
+                                                    <div className="p-3 bg-white/10 rounded-full mb-4 backdrop-blur-sm border border-white/10">
+                                                        <TrendingUp className="w-6 h-6 text-green-400" />
+                                                    </div>
+                                                    <h4 className="text-xs font-bold text-gray-300 uppercase tracking-widest mb-1">Conversion Rate</h4>
+                                                    <div className="text-5xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">{conversionRate}%</div>
+                                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Dari Total {totalValid} Data Valid</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })()
-                    )}
-                </div>
+                                );
+                            })()
+                        )}
+                    </div>
+                </>
             ) : (
                 <div className="bg-white border border-[#E5E5E5] overflow-hidden">
                     <div className="overflow-x-auto">

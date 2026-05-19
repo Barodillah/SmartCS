@@ -12,7 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once dirname(__DIR__) . '/config_legacy.php';
+require_once dirname(__DIR__) . '/config.php';
 $conn = getLegacyDB();
+$pdo = getDB(); // SmartCS DB for potensi_service
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $raw = file_get_contents('php://input');
@@ -29,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $successCount = 0;
     $skipCount = 0;
     $errorCount = 0;
+    $potensiUpdateCount = 0;
 
     mysqli_begin_transaction($conn);
 
@@ -63,12 +66,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $oldData = mysqli_fetch_assoc($checkBooking);
                 $id = $oldData['id'];
                 
-                $query = "UPDATE booking SET status = 'DATANG', jenis = '$jenis' WHERE id = $id";
+                $oldStatus = $oldData['status'];
+                $newStatus = ($oldStatus === 'WALK IN') ? 'WALK IN' : 'DATANG';
+                
+                $query = "UPDATE booking SET status = '$newStatus', jenis = '$jenis' WHERE id = $id";
                 if (mysqli_query($conn, $query)) {
                     $beforeRecord = "{$oldData['user']} - {$oldData['tanggal']} - {$oldData['jam']} - {$oldData['kendaraan']} - {$oldData['nopol']} - {$oldData['nama']} - {$oldData['telp']} - {$oldData['jenis']} - {$oldData['keluhan']} - {$oldData['status']}";
-                    $afterRecord = "$user - {$oldData['tanggal']} - {$oldData['jam']} - {$oldData['kendaraan']} - {$oldData['nopol']} - {$oldData['nama']} - {$oldData['telp']} - $jenis - {$oldData['keluhan']} - DATANG";
+                    $afterRecord = "$user - {$oldData['tanggal']} - {$oldData['jam']} - {$oldData['kendaraan']} - {$oldData['nopol']} - {$oldData['nama']} - {$oldData['telp']} - $jenis - {$oldData['keluhan']} - $newStatus";
                     
-                    $recordStatus = (strtoupper($oldData['status']) === 'DATANG') ? 'IMPORT_UPDATE' : 'IMPORT';
+                    $recordStatus = (strtoupper($oldData['status']) === 'DATANG' || strtoupper($oldData['status']) === 'WALK IN') ? 'IMPORT_UPDATE' : 'IMPORT';
                     
                     mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
                                          VALUES ($id, '$user', '$recordStatus', '$beforeRecord', '$afterRecord')");
@@ -95,12 +101,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errorCount++;
                 }
             }
+
+            // === Sync potensi_service: update status to DATANG if nopol exists ===
+            if ($pdo && !empty($nopol)) {
+                try {
+                    $stmtPotensi = $pdo->prepare("UPDATE potensi_service SET status = 'DATANG' WHERE nopol = ? AND status != 'DATANG'");
+                    $stmtPotensi->execute([$nopol]);
+                    if ($stmtPotensi->rowCount() > 0) {
+                        $potensiUpdateCount += $stmtPotensi->rowCount();
+                    }
+                } catch (Exception $pe) {
+                    // Log but don't fail the main transaction
+                    error_log("Potensi service update failed for nopol $nopol: " . $pe->getMessage());
+                }
+            }
         }
         
         mysqli_commit($conn);
         echo json_encode([
             'status' => true, 
-            'message' => "Proses selesai: $successCount berhasil, $skipCount dilewati, $errorCount gagal."
+            'message' => "Proses selesai: $successCount berhasil, $skipCount dilewati, $errorCount gagal." . ($potensiUpdateCount > 0 ? " ($potensiUpdateCount potensi service diupdate DATANG)" : "")
         ]);
 
     } catch (Exception $e) {
