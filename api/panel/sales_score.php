@@ -32,7 +32,7 @@ if ($method === 'GET') {
     $unsurveyed_statuses = ['PERLU FOLLOW UP', 'TIDAK DIANGKAT', 'NOMOR SALAH', 'SALAH SAMBUNG', 'PERJANJIAN', 'DITOLAK/REJECT', 'SURVEY_WA'];
 
     // Ambil nps_data dari smartcs DB untuk matching NPS
-    $stmt = $pdo->prepare("SELECT rangka, score FROM nps_data");
+    $stmt = $pdo->prepare("SELECT rangka, score, note FROM nps_data");
     $stmt->execute();
     $npsDataRaw = $stmt->fetchAll();
     
@@ -47,7 +47,8 @@ if ($method === 'GET') {
         }
         $npsMapByRangka[$row['rangka']] = [
             'score' => $score,
-            'status_nps' => $status_nps
+            'status_nps' => $status_nps,
+            'note' => $row['note']
         ];
     }
 
@@ -69,7 +70,10 @@ if ($method === 'GET') {
                 'promotor' => 0,
                 'passiver' => 0,
                 'detraktor' => 0,
-                'invalid_numbers' => 0
+                'invalid_numbers' => 0,
+                'detail_nps' => [],
+                'detail_survey' => [],
+                'spv' => $row['spv'] ?? ''
             ];
         }
 
@@ -77,13 +81,23 @@ if ($method === 'GET') {
 
         $status = strtoupper($row['status']);
         $isSurveyed = false;
+        $survey_status_label = 'Sudah';
         
         if (in_array($status, $unsurveyed_statuses) || empty($status)) {
             $rekapSales[$sales]['unsurveyed']++;
+            $survey_status_label = 'Belum';
         } else {
             $isSurveyed = true;
             $rekapSales[$sales]['surveyed']++;
         }
+
+        $rekapSales[$sales]['detail_survey'][] = [
+            'nama' => $row['nama'] ?? 'Unknown',
+            'kendaraan' => $row['kendaraan'] ?? 'Unknown',
+            'rangka' => $row['rangka'] ?? '',
+            'status_survey' => $survey_status_label,
+            'status_detail' => $status ?: 'BLANK'
+        ];
 
         if (in_array($status, ['NOMOR SALAH', 'SALAH SAMBUNG', 'DITOLAK/REJECT'])) {
             $rekapSales[$sales]['invalid_numbers']++;
@@ -130,6 +144,30 @@ if ($method === 'GET') {
                 $rekapSales[$sales]['passiver']++;
             } else if ($npsScoreStr === 'detractor' || $npsScoreStr === 'detraktor') {
                 $rekapSales[$sales]['detraktor']++;
+            }
+
+            if ($npsScoreStr) {
+                $actual_score = null;
+                $actual_note = null;
+                if (isset($npsMapByRangka[$rangka])) {
+                    $actual_score = $npsMapByRangka[$rangka]['score'];
+                    $actual_note = $npsMapByRangka[$rangka]['note'];
+                } elseif (isset($nilai)) {
+                    $actual_score = $nilai;
+                }
+
+                if (empty($actual_note)) {
+                    $actual_note = $row['note'] ?? '';
+                }
+                
+                $rekapSales[$sales]['detail_nps'][] = [
+                    'nama' => $row['nama'] ?? 'Unknown',
+                    'kendaraan' => $row['kendaraan'] ?? 'Unknown',
+                    'rangka' => $rangka,
+                    'kategori' => $npsScoreStr,
+                    'score' => $actual_score,
+                    'note' => $actual_note
+                ];
             }
         }
     }
@@ -232,6 +270,7 @@ if ($method === 'GET') {
         
         $item = [
             'sales' => $sales,
+            'spv' => $data['spv'] ?? '',
             'total' => $data['total'],
             'surveyed' => $data['surveyed'],
             'unsurveyed' => $data['unsurveyed'],
@@ -243,7 +282,9 @@ if ($method === 'GET') {
             'promotor_pct' => round($promotorPct, 2),
             'passiver_pct' => round($passiverPct, 2),
             'detraktor_pct' => round($detraktorPct, 2),
-            'nps' => round($nps, 2)
+            'nps' => round($nps, 2),
+            'detail_nps' => $data['detail_nps'],
+            'detail_survey' => $data['detail_survey']
         ];
         
         if ($data['total'] >= 2) {
@@ -275,7 +316,8 @@ if ($method === 'GET') {
         'kontak_efektif_pct' => 0,
         'pola_harian' => [
             'Senin' => 0, 'Selasa' => 0, 'Rabu' => 0, 'Kamis' => 0, 'Jumat' => 0, 'Sabtu' => 0, 'Minggu' => 0
-        ]
+        ],
+        'trend_harian' => []
     ];
 
     $daysMap = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'];
@@ -318,6 +360,11 @@ if ($method === 'GET') {
             if (isset($daysMap[$dayOfWeek])) {
                 $csFollowUpData['pola_harian'][$daysMap[$dayOfWeek]]++;
             }
+            
+            if (!isset($csFollowUpData['trend_harian'][$logDate])) {
+                $csFollowUpData['trend_harian'][$logDate] = 0;
+            }
+            $csFollowUpData['trend_harian'][$logDate]++;
             
             if ($dayOfWeek <= 5) {
                 $unique_dates[$logDate] = true;

@@ -450,12 +450,38 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                                     </div>
                                 </div>
 
-                                <div className="space-y-1 pt-2 border-t border-gray-100">
-                                    <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><FileText size={12} /> Catatan / Note</div>
-                                    <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 whitespace-pre-wrap min-h-[60px] border border-gray-200">
-                                        {selectedDetail.note || <span className="text-gray-400 italic">Tidak ada catatan</span>}
+                                {selectedDetail.cabang === 'BINTARO' ? (
+                                    <div className="space-y-3 pt-3 border-t border-gray-100">
+                                        <div className="flex justify-between items-center bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                            <div>
+                                                <div className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-0.5">Sales / SPV</div>
+                                                <div className="font-bold text-[#111111] text-sm">{selectedDetail.sales || '-'} <span className="text-gray-400 font-normal">/ {selectedDetail.spv || '-'}</span></div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-0.5">Status Survey Sales</div>
+                                                <div className="font-bold text-[#111111] text-sm">{selectedDetail.survey_status || '-'}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1"><FileText size={12} /> Note NPS Tele</div>
+                                                <div className="text-xs text-gray-700 whitespace-pre-wrap flex-1">{selectedDetail.note || <span className="text-gray-400 italic">Tidak ada catatan</span>}</div>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex flex-col">
+                                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1"><FileText size={12} /> Note Survey Sales</div>
+                                                <div className="text-xs text-gray-700 whitespace-pre-wrap flex-1">{selectedDetail.survey_note || <span className="text-gray-400 italic">Tidak ada catatan</span>}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="space-y-1 pt-2 border-t border-gray-100">
+                                        <div className="text-xs text-gray-500 font-bold uppercase flex items-center gap-1"><FileText size={12} /> Catatan / Note</div>
+                                        <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 whitespace-pre-wrap min-h-[60px] border border-gray-200">
+                                            {selectedDetail.note || <span className="text-gray-400 italic">Tidak ada catatan</span>}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Action Buttons */}
                                 <div className="pt-3 border-t border-gray-100 flex justify-between gap-3">

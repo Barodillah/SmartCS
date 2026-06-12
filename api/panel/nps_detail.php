@@ -1,5 +1,6 @@
 <?php
 require_once '../config.php';
+require_once '../config_legacy.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -70,7 +71,38 @@ if ($method === 'GET') {
         $stmtList->execute($params);
         $list = $stmtList->fetchAll();
 
-        // Add NPS Status Label for convenience
+        $rangkas = [];
+        foreach ($list as $r) {
+            if (!empty($r['rangka'])) {
+                $rangkas[] = $r['rangka'];
+            }
+        }
+        
+        $surveyData = [];
+        if (!empty($rangkas)) {
+            $conn = getLegacyDB();
+            if ($conn) {
+                $escapedRangkas = array_map(function($r) use ($conn) {
+                    return "'" . mysqli_real_escape_string($conn, $r) . "'";
+                }, $rangkas);
+                $inClause = implode(',', $escapedRangkas);
+                
+                $q = "SELECT rangka, sales, spv, status, note as survey_note FROM surveyupdate WHERE rangka IN ($inClause)";
+                $res = mysqli_query($conn, $q);
+                if ($res) {
+                    while($sRow = mysqli_fetch_assoc($res)) {
+                        $surveyData[$sRow['rangka']] = [
+                            'sales' => $sRow['sales'],
+                            'spv' => $sRow['spv'],
+                            'survey_status' => $sRow['status'],
+                            'survey_note' => $sRow['survey_note']
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Add NPS Status Label and Survey Data
         foreach ($list as &$row) {
             $score = (int)$row['score'];
             $row['score'] = $score;
@@ -80,6 +112,19 @@ if ($method === 'GET') {
                 $row['status_nps'] = 'Passive';
             } else {
                 $row['status_nps'] = 'Detractor';
+            }
+            
+            $rk = $row['rangka'];
+            if (isset($surveyData[$rk])) {
+                $row['sales'] = $surveyData[$rk]['sales'];
+                $row['spv'] = $surveyData[$rk]['spv'];
+                $row['survey_status'] = $surveyData[$rk]['survey_status'];
+                $row['survey_note'] = $surveyData[$rk]['survey_note'];
+            } else {
+                $row['sales'] = '';
+                $row['spv'] = '';
+                $row['survey_status'] = '';
+                $row['survey_note'] = '';
             }
         }
 

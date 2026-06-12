@@ -7,6 +7,8 @@ const SalesScoreTab = ({ month }) => {
     const [loading, setLoading] = useState(false);
     const [qualified, setQualified] = useState([]);
     const [nonQualified, setNonQualified] = useState([]);
+    const [selectedNpsDetails, setSelectedNpsDetails] = useState(null);
+    const [selectedSurveyDetails, setSelectedSurveyDetails] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -94,10 +96,29 @@ const SalesScoreTab = ({ month }) => {
                                             {row.skor}
                                         </div>
                                     </td>
-                                    <td className="p-3 font-bold text-[#111111] border-r border-gray-100 whitespace-nowrap">{row.sales}</td>
+                                    <td className="p-3 font-bold text-[#111111] border-r border-gray-100 whitespace-nowrap">
+                                        <div className="relative group inline-block cursor-help">
+                                            <span className={`border-b-2 border-dashed ${row.spv ? 'border-gray-300' : 'border-transparent pb-0.5'}`}>
+                                                {row.sales}
+                                            </span>
+                                            {row.spv && (
+                                                <div className="absolute z-[60] bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-auto p-2 px-3 bg-[#111111] text-white text-xs rounded-lg shadow-xl whitespace-nowrap font-normal animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="text-gray-400 mb-0.5 text-[9px] uppercase tracking-wider font-bold flex items-center gap-1">
+                                                        Supervisor
+                                                    </div>
+                                                    <div className="font-bold text-sm">{row.spv}</div>
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-[#111111]"></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
                                     
-                                    <td className="p-3 border-r border-gray-100">
-                                        <div className="flex items-center justify-between mb-1">
+                                    <td 
+                                        className="p-3 border-r border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors group"
+                                        onClick={() => setSelectedSurveyDetails({ sales: row.sales, details: row.detail_survey })}
+                                        title="Klik untuk melihat detail status survey"
+                                    >
+                                        <div className="flex items-center justify-between mb-1 group-hover:scale-105 transition-transform origin-left">
                                             <span className="text-xs font-bold text-gray-700">{row.ratio}%</span>
                                             <span className="text-[10px] text-gray-500 font-medium">{row.surveyed}/{row.total} Tersurvey</span>
                                         </div>
@@ -110,7 +131,11 @@ const SalesScoreTab = ({ month }) => {
                                     </td>
 
                                     <td className="p-3 border-r border-gray-100">
-                                        <div className="flex items-center justify-center gap-1">
+                                        <div 
+                                            className="flex items-center justify-center gap-1 cursor-pointer hover:scale-105 transition-transform"
+                                            onClick={() => setSelectedNpsDetails({ sales: row.sales, details: row.detail_nps })}
+                                            title="Klik untuk melihat detail NPS"
+                                        >
                                             <div className="flex flex-col items-center justify-center w-12 bg-green-50 rounded py-1 border border-green-100">
                                                 <span className="text-[9px] font-bold text-green-600 uppercase tracking-tighter">Prom</span>
                                                 <span className="text-sm font-black text-green-700">{row.promotor}</span>
@@ -150,6 +175,159 @@ const SalesScoreTab = ({ month }) => {
         <div className="animate-in fade-in duration-300">
             <Table data={qualified} title="Ranking Survey Sales (Min. 2 Konsumen)" showRank={true} />
             <Table data={nonQualified} title="Sales dengan Kurang dari 2 Konsumen" showRank={false} />
+
+            <AnimatePresence>
+                {selectedNpsDetails && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]"
+                        >
+                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 shrink-0">
+                                <div>
+                                    <h3 className="font-display font-bold text-lg text-[#111111]">Detail Simple NPS</h3>
+                                    <p className="text-sm text-gray-500 font-medium">Sales: <span className="font-bold text-gray-800">{selectedNpsDetails.sales}</span></p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedNpsDetails(null)}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                            <div className="p-0 overflow-y-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50 sticky top-0 border-b border-gray-200 shadow-sm">
+                                        <tr className="text-[11px] font-black uppercase tracking-wider text-gray-600">
+                                            <th className="p-3 pl-4">No</th>
+                                            <th className="p-3">Nama Konsumen</th>
+                                            <th className="p-3">Kendaraan / Rangka</th>
+                                            <th className="p-3 text-center">Score</th>
+                                            <th className="p-3 text-center">Kategori</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {selectedNpsDetails.details && selectedNpsDetails.details.length > 0 ? (
+                                            selectedNpsDetails.details.map((item, idx) => (
+                                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 last:border-0">
+                                                    <td className="p-3 pl-4 text-gray-500 font-bold">{idx + 1}</td>
+                                                    <td className="p-3 font-bold text-[#111111]">{item.nama}</td>
+                                                    <td className="p-3">
+                                                        <div className="font-bold text-gray-800 text-xs">{item.kendaraan}</div>
+                                                        <div className="text-[10px] text-gray-500 font-medium">{item.rangka}</div>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        {item.score !== null ? (
+                                                            <div className="relative group inline-block cursor-help" onClick={(e) => { e.stopPropagation(); }}>
+                                                                <span className={`font-black ${item.note ? 'border-b-2 border-dashed border-gray-300 text-[#111111]' : ''}`}>
+                                                                    {item.score}
+                                                                </span>
+                                                                {item.note && (
+                                                                    <div className="absolute z-[60] bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-56 p-3 bg-[#111111] text-white text-xs rounded-lg shadow-xl whitespace-normal text-left font-normal animate-in fade-in zoom-in-95 duration-200">
+                                                                        <div className="text-gray-400 mb-1 text-[10px] uppercase tracking-wider font-bold flex items-center gap-1">
+                                                                            <Info size={12} />
+                                                                            Catatan Survey
+                                                                        </div>
+                                                                        <div className="leading-relaxed">{item.note}</div>
+                                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-[#111111]"></div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : '-'}
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                                            item.kategori === 'promotor' ? 'bg-green-100 text-green-700' :
+                                                            item.kategori === 'passive' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-red-100 text-red-700'
+                                                        }`}>
+                                                            {item.kategori}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="p-8 text-center text-gray-400 font-bold">Belum ada detail NPS</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {selectedSurveyDetails && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]"
+                        >
+                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 shrink-0">
+                                <div>
+                                    <h3 className="font-display font-bold text-lg text-[#111111]">Detail Status Survey</h3>
+                                    <p className="text-sm text-gray-500 font-medium">Sales: <span className="font-bold text-gray-800">{selectedSurveyDetails.sales}</span></p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedSurveyDetails(null)}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                            <div className="p-0 overflow-y-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50 sticky top-0 border-b border-gray-200 shadow-sm">
+                                        <tr className="text-[11px] font-black uppercase tracking-wider text-gray-600">
+                                            <th className="p-3 pl-4">No</th>
+                                            <th className="p-3">Nama Konsumen</th>
+                                            <th className="p-3">Kendaraan / Rangka</th>
+                                            <th className="p-3 text-center">Status Survey</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {selectedSurveyDetails.details && selectedSurveyDetails.details.length > 0 ? (
+                                            selectedSurveyDetails.details.map((item, idx) => (
+                                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 last:border-0">
+                                                    <td className="p-3 pl-4 text-gray-500 font-bold">{idx + 1}</td>
+                                                    <td className="p-3 font-bold text-[#111111]">{item.nama}</td>
+                                                    <td className="p-3">
+                                                        <div className="font-bold text-gray-800 text-xs">{item.kendaraan}</div>
+                                                        <div className="text-[10px] text-gray-500 font-medium">{item.rangka}</div>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <div className="flex flex-col items-center justify-center">
+                                                            <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 ${
+                                                                item.status_survey === 'Sudah' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                                            }`}>
+                                                                {item.status_survey}
+                                                            </span>
+                                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">
+                                                                {item.status_detail}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={4} className="p-8 text-center text-gray-400 font-bold">Belum ada detail data konsumen</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
@@ -518,6 +696,148 @@ const CSFollowUpTab = ({ month }) => {
                         Hari dengan persentase dominan (warna merah) seringkali menunjukkan akumulasi kerja akibat tertunda di hari-hari sebelumnya. Hari Sabtu dan Minggu ditandai abu-abu karena berada di luar 5 hari kerja efektif.
                     </div>
                 </div>
+            </div>
+
+            {/* Daily Trend Line Chart */}
+            <DailyTrendChart data={csData.trend_harian || {}} month={month} />
+        </div>
+    );
+};
+
+const DailyTrendChart = ({ data, month }) => {
+    const [hoverInfo, setHoverInfo] = useState(null);
+    const [year, monthNum] = month.split('-');
+    const daysInMonth = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+    
+    // Build array of values for each day
+    const chartData = Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        const dateStr = `${year}-${monthNum}-${String(day).padStart(2, '0')}`;
+        // Mendukung format key "YYYY-MM-DD" atau "D" (angka hari)
+        const val = (data && (data[dateStr] !== undefined ? data[dateStr] : (data[day] !== undefined ? data[day] : 0))) || 0;
+        return { day, val };
+    });
+
+    const maxValue = Math.max(...chartData.map(d => d.val), 5); // min axis 5
+    
+    const w = 1000;
+    const h = 250;
+    const padX = 40;
+    const padY = 40;
+    
+    const points = chartData.map((d, i) => {
+        const x = padX + (i / (daysInMonth - 1)) * (w - 2 * padX);
+        const y = h - padY - (d.val / maxValue) * (h - 2 * padY);
+        return { x, y, val: d.val, day: d.day };
+    });
+
+    const createSmoothPath = (pts) => {
+        if (pts.length === 0) return '';
+        if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
+        let path = `M ${pts[0].x},${pts[0].y}`;
+        for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[i];
+            const p1 = pts[i + 1];
+            // Horizontal tangent smoothing
+            const cp1x = p0.x + (p1.x - p0.x) / 3;
+            const cp1y = p0.y;
+            const cp2x = p1.x - (p1.x - p0.x) / 3;
+            const cp2y = p1.y;
+            path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p1.x},${p1.y}`;
+        }
+        return path;
+    };
+
+    const pathData = createSmoothPath(points);
+
+    return (
+        <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm col-span-full mt-6">
+            <h4 className="font-display font-bold text-md text-[#111111] mb-6">Tren Harian (Bulan {month})</h4>
+            <div className="w-full h-64 relative" onMouseLeave={() => setHoverInfo(null)}>
+                
+                {/* HTML Tooltip Overlay */}
+                <AnimatePresence>
+                    {hoverInfo && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-10 bg-[#111111] text-white p-3 rounded-lg shadow-xl pointer-events-none"
+                            style={{
+                                left: `${(hoverInfo.x / w) * 100}%`, 
+                                top: `${(hoverInfo.y / h) * 100}%`,
+                                transform: 'translate(-50%, -130%)'
+                            }}
+                        >
+                            <div className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wider">Tgl {hoverInfo.day}</div>
+                            <div className="flex items-end gap-1">
+                                <span className="text-xl font-black text-white leading-none">{hoverInfo.val}</span>
+                                <span className="text-xs text-gray-300 mb-0.5">data</span>
+                            </div>
+                            <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#111111]"></div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                    {/* Y Axis Grid Lines */}
+                    {[0, 0.25, 0.5, 0.75, 1].map(pct => {
+                        const y = h - padY - (pct * (h - 2 * padY));
+                        const val = Math.round(maxValue * pct);
+                        return (
+                            <g key={`y-${pct}`}>
+                                <line x1={padX} y1={y} x2={w - padX} y2={y} stroke="#f3f4f6" strokeWidth="1" />
+                                <text x={padX - 10} y={y + 4} textAnchor="end" className="text-[10px] fill-gray-400 font-medium">{val}</text>
+                            </g>
+                        );
+                    })}
+
+                    {/* X Axis Labels */}
+                    {points.map((d) => {
+                        const showLabel = daysInMonth <= 15 || d.day % 2 !== 0 || d.day === daysInMonth;
+                        return (
+                            <g key={`x-${d.day}`}>
+                                {showLabel && (
+                                    <text x={d.x} y={h - padY + 20} textAnchor="middle" className="text-[10px] fill-gray-400 font-medium">{d.day}</text>
+                                )}
+                                {/* Invisible larger circle to increase hover area */}
+                                <circle cx={d.x} cy={d.y} r="12" fill="transparent" 
+                                        onMouseEnter={() => setHoverInfo(d)} 
+                                        className="cursor-pointer" />
+                                {/* Visible Dot */}
+                                <circle cx={d.x} cy={d.y} r={d.val > 0 || hoverInfo?.day === d.day ? "4" : "2"} 
+                                        fill={hoverInfo?.day === d.day ? "#111111" : (d.val > 0 ? "#E60012" : "#d1d5db")} 
+                                        className="transition-all pointer-events-none" />
+                            </g>
+                        );
+                    })}
+
+                    {/* Area Fill */}
+                    <polygon 
+                        fill="url(#gradient-line)" 
+                        points={`${padX},${h - padY} ${pathData.replace(/^M/, 'L')} L ${w - padX},${h - padY}`}
+                        opacity="0.15"
+                    />
+                    
+                    {/* The Smooth Line */}
+                    <path 
+                        d={pathData}
+                        fill="none" 
+                        stroke="#E60012" 
+                        strokeWidth="3" 
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        className="drop-shadow-sm"
+                    />
+
+                    <defs>
+                        <linearGradient id="gradient-line" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#E60012" stopOpacity="1" />
+                            <stop offset="100%" stopColor="#E60012" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
+                </svg>
             </div>
         </div>
     );

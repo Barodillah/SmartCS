@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, BarChart2, PieChart, Users, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
+import { Calendar, BarChart2, PieChart, Users, ArrowUpRight, ArrowDownRight, Activity, ChevronDown, ChevronUp, Target, TrendingUp, TrendingDown } from 'lucide-react';
 
 const AnalisisBooking = () => {
-    // Determine "last month" and corresponding "year"
+    // Determine "current month" and corresponding "year"
     const today = new Date();
-    let defaultMonth = today.getMonth(); // 0-indexed, so getMonth() is the previous month (1-12 scale)
+    let defaultMonth = today.getMonth() + 1; // 1-12 scale for current month
     let defaultYear = today.getFullYear();
-
-    if (defaultMonth === 0) {
-        defaultMonth = 12;
-        defaultYear -= 1;
-    }
 
     const [year, setYear] = useState(defaultYear.toString());
     const [month, setMonth] = useState(defaultMonth.toString().padStart(2, '0'));
@@ -19,6 +14,8 @@ const AnalisisBooking = () => {
     const [heatmapFilter, setHeatmapFilter] = useState('WALK IN');
     const [heatmapLoading, setHeatmapLoading] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showRealisticTarget, setShowRealisticTarget] = useState(false);
+    const [prevMonthEntry, setPrevMonthEntry] = useState(null);
 
     const [capacityData, setCapacityData] = useState([]);
     const [capacityLoading, setCapacityLoading] = useState(false);
@@ -142,8 +139,33 @@ const AnalisisBooking = () => {
                 setData(json.data);
                 calculateSummary(json.data);
             }
+
+            // Ambil data bulan sebelumnya untuk perbandingan (jika tampilan bulan spesifik)
+            if (month) {
+                let pMonth = parseInt(month) - 1;
+                let pYear = parseInt(year);
+                if (pMonth === 0) {
+                    pMonth = 12;
+                    pYear -= 1;
+                }
+                const urlPrev = `https://csdwindo.com/api/panel/analisis_booking.php?tahun=${pYear}&bulan=${pMonth.toString().padStart(2, '0')}`;
+                const resPrev = await fetch(urlPrev);
+                const jsonPrev = await resPrev.json();
+                if (jsonPrev.status) {
+                    let prevTotal = 0;
+                    jsonPrev.data.forEach(item => {
+                        prevTotal += (item.datang + item.walk_in);
+                    });
+                    setPrevMonthEntry(prevTotal);
+                } else {
+                    setPrevMonthEntry(0);
+                }
+            } else {
+                setPrevMonthEntry(null);
+            }
         } catch (err) {
             console.error("Failed to fetch analytics data", err);
+            setPrevMonthEntry(null);
         } finally {
             setLoading(false);
         }
@@ -210,12 +232,55 @@ const AnalisisBooking = () => {
         const unbookedDeficit = Math.max(0, targetDeficit - potensiBooking);
         const potensiPerDay = remainingDays > 0 ? (potensiBooking / remainingDays).toFixed(1) : potensiBooking;
 
+        const avgPerDayNow = currentDay > 0 ? (totalEntryNow / currentDay).toFixed(1) : 0;
+        const estimatedRemaining = Math.round(avgPerDayNow * remainingDays);
+        const estimatedTotal = totalEntryNow + estimatedRemaining;
+        const realisticProgress = targetUnitEntry > 0 ? Math.min(100, (estimatedTotal / targetUnitEntry) * 100).toFixed(1) : 0;
+
+        // Analisis Target Lanjutan
+        const idealPacingPerDay = targetUnitEntry / daysInMonth;
+        const targetSampaiHariIni = Math.round(idealPacingPerDay * currentDay);
+        const statusPacing = totalEntryNow - targetSampaiHariIni;
+        const requiredIncreasePct = avgPerDayNow > 0 ? (((targetPerDay - avgPerDayNow) / avgPerDayNow) * 100).toFixed(1) : 0;
+        
+        // Data Kumulatif Harian untuk Chart
+        let actualByDay = new Array(daysInMonth).fill(0);
+        data.forEach(item => {
+            if (item.tanggal) {
+                const itemDate = new Date(item.tanggal);
+                const dayIdx = itemDate.getDate() - 1; 
+                if (dayIdx >= 0 && dayIdx < daysInMonth) {
+                    actualByDay[dayIdx] += (item.datang || 0) + (item.walk_in || 0);
+                }
+            }
+        });
+        
+        let cumulativeActual = [];
+        let currentCumTotal = 0;
+        actualByDay.forEach((val, idx) => {
+            if (idx < currentDay) {
+                currentCumTotal += val;
+                cumulativeActual.push({ day: idx + 1, val: currentCumTotal });
+            }
+        });
+
+        const svgW = 400;
+        const svgH = 80;
+        const svgMaxY = Math.max(targetUnitEntry, totalEntryNow) || 1;
+        const idealPoints = `0,${svgH} ${svgW},0`;
+        const actualPoints = cumulativeActual.map((d) => {
+            const x = ((d.day - 1) / (daysInMonth - 1)) * svgW;
+            const y = svgH - (d.val / svgMaxY) * svgH;
+            return `${x},${y}`;
+        }).join(' ');
+
         targetInfo = (
-            <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm mb-8 relative overflow-hidden border border-[#E5E5E5] text-[#111111] flex flex-col md:flex-row gap-8 items-center">
+            <div className="bg-white p-6 sm:p-8 rounded-xl shadow-sm mb-8 relative overflow-hidden border border-[#E5E5E5] text-[#111111] flex flex-col gap-6">
                 <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#E60012]/5 rounded-full blur-3xl"></div>
                 <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"></div>
                 
-                <div className="flex-1 w-full z-10 relative">
+                <div className="flex flex-col md:flex-row gap-8 items-center w-full relative z-10">
+                    <div className="flex-1 w-full relative">
                     <div className="flex justify-between items-start mb-2">
                         <div>
                             <h3 className="text-gray-500 font-display font-bold uppercase tracking-widest text-[11px] flex items-center gap-2">
@@ -266,6 +331,162 @@ const AnalisisBooking = () => {
                             <span className="text-[9px] text-[#E60012] font-bold mt-1">Sisa Target: {unbookedDeficit} Unit</span>
                         </div>
                     </div>
+                </div>
+                </div>
+
+                {/* Divider & Proyeksi Realistis */}
+                <div className="w-full relative z-10 border-t border-dashed border-gray-200 pt-6 flex flex-col">
+                    <button 
+                        onClick={() => setShowRealisticTarget(!showRealisticTarget)}
+                        className="flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-blue-600 transition-colors uppercase tracking-widest self-center md:self-start bg-gray-50 hover:bg-blue-50 px-5 py-2.5 rounded-xl border border-gray-200 hover:border-blue-200 shadow-sm"
+                    >
+                        <Target size={16} className={showRealisticTarget ? "text-blue-600" : "text-gray-400"} /> 
+                        Proyeksi Realistis Akhir Bulan 
+                        {showRealisticTarget ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    {showRealisticTarget && (
+                        <div className="mt-6 flex flex-col gap-5 animate-in slide-in-from-top-4 duration-300 fade-in">
+                            {/* Baris Pertama: Proyeksi Realistis Dasar */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                {/* Avg per day */}
+                                <div className="bg-blue-50 border border-blue-100 p-5 rounded-xl flex flex-col relative overflow-hidden">
+                                    <div className="absolute -right-4 -bottom-4 opacity-10"><Activity size={64} /></div>
+                                    <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mb-2">Rata-rata Berjalan</span>
+                                    <div className="flex items-end gap-2">
+                                        <span className="text-4xl font-black text-blue-700 leading-none">{avgPerDayNow}</span>
+                                        <span className="text-xs font-bold text-blue-500 mb-1">unit/hari</span>
+                                    </div>
+                                    <span className="text-[10px] text-blue-500/80 font-medium mt-3">Dari {currentDay} hari efektif berjalan</span>
+                                </div>
+
+                                {/* Estimated Remaining */}
+                                <div className="bg-amber-50 border border-amber-100 p-5 rounded-xl flex flex-col relative overflow-hidden">
+                                    <div className="absolute -right-4 -bottom-4 opacity-10"><Calendar size={64} /></div>
+                                    <span className="text-[10px] text-amber-600 font-bold uppercase tracking-widest mb-2">Estimasi Tambahan</span>
+                                    <div className="flex items-end gap-2">
+                                        <span className="text-4xl font-black text-amber-700 leading-none">{estimatedRemaining}</span>
+                                        <span className="text-xs font-bold text-amber-500 mb-1">unit</span>
+                                    </div>
+                                    <span className="text-[10px] text-amber-500/80 font-medium mt-3">({avgPerDayNow} rata-rata × {remainingDays} sisa hari)</span>
+                                </div>
+
+                                {/* Estimated Total */}
+                                <div className={`p-5 rounded-xl flex flex-col relative overflow-hidden border ${estimatedTotal >= targetUnitEntry ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                    <div className="absolute -right-4 -bottom-4 opacity-10">
+                                        <Target size={64} className={estimatedTotal >= targetUnitEntry ? 'text-green-700' : 'text-red-700'} />
+                                    </div>
+                                    <span className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${estimatedTotal >= targetUnitEntry ? 'text-green-600' : 'text-red-600'}`}>
+                                        Proyeksi Total Akhir
+                                    </span>
+                                    <div className="flex items-end gap-2 relative z-10">
+                                        <span className={`text-5xl font-black leading-none ${estimatedTotal >= targetUnitEntry ? 'text-green-700' : 'text-red-700'}`}>{estimatedTotal}</span>
+                                        <span className={`text-xs font-bold mb-1 ${estimatedTotal >= targetUnitEntry ? 'text-green-500' : 'text-red-500'}`}>unit</span>
+                                    </div>
+                                    <div className="mt-4 w-full bg-white/50 rounded-full h-2 overflow-hidden shadow-inner relative z-10">
+                                        <div className={`h-full rounded-full ${estimatedTotal >= targetUnitEntry ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${realisticProgress}%` }}></div>
+                                    </div>
+                                    <div className="flex flex-col mt-3 gap-2 relative z-10">
+                                        <span className={`text-[10px] font-bold inline-flex items-center gap-1 ${estimatedTotal >= targetUnitEntry ? 'text-green-600' : 'text-red-600'}`}>
+                                            {estimatedTotal >= targetUnitEntry ? (
+                                                <>✨ Target {targetUnitEntry} Akan Tercapai!</>
+                                            ) : (
+                                                <>⚠️ Beresiko Kurang {targetUnitEntry - estimatedTotal} Unit dari Target ({targetUnitEntry})</>
+                                            )}
+                                        </span>
+                                        {prevMonthEntry !== null && prevMonthEntry > 0 && (
+                                            <span className="text-[10px] font-bold bg-white/60 px-2.5 py-1.5 rounded-lg self-start inline-flex items-center gap-1.5 border border-white/60 shadow-sm">
+                                                {estimatedTotal >= prevMonthEntry ? (
+                                                    <><TrendingUp size={14} className="text-blue-600" /> <span className="text-blue-700">+{((estimatedTotal - prevMonthEntry) / prevMonthEntry * 100).toFixed(1)}%</span> <span className="text-gray-500 font-medium ml-1">vs bln lalu ({prevMonthEntry})</span></>
+                                                ) : (
+                                                    <><TrendingDown size={14} className="text-orange-600" /> <span className="text-orange-700">{((estimatedTotal - prevMonthEntry) / prevMonthEntry * 100).toFixed(1)}%</span> <span className="text-gray-500 font-medium ml-1">vs bln lalu ({prevMonthEntry})</span></>
+                                                )}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Baris Kedua: Analisis Lanjutan (Pacing & Saran Konversi) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+                                {/* Pacing Harian */}
+                                <div className="border border-gray-200 bg-gray-50 rounded-xl p-5 flex flex-col justify-between">
+                                    <div>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                                            Status Pacing Hari Ini
+                                        </span>
+                                        <div className="flex items-center gap-4 mt-2">
+                                            <div className="flex-1">
+                                                <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                                                    Idealnya, hingga hari ke-{currentDay} total capaian adalah <strong className="text-gray-800">{targetSampaiHariIni} unit</strong>.
+                                                    <br/>Capaian saat ini <strong className="text-gray-800">{totalEntryNow} unit</strong>.
+                                                </p>
+                                            </div>
+                                            <div className={`px-4 py-2 rounded-lg font-black text-xl shrink-0 border ${statusPacing >= 0 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
+                                                {statusPacing >= 0 ? `+${statusPacing} Surplus` : `${statusPacing} Defisit`}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-gray-200 w-full">
+                                        <span className="text-[9px] text-gray-400 font-bold uppercase mb-2 block">Garis Target Ideal vs Aktual</span>
+                                        <div className="w-full h-16 relative mt-4">
+                                            <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                                                <polyline points={idealPoints} fill="none" stroke="#d1d5db" strokeWidth="2" strokeDasharray="4 4" />
+                                                {actualPoints && (
+                                                    <polyline points={actualPoints} fill="none" stroke="#E60012" strokeWidth="3" strokeLinejoin="round" />
+                                                )}
+                                            </svg>
+                                            
+                                            {/* Titik Overlay untuk Tooltip */}
+                                            {cumulativeActual.map((d, idx) => {
+                                                const leftPct = ((d.day - 1) / (daysInMonth - 1)) * 100;
+                                                const topPct = (1 - (d.val / svgMaxY)) * 100;
+                                                const idealForDay = Math.round((targetUnitEntry / daysInMonth) * d.day);
+                                                
+                                                return (
+                                                    <div 
+                                                        key={d.day}
+                                                        className="absolute w-5 h-5 -ml-2.5 -mt-2.5 flex items-center justify-center cursor-pointer group z-10"
+                                                        style={{ left: `${leftPct}%`, top: `${topPct}%` }}
+                                                    >
+                                                        <div className={`w-2 h-2 rounded-full bg-[#E60012] transition-all group-hover:scale-150 ${idx === cumulativeActual.length - 1 ? 'scale-125 ring-2 ring-[#E60012]/30' : 'opacity-0 group-hover:opacity-100'}`} />
+                                                        
+                                                        {/* Tooltip */}
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900/95 text-white text-[10px] p-2 rounded-lg shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 border border-gray-700">
+                                                            <div className="font-bold border-b border-gray-700 pb-1 mb-1 text-gray-200">Tanggal {d.day}</div>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-[#ff6b7b] font-bold">Aktual: {d.val} unit</span>
+                                                                <span className="text-gray-400">Target: {idealForDay} unit</span>
+                                                            </div>
+                                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900/95"></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Required Run Rate */}
+                                <div className="border border-gray-200 bg-gray-50 rounded-xl p-5 flex flex-col justify-center">
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Required Run Rate (Aksi Dibutuhkan)</span>
+                                    <p className="text-xs text-gray-600 font-medium leading-relaxed mt-2">
+                                        Untuk bisa mengejar sisa target <strong className="text-gray-800">{targetDeficit} unit</strong> di sisa <strong className="text-gray-800">{remainingDays} hari</strong>, tim membutuhkan kinerja rata-rata minimal:
+                                    </p>
+                                    <div className="my-4 text-center">
+                                        <span className="text-4xl font-display font-black text-[#111111]">{targetPerDay}</span>
+                                        <span className="text-[10px] font-bold text-gray-500 ml-1">unit / hari</span>
+                                    </div>
+                                    <div className={`p-3 rounded-lg text-xs font-bold border flex items-center justify-center gap-2 ${requiredIncreasePct > 0 ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+                                        <Activity size={16} />
+                                        {requiredIncreasePct > 0 
+                                            ? `Perlu menaikkan kecepatan +${requiredIncreasePct}% dari rata-rata saat ini.` 
+                                            : `Kecepatan saat ini sudah melampaui kebutuhan. Pertahankan!`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -571,6 +792,16 @@ const AnalisisBooking = () => {
                                         #ef4444 ${pctB + pctD + pctW}% 100%
                                     )`;
 
+                                    const todayDate = new Date();
+                                    const isCurrentMonth = month === (todayDate.getMonth() + 1).toString().padStart(2, '0') && year === todayDate.getFullYear().toString();
+                                    const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+                                    const divisor = isCurrentMonth ? Math.max(1, todayDate.getDate()) : daysInMonth;
+
+                                    const avgB = (tBooking / divisor).toFixed(1);
+                                    const avgD = (tDatang / divisor).toFixed(1);
+                                    const avgW = (tWalkIn / divisor).toFixed(1);
+                                    const avgC = (tCancel / divisor).toFixed(1);
+
                                     return (
                                         <>
                                             <div className="w-40 h-40 rounded-full relative flex justify-center items-center shrink-0 shadow-inner" style={{ background: grad }}>
@@ -580,10 +811,34 @@ const AnalisisBooking = () => {
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-3 w-full sm:w-auto">
-                                                <div className="flex items-center justify-between gap-4 text-sm"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded-sm"></div><span className="font-bold text-gray-700">Booking</span></div><span className="font-mono">{pctB.toFixed(1)}%</span></div>
-                                                <div className="flex items-center justify-between gap-4 text-sm"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div><span className="font-bold text-gray-700">Datang</span></div><span className="font-mono">{pctD.toFixed(1)}%</span></div>
-                                                <div className="flex items-center justify-between gap-4 text-sm"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div><span className="font-bold text-gray-700">Walk In</span></div><span className="font-mono">{pctW.toFixed(1)}%</span></div>
-                                                <div className="flex items-center justify-between gap-4 text-sm"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div><span className="font-bold text-gray-700">Cancel</span></div><span className="font-mono">{pctC.toFixed(1)}%</span></div>
+                                                <div className="flex items-center justify-between gap-6 text-sm">
+                                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded-sm"></div><span className="font-bold text-gray-700">Booking</span></div>
+                                                    <div className="flex items-center gap-3 text-right">
+                                                        <span className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded shadow-sm border border-gray-100">{avgB} /hr</span>
+                                                        <span className="font-mono font-bold w-12">{pctB.toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between gap-6 text-sm">
+                                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-sm"></div><span className="font-bold text-gray-700">Datang</span></div>
+                                                    <div className="flex items-center gap-3 text-right">
+                                                        <span className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded shadow-sm border border-gray-100">{avgD} /hr</span>
+                                                        <span className="font-mono font-bold w-12">{pctD.toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between gap-6 text-sm">
+                                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div><span className="font-bold text-gray-700">Walk In</span></div>
+                                                    <div className="flex items-center gap-3 text-right">
+                                                        <span className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded shadow-sm border border-gray-100">{avgW} /hr</span>
+                                                        <span className="font-mono font-bold w-12">{pctW.toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between gap-6 text-sm">
+                                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-sm"></div><span className="font-bold text-gray-700">Cancel</span></div>
+                                                    <div className="flex items-center gap-3 text-right">
+                                                        <span className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded shadow-sm border border-gray-100">{avgC} /hr</span>
+                                                        <span className="font-mono font-bold w-12">{pctC.toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </>
                                     );

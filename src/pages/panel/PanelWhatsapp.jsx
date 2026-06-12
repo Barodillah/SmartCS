@@ -113,7 +113,7 @@ const buildH1Message = async (item) => {
     const salam = getSalam();
     const hari = getHariIndonesia(item.tanggal);
     const tgl = formatTanggal(item.tanggal);
-    const sapaan = await guessGender(item.nama);
+    const sapaan = "Bapak/Ibu"; // Hemat kredit: Reminder tidak butuh AI guess gender
 
     let pesan = `*REMINDER BOOKING SERVICE*\n\n`;
     pesan += `${salam} ${sapaan} *${item.nama}*\n\n`;
@@ -139,7 +139,7 @@ const buildH30MenitMessage = async (item) => {
     const salam = getSalam();
     const hari = getHariIndonesia(item.tanggal);
     const tgl = formatTanggal(item.tanggal);
-    const sapaan = await guessGender(item.nama);
+    const sapaan = "Bapak/Ibu"; // Hemat kredit: Reminder tidak butuh AI guess gender
 
     let pesan = `${salam}, mengingatkan kembali bahwa hari ini *${hari} ${tgl}*, Pukul *${item.jam}*, ada jadwal booking service untuk kendaraan ${sapaan}\n`;
     pesan += `Kendaraan : *${item.kendaraan}, ${item.nopol}*\n\n`;
@@ -149,8 +149,14 @@ const buildH30MenitMessage = async (item) => {
     return pesan;
 };
 
+const genderCache = new Map();
+
 const guessGender = async (name) => {
     try {
+        if (!name) return "Bapak/Ibu";
+        const cacheKey = name.trim().toLowerCase();
+        if (genderCache.has(cacheKey)) return genderCache.get(cacheKey);
+
         const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
         if (!apiKey) return "Bapak/Ibu";
 
@@ -161,7 +167,7 @@ const guessGender = async (name) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "~google/gemini-flash-latest",
+                model: "google/gemini-2.0-flash-exp:free", // Menggunakan model gratis dari OpenRouter jika ada, atau fallback ke model default Anda
                 messages: [
                     { role: "system", content: "Tebak gender dari nama orang Indonesia. Balas HANYA dengan satu kata: Bapak atau Ibu. Jika tidak yakin balas Bapak/Ibu." },
                     { role: "user", content: name }
@@ -177,10 +183,16 @@ const guessGender = async (name) => {
         const reply = data.choices?.[0]?.message?.content?.trim();
 
         if (reply) {
-            if (reply.includes("Bapak") && !reply.includes("Ibu")) return "Bapak";
-            if (reply.includes("Ibu") && !reply.includes("Bapak")) return "Ibu";
-            if (reply === "Bapak" || reply === "Ibu") return reply;
+            let finalGender = "Bapak/Ibu";
+            if (reply.includes("Bapak") && !reply.includes("Ibu")) finalGender = "Bapak";
+            else if (reply.includes("Ibu") && !reply.includes("Bapak")) finalGender = "Ibu";
+            else if (reply === "Bapak" || reply === "Ibu") finalGender = reply;
+            
+            genderCache.set(cacheKey, finalGender);
+            return finalGender;
         }
+        
+        genderCache.set(cacheKey, "Bapak/Ibu");
         return "Bapak/Ibu";
     } catch (err) {
         console.error("Gender guess error:", err);
@@ -209,7 +221,7 @@ const buildStnkMessage = async (item) => {
     else if (jam >= 15 && jam < 18) salam = 'Selamat Sore';
     else if (jam >= 18) salam = 'Selamat Malam';
 
-    const sapaan = await guessGender(item.nama);
+    const sapaan = "Bapak/Ibu"; // Hemat kredit
     const dateObj = new Date(item.one_year);
     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const format_tanggal = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
@@ -231,7 +243,7 @@ const buildBpkbMessage = async (item) => {
     else if (jam >= 15 && jam < 18) salam = 'Selamat Sore';
     else if (jam >= 18) salam = 'Selamat Malam';
 
-    const sapaan = await guessGender(item.nama);
+    const sapaan = "Bapak/Ibu"; // Hemat kredit
 
     let pesan = `${salam}, Kami dari Mitsubishi Bintaro ingin dengan hormat mengingatkan ${sapaan} *${item.nama}* bahwa BPKB untuk kendaraan *${item.kendaraan || 'Mitsubishi'}* dengan nomor rangka *${item.rangka}* sudah dapat diambil. Kami sangat berharap ${sapaan} berkenan untuk mengambilnya di kantor kami pada waktu yang memungkinkan. Mohon maaf apabila pemberitahuan ini mengganggu kesibukan ${sapaan}, namun hal ini merupakan upaya kami untuk memberikan pelayanan terbaik kepada pelanggan kami.\n\n`;
 
@@ -484,7 +496,7 @@ const PanelWhatsapp = () => {
         setUpdatingIds(prev => new Set(prev).add(item.id));
         try {
             const salam = getSalam();
-            const sapaan = await guessGender(item.nama);
+            const sapaan = "Bapak/Ibu"; // Hemat kredit
             let pesan = `${salam} ${sapaan} *${item.nama}*,\n\n`;
             pesan += `Kami dari Mitsubishi Bintaro ingin mengkonfirmasi ketidakhadiran ${sapaan} untuk Booking Service hari ini.\n\n`;
             pesan += `Apakah ada rencana *Reschedule* atau bagaimana kelanjutannya?\n`;
