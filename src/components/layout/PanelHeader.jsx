@@ -243,11 +243,10 @@ const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
 
     const fetchNewCustomers = async () => {
         try {
-            const res = await fetch('https://runner.cuma.click/api/notifications/customers');
-            const data = await res.json();
-            if (Array.isArray(data)) {
-                const newCusts = data.filter(c => c.status === 'New');
-                setNewCustomerNotifs(newCusts);
+            const res = await fetch('https://runner.csdwindo.com/api/public_notif.php');
+            const result = await res.json();
+            if (result.status === 'success' && Array.isArray(result.data)) {
+                setNewCustomerNotifs(result.data);
             }
         } catch (error) {
             console.error('Failed to fetch new customers:', error);
@@ -513,25 +512,27 @@ const PanelHeader = ({ sidebarOpen, setSidebarOpen }) => {
                                                         <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Aktivasi Runner Baru</span>
                                                     </div>
                                                     {newCustomerNotifs.map((notif) => (
-                                                        <div
+                                                        <a
                                                             key={`cust-${notif.id}`}
-                                                            onClick={() => window.open('https://runner.cuma.click/dealer', '_blank')}
-                                                            className="p-4 border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer"
+                                                            href={`https://runner.csdwindo.com/dealer/customers/${notif.customer_id}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="block p-4 border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer"
                                                         >
                                                             <div className="flex gap-3">
                                                                 <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-200">
                                                                     <MapPin size={18} />
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-sm font-bold text-[#111111]">{notif.nama}</p>
-                                                                    <p className="text-[11px] font-mono font-bold text-gray-500 mt-0.5">{notif.telp}</p>
-                                                                    <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{notif.company}</p>
+                                                                    <p className="text-sm font-bold text-[#111111]">{notif.jenis_tiket}</p>
+                                                                    <p className="text-[11px] font-mono font-bold text-gray-500 mt-0.5">{notif.kode}</p>
+                                                                    <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{notif.perusahaan}</p>
                                                                     <p className="text-[9px] text-gray-400 mt-1 flex items-center gap-1 font-medium">
                                                                         <Clock size={10} /> {new Date(notif.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </a>
                                                     ))}
                                                 </>
                                             )}

@@ -87,7 +87,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, onRunnerCli
             return;
         }
         setLoadingRunner(true);
-        fetch(`https://runner.cuma.click/api/vehicles/${data.rangka}`)
+        fetch(`https://runner.csdwindo.com/api/vehicles/${data.rangka}`)
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success' && res.data) {
@@ -107,9 +107,9 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, onRunnerCli
 
         if (runnerDataLocal) {
             return (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); if (onRunnerClick) onRunnerClick(runnerDataLocal); }} 
-                    className="inline-flex items-center justify-center p-1 bg-red-50 text-[#E60012] rounded hover:bg-[#E60012] hover:text-white transition-colors ml-2" 
+                <button
+                    onClick={(e) => { e.stopPropagation(); if (onRunnerClick) onRunnerClick(runnerDataLocal); }}
+                    className="inline-flex items-center justify-center p-1 bg-red-50 text-[#E60012] rounded hover:bg-[#E60012] hover:text-white transition-colors ml-2"
                     title="Lihat Data KTB Runner"
                 >
                     <MapPin size={14} />
@@ -121,9 +121,9 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, onRunnerCli
         const waNumber = data?.telp?.startsWith('0') ? `62${data.telp.substring(1)}` : data?.telp;
 
         return (
-            <a 
+            <a
                 href={`https://wa.me/${waNumber}?text=${waText}`}
-                target="_blank" 
+                target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center justify-center p-1 bg-green-50 text-green-600 rounded hover:bg-green-600 hover:text-white transition-colors ml-2"
@@ -316,13 +316,13 @@ const SalesSurveyKTB = () => {
         try {
             const chunkSize = 10;
             const runnerStatuses = {};
-            
+
             for (let i = 0; i < surveys.length; i += chunkSize) {
                 const chunk = surveys.slice(i, i + chunkSize);
                 await Promise.all(chunk.map(async (item) => {
                     if (!item.rangka) return;
                     try {
-                        const res = await fetch(`https://runner.cuma.click/api/vehicles/${item.rangka}`);
+                        const res = await fetch(`https://runner.csdwindo.com/api/vehicles/${item.rangka}`);
                         const data = await res.json();
                         if (data.status === 'success' && data.data?.vehicle?.status) {
                             runnerStatuses[item.rangka] = data.data.vehicle.status;
@@ -348,7 +348,7 @@ const SalesSurveyKTB = () => {
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Survey KTB");
-            
+
             const fileName = `Data_Survey_KTB_${month || 'All'}.xlsx`;
             XLSX.writeFile(workbook, fileName);
             showToast('Excel berhasil didownload');
@@ -406,7 +406,7 @@ const SalesSurveyKTB = () => {
                 // Filter bulan: bulan ini adalah semua data PKT dengan pkt_date bulan sebelumnya
                 fetchedData = fetchedData.filter(item => {
                     const isSurveyed = ['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'KOMPLEN', 'SARAN', 'TIDAK DIANGKAT', 'NOMOR SALAH', 'DITOLAK/REJECT', 'PERJANJIAN', 'SALAH SAMBUNG'].includes(item.status);
-                    
+
                     // We only want items that are at least PKT
                     if (item.status !== 'PKT' && !isSurveyed) return false;
 
@@ -468,7 +468,7 @@ const SalesSurveyKTB = () => {
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center">
                     {adminUser?.role === 'staff' && (
                         <button onClick={handleDownloadExcel} className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-bold shadow-sm transition-colors h-10 mr-1" disabled={isLoading}>
-                             <FileText size={16} /> Download Excel
+                            <FileText size={16} /> Download Excel
                         </button>
                     )}
                     <div className="flex items-center gap-1 bg-white border border-[#E5E5E5] p-1 rounded w-fit relative" ref={monthPickerRef}>
