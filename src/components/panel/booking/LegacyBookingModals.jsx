@@ -201,7 +201,7 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
             const res = await fetch(`https://csdwindo.com/api/panel/sales_survey.php?action=list&search=${encodeURIComponent(cleanNopol)}`);
             const json = await res.json();
             if (json.status && json.data && json.data.length > 0) {
-                const match = json.data.find(item => 
+                const match = json.data.find(item =>
                     item.stnk?.replace(/\s/g, '').toUpperCase() === cleanNopol ||
                     item.nopol?.replace(/\s/g, '').toUpperCase() === cleanNopol
                 );
@@ -287,7 +287,7 @@ Buatkan draft pesannya sekarang:`;
                     'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'google/gemini-2.0-flash-lite-001',
+                    model: 'google/gemini-2.5-flash-lite',
                     messages: [
                         { role: 'user', content: systemPrompt }
                     ],
@@ -872,30 +872,27 @@ export const LegacyFormModal = ({ isOpen, onClose, initialData, onSave, isLoadin
 
                     <div className="p-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                         {!initialData && consumerInfo && (
-                            <div className={`mb-6 p-4 rounded-lg border-l-4 shadow-sm flex items-start gap-3 ${
-                                consumerInfo.prioritas === 3 ? 'bg-red-50 border-red-500' :
+                            <div className={`mb-6 p-4 rounded-lg border-l-4 shadow-sm flex items-start gap-3 ${consumerInfo.prioritas === 3 ? 'bg-red-50 border-red-500' :
                                 consumerInfo.prioritas === 2 ? 'bg-green-50 border-green-500' :
-                                'bg-blue-50 border-blue-500'
-                            }`}>
-                                <User size={20} className={`shrink-0 mt-0.5 ${
-                                    consumerInfo.prioritas === 3 ? 'text-red-600' :
+                                    'bg-blue-50 border-blue-500'
+                                }`}>
+                                <User size={20} className={`shrink-0 mt-0.5 ${consumerInfo.prioritas === 3 ? 'text-red-600' :
                                     consumerInfo.prioritas === 2 ? 'text-green-600' :
-                                    'text-blue-600'
-                                }`} />
+                                        'text-blue-600'
+                                    }`} />
                                 <div>
-                                    <h4 className={`font-bold mb-1 ${
-                                        consumerInfo.prioritas === 3 ? 'text-red-800' :
+                                    <h4 className={`font-bold mb-1 ${consumerInfo.prioritas === 3 ? 'text-red-800' :
                                         consumerInfo.prioritas === 2 ? 'text-green-800' :
-                                        'text-blue-800'
-                                    }`}>
+                                            'text-blue-800'
+                                        }`}>
                                         Info Konsumen: {
                                             consumerInfo.prioritas === 3 ? 'Perlu Perhatian Khusus' :
-                                            consumerInfo.prioritas === 2 ? 'Loyal' : 'Biasa'
+                                                consumerInfo.prioritas === 2 ? 'Loyal' : 'Biasa'
                                         }
                                     </h4>
                                     {consumerInfo.lastServiceJenis ? (
                                         <p className="text-sm text-gray-700">
-                                            Service Terakhir: <span className="font-bold">{consumerInfo.lastServiceJenis}</span> 
+                                            Service Terakhir: <span className="font-bold">{consumerInfo.lastServiceJenis}</span>
                                             {consumerInfo.lastServiceTanggal && ` (${new Date(consumerInfo.lastServiceTanggal).toLocaleDateString('id-ID')})`}
                                         </p>
                                     ) : (

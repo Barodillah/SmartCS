@@ -72,10 +72,12 @@ $checkKonsumen = mysqli_query($conn, "SELECT id FROM konsumen WHERE nopol = '{$n
 $konsumenInserted = false;
 if ($checkKonsumen && mysqli_num_rows($checkKonsumen) === 0) {
     // Konsumen belum ada, simpan baru
-    $stmt = mysqli_prepare($conn, "INSERT INTO konsumen (nopol, kendaraan, nama, telp, one_year, five_year, prioritas) VALUES (?, ?, ?, ?, NULL, NULL, 0)");
-    mysqli_stmt_bind_param($stmt, "ssss", $nopol, $kendaraan, $nama, $telp);
-    $konsumenInserted = mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
+    $stmt = mysqli_prepare($conn, "INSERT INTO konsumen (nopol, kendaraan, nama, telp) VALUES (?, ?, ?, ?)");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "ssss", $nopol, $kendaraan, $nama, $telp);
+        $konsumenInserted = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
 }
 
 // ============================================================

@@ -562,10 +562,35 @@ const Cetak = () => {
                             <h3 className="text-xl font-bold font-['MMC']" style={{ fontFamily: '"MMC", sans-serif' }}>
                                 <strong>ABSENSI KEGIATAN DEALER{absensiForm.divisi !== 'ALL' ? ` ${absensiForm.divisi}` : ''}</strong>
                             </h3>
-                            <div className="flex justify-between mt-4 px-4 text-sm">
-                                <p><strong>Tanggal </strong>: <span className="underline">{formatDateLong(absensiForm.date)}</span></p>
-                                <p><strong>Kegiatan </strong>: <span className="underline">{absensiForm.kegiatan}</span></p>
-                                <p><strong>Materi </strong>: <span className="underline">{absensiForm.materi}</span></p>
+                            <div className="grid grid-cols-2 gap-4 mt-4 px-4 text-sm text-left">
+                                <table className="w-full">
+                                    <tbody>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Dealer</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">Dwindo Bintaro - 100066</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Tanggal</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">{formatDateLong(absensiForm.date)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table className="w-full">
+                                    <tbody>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Kegiatan</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">{absensiForm.kegiatan}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Materi</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">{absensiForm.materi}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -580,7 +605,7 @@ const Cetak = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {Array.from({ length: 11 }).map((_, i) => {
+                                {Array.from({ length: 10 }).map((_, i) => {
                                     const n1 = i * 2 + 1;
                                     const n2 = i * 2 + 2;
                                     return (
@@ -610,14 +635,18 @@ const Cetak = () => {
                         </table>
 
                         <div className="mt-8 flex justify-between px-4">
-                            <div>
-                                <p className="mb-12">Tangerang, {formatDateLong(absensiForm.date)}</p>
-                                <p className="font-bold underline">M. Munir</p>
-                                <p className="text-sm">Branch Manager</p>
-                            </div>
+                            {(absensiForm.divisi === 'MMKSI' || absensiForm.divisi === 'ALL') && (
+                                <div>
+                                    <p className="mb-12">Tangerang, {formatDateLong(absensiForm.date)}</p>
+                                    <p className="font-bold underline">M. Munir</p>
+                                    <p className="text-sm">Branch Manager</p>
+                                </div>
+                            )}
                             {(absensiForm.divisi === 'KTB' || absensiForm.divisi === 'ALL') && (
-                                <div className="text-center">
-                                    <p className="mb-12 opacity-0">spacer</p>
+                                <div className={absensiForm.divisi === 'ALL' ? 'text-center' : ''}>
+                                    <p className={absensiForm.divisi === 'ALL' ? 'mb-12 opacity-0' : 'mb-12'}>
+                                        {absensiForm.divisi === 'ALL' ? 'spacer' : `Tangerang, ${formatDateLong(absensiForm.date)}`}
+                                    </p>
                                     <p className="font-bold underline">Jo Herman</p>
                                     <p className="text-sm">Branch Manager</p>
                                 </div>
@@ -625,8 +654,7 @@ const Cetak = () => {
                         </div>
                     </div>
 
-                    {/* Page Break for Print */}
-                    <div className="page-break"></div>
+                    {/* Page Break for Print (Handled automatically by CSS named pages) */}
 
                     {/* Page 2: Catatan Kegiatan (LANDSCAPE) */}
                     <div className="p-4 catatan-view">
@@ -634,10 +662,35 @@ const Cetak = () => {
                             <h3 className="text-xl font-bold font-['MMC']" style={{ fontFamily: '"MMC", sans-serif' }}>
                                 <strong>CATATAN KEGIATAN{absensiForm.divisi !== 'ALL' ? ` ${absensiForm.divisi}` : ''}</strong>
                             </h3>
-                            <div className="flex justify-between mt-4 px-4 text-sm">
-                                <p><strong>Tanggal </strong>: <span className="underline">{formatDateLong(absensiForm.date)}</span></p>
-                                <p><strong>Kegiatan </strong>: <span className="underline">{absensiForm.kegiatan}</span></p>
-                                <p><strong>Materi </strong>: <span className="underline">{absensiForm.materi}</span></p>
+                            <div className="grid grid-cols-2 gap-4 mt-4 px-4 text-sm text-left">
+                                <table className="w-full">
+                                    <tbody>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Dealer</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">Dwindo Bintaro - 100066</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Tanggal</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">{formatDateLong(absensiForm.date)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table className="w-full">
+                                    <tbody>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Kegiatan</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">{absensiForm.kegiatan}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="font-bold w-20 align-top">Materi</td>
+                                            <td className="w-4 align-top">:</td>
+                                            <td className="underline align-top">{absensiForm.materi}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -663,14 +716,18 @@ const Cetak = () => {
                         </table>
 
                         <div className="mt-8 flex justify-between px-4">
-                            <div>
-                                <p className="mb-12">Tangerang, {formatDateLong(absensiForm.date)}</p>
-                                <p className="font-bold underline">M. Munir</p>
-                                <p className="text-sm">Branch Manager</p>
-                            </div>
+                            {(absensiForm.divisi === 'MMKSI' || absensiForm.divisi === 'ALL') && (
+                                <div>
+                                    <p className="mb-12">Tangerang, {formatDateLong(absensiForm.date)}</p>
+                                    <p className="font-bold underline">M. Munir</p>
+                                    <p className="text-sm">Branch Manager</p>
+                                </div>
+                            )}
                             {(absensiForm.divisi === 'KTB' || absensiForm.divisi === 'ALL') && (
-                                <div className="text-center">
-                                    <p className="mb-12 opacity-0">spacer</p>
+                                <div className={absensiForm.divisi === 'ALL' ? 'text-center' : ''}>
+                                    <p className={absensiForm.divisi === 'ALL' ? 'mb-12 opacity-0' : 'mb-12'}>
+                                        {absensiForm.divisi === 'ALL' ? 'spacer' : `Tangerang, ${formatDateLong(absensiForm.date)}`}
+                                    </p>
                                     <p className="font-bold underline">Jo Herman</p>
                                     <p className="text-sm">Branch Manager</p>
                                 </div>

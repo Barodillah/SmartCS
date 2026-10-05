@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { parseChatMarkdown } from '../../utils/markdownParser';
 import { CATEGORIES, SUB_PARAMS, fetchBookingData, fetchKonsumenData, fetchPotensiData, fetchDissatisfactionData, fetchSalesSurveyData, fetchSurveyKTBData, getSystemPrompt } from './commandCenterConfig';
 
-const AI_MODEL = 'qwen/qwen3-235b-a22b-2507';
+const AI_MODEL = 'google/gemini-2.5-flash-lite';
 const CACHE_KEY = 'ai_insight_conv';
 const CACHE_TIME_KEY = 'ai_insight_time';
 
@@ -21,11 +21,11 @@ const ChurnPrediction = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [conversation, setConversation] = useState([]);
     const [showParamModal, setShowParamModal] = useState(false);
-    
+
     // Parameter Modal State
     const [modalStep, setModalStep] = useState(1);
     const [analysisParams, setAnalysisParams] = useState({ category: '', depth: 'Standar' });
-    
+
     const [lastUpdated, setLastUpdated] = useState(null);
     const [loadingStatus, setLoadingStatus] = useState('');
     const [followUpInput, setFollowUpInput] = useState('');
@@ -76,7 +76,7 @@ const ChurnPrediction = () => {
         try {
             setLoadingStatus(`Mengambil data ${CATEGORIES.find(c => c.id === analysisParams.category)?.label || ''}...`);
             let userMsg = '';
-            
+
             if (analysisParams.category === 'booking' || analysisParams.category === 'semua') {
                 setLoadingStatus('Mengambil data Booking & Kapasitas...');
                 userMsg += await fetchBookingData(analysisParams) + '\\n\\n';
@@ -367,7 +367,7 @@ const ChurnPrediction = () => {
                         className="fixed inset-0 bg-black/40 z-[130] backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowParamModal(false)}>
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
                             className={`bg-white rounded-xl shadow-2xl w-full overflow-hidden flex flex-col ${modalStep === 1 ? 'max-w-4xl max-h-[90vh]' : 'max-w-md'}`} onClick={e => e.stopPropagation()}>
-                            
+
                             {modalStep === 1 ? (
                                 <>
                                     <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
@@ -408,25 +408,25 @@ const ChurnPrediction = () => {
                                         <button onClick={() => setModalStep(1)} className="p-1.5 hover:bg-gray-100 rounded text-gray-500 transition-colors"><ChevronRight size={18} className="rotate-180" /></button>
                                         <h3 className="font-display font-bold text-lg text-[#111111]">Parameter Detail</h3>
                                     </div>
-                                    
+
                                     <div className="space-y-4 mb-6">
                                         {SUB_PARAMS[analysisParams.category]?.map(param => (
                                             <div key={param.key}>
                                                 <label className="block text-sm font-bold text-gray-700 mb-1">{param.label}</label>
                                                 {param.type === 'select' ? (
-                                                    <select value={analysisParams[param.key]} onChange={e => setAnalysisParams({...analysisParams, [param.key]: e.target.value})}
+                                                    <select value={analysisParams[param.key]} onChange={e => setAnalysisParams({ ...analysisParams, [param.key]: e.target.value })}
                                                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00B2A9]">
                                                         {param.options.map(opt => <option key={opt.v} value={opt.v}>{opt.l}</option>)}
                                                     </select>
                                                 ) : param.type === 'month' ? (
-                                                    <input type="month" value={analysisParams[param.key]} onChange={e => setAnalysisParams({...analysisParams, [param.key]: e.target.value})}
+                                                    <input type="month" value={analysisParams[param.key]} onChange={e => setAnalysisParams({ ...analysisParams, [param.key]: e.target.value })}
                                                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00B2A9]" />
                                                 ) : null}
                                             </div>
                                         ))}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-1">Kedalaman Analisis</label>
-                                            <select value={analysisParams.depth} onChange={e => setAnalysisParams({...analysisParams, depth: e.target.value})}
+                                            <select value={analysisParams.depth} onChange={e => setAnalysisParams({ ...analysisParams, depth: e.target.value })}
                                                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00B2A9]">
                                                 <option value="Standar">Standar (Ringkasan Eksekutif)</option>
                                                 <option value="Mendalam">Mendalam (Detail & Komprehensif)</option>

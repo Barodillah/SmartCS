@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart3, ChevronLeft, ChevronRight, Calendar, Users, Star, Info, AlertTriangle } from 'lucide-react';
+import { BarChart3, ChevronLeft, ChevronRight, Calendar, Users, Star, Info, AlertTriangle, PieChart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 
@@ -17,7 +17,7 @@ const SalesScoreTab = ({ month }) => {
                 const params = new URLSearchParams({ bulan: month });
                 const res = await fetch(`https://csdwindo.com/api/panel/sales_score.php?${params}`);
                 const json = await res.json();
-                
+
                 if (json.status && json.data) {
                     setQualified(json.data.qualified || []);
                     setNonQualified(json.data.non_qualified || []);
@@ -43,7 +43,7 @@ const SalesScoreTab = ({ month }) => {
                     <thead className="bg-gray-50 border-b border-[#E5E5E5]">
                         <tr className="text-[11px] font-black uppercase tracking-wider text-gray-600">
                             {showRank && <th className="p-3 text-center border-r border-gray-200 w-12">Rank</th>}
-                            <th className="p-3 border-r border-gray-200 text-center w-24">Skor<br/>Akhir</th>
+                            <th className="p-3 border-r border-gray-200 text-center w-24">Skor<br />Akhir</th>
                             <th className="p-3 border-r border-gray-200 w-48">Sales</th>
                             <th className="p-3 border-r border-gray-200 w-64">
                                 <div className="flex flex-col items-center">
@@ -112,10 +112,10 @@ const SalesScoreTab = ({ month }) => {
                                             )}
                                         </div>
                                     </td>
-                                    
-                                    <td 
+
+                                    <td
                                         className="p-3 border-r border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors group"
-                                        onClick={() => setSelectedSurveyDetails({ sales: row.sales, details: row.detail_survey })}
+                                        onClick={() => setSelectedSurveyDetails({ sales: row.sales, details: row.detail_survey, nps_details: row.detail_nps })}
                                         title="Klik untuk melihat detail status survey"
                                     >
                                         <div className="flex items-center justify-between mb-1 group-hover:scale-105 transition-transform origin-left">
@@ -123,15 +123,15 @@ const SalesScoreTab = ({ month }) => {
                                             <span className="text-[10px] text-gray-500 font-medium">{row.surveyed}/{row.total} Tersurvey</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full ${row.ratio >= 80 ? 'bg-green-500' : row.ratio >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                                            <div
+                                                className={`h-full ${row.ratio >= 80 ? 'bg-green-500' : row.ratio >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
                                                 style={{ width: `${row.ratio}%` }}
                                             ></div>
                                         </div>
                                     </td>
 
                                     <td className="p-3 border-r border-gray-100">
-                                        <div 
+                                        <div
                                             className="flex items-center justify-center gap-1 cursor-pointer hover:scale-105 transition-transform"
                                             onClick={() => setSelectedNpsDetails({ sales: row.sales, details: row.detail_nps })}
                                             title="Klik untuk melihat detail NPS"
@@ -153,11 +153,10 @@ const SalesScoreTab = ({ month }) => {
 
                                     <td className="p-3 text-center border-r border-gray-100">
                                         <div className="flex flex-col items-center justify-center">
-                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-black ${
-                                                row.nps >= 50 ? 'bg-green-100 text-green-700' : 
-                                                row.nps >= 0 ? 'bg-blue-100 text-blue-700' : 
-                                                'bg-red-100 text-red-700'
-                                            }`}>
+                                            <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-black ${row.nps >= 50 ? 'bg-green-100 text-green-700' :
+                                                    row.nps >= 0 ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-red-100 text-red-700'
+                                                }`}>
                                                 {row.nps > 0 ? `+${row.nps}` : row.nps}
                                             </span>
                                         </div>
@@ -238,11 +237,10 @@ const SalesScoreTab = ({ month }) => {
                                                         ) : '-'}
                                                     </td>
                                                     <td className="p-3 text-center">
-                                                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                                            item.kategori === 'promotor' ? 'bg-green-100 text-green-700' :
-                                                            item.kategori === 'passive' ? 'bg-amber-100 text-amber-700' :
-                                                            'bg-red-100 text-red-700'
-                                                        }`}>
+                                                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${item.kategori === 'promotor' ? 'bg-green-100 text-green-700' :
+                                                                item.kategori === 'passive' ? 'bg-amber-100 text-amber-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                            }`}>
                                                             {item.kategori}
                                                         </span>
                                                     </td>
@@ -290,35 +288,57 @@ const SalesScoreTab = ({ month }) => {
                                             <th className="p-3">Nama Konsumen</th>
                                             <th className="p-3">Kendaraan / Rangka</th>
                                             <th className="p-3 text-center">Status Survey</th>
+                                            <th className="p-3 text-center">NPS</th>
                                         </tr>
                                     </thead>
                                     <tbody className="text-sm">
                                         {selectedSurveyDetails.details && selectedSurveyDetails.details.length > 0 ? (
-                                            selectedSurveyDetails.details.map((item, idx) => (
-                                                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 last:border-0">
-                                                    <td className="p-3 pl-4 text-gray-500 font-bold">{idx + 1}</td>
-                                                    <td className="p-3 font-bold text-[#111111]">{item.nama}</td>
-                                                    <td className="p-3">
-                                                        <div className="font-bold text-gray-800 text-xs">{item.kendaraan}</div>
-                                                        <div className="text-[10px] text-gray-500 font-medium">{item.rangka}</div>
-                                                    </td>
-                                                    <td className="p-3 text-center">
-                                                        <div className="flex flex-col items-center justify-center">
-                                                            <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 ${
-                                                                item.status_survey === 'Sudah' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                                                            }`}>
-                                                                {item.status_survey}
-                                                            </span>
-                                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">
-                                                                {item.status_detail}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
+                                            selectedSurveyDetails.details.map((item, idx) => {
+                                                const npsItem = selectedSurveyDetails.nps_details?.find(n => n.rangka === item.rangka);
+                                                return (
+                                                    <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 last:border-0">
+                                                        <td className="p-3 pl-4 text-gray-500 font-bold">{idx + 1}</td>
+                                                        <td className="p-3 font-bold text-[#111111]">{item.nama}</td>
+                                                        <td className="p-3">
+                                                            <div className="font-bold text-gray-800 text-xs">{item.kendaraan}</div>
+                                                            <div className="text-[10px] text-gray-500 font-medium">{item.rangka}</div>
+                                                        </td>
+                                                        <td className="p-3 text-center">
+                                                            <div className="flex flex-col items-center justify-center">
+                                                                <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 ${item.status_survey === 'Sudah' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                                                    }`}>
+                                                                    {item.status_survey}
+                                                                </span>
+                                                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">
+                                                                    {item.status_detail}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 text-center">
+                                                            {npsItem ? (
+                                                                <div className="flex flex-col items-center justify-center">
+                                                                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-0.5 ${npsItem.kategori === 'promotor' ? 'bg-green-100 text-green-700' :
+                                                                            npsItem.kategori === 'passive' ? 'bg-amber-100 text-amber-700' :
+                                                                                'bg-red-100 text-red-700'
+                                                                        }`}>
+                                                                        {npsItem.kategori}
+                                                                    </span>
+                                                                    {npsItem.score !== null && (
+                                                                        <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">
+                                                                            Score: {npsItem.score}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-gray-400 font-bold text-xs">-</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })
                                         ) : (
                                             <tr>
-                                                <td colSpan={4} className="p-8 text-center text-gray-400 font-bold">Belum ada detail data konsumen</td>
+                                                <td colSpan={5} className="p-8 text-center text-gray-400 font-bold">Belum ada detail data konsumen</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -328,6 +348,184 @@ const SalesScoreTab = ({ month }) => {
                     </div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+};
+
+const SurveySamplingTab = ({ month }) => {
+    const [loading, setLoading] = useState(false);
+    const [samplingData, setSamplingData] = useState({
+        totalData: 0,
+        potensialSurvey: 0,
+        masukNPS: 0,
+        semuaStatus: {}
+    });
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const params = new URLSearchParams({ bulan: month });
+                const res = await fetch(`https://csdwindo.com/api/panel/sales_score.php?${params}`);
+                const json = await res.json();
+
+                if (json.status && json.data) {
+                    let total = 0;
+                    let potensialSurvey = 0;
+                    let npsCount = 0;
+                    const semuaStatusTally = {};
+
+                    const processList = (list) => {
+                        list.forEach(item => {
+                            total += item.total;
+                            npsCount += item.detail_nps ? item.detail_nps.length : 0;
+
+                            if (item.detail_survey) {
+                                item.detail_survey.forEach(survey => {
+                                    const status = survey.status_detail ? survey.status_detail.toUpperCase() : 'BLANK';
+                                    
+                                    if (!['NOMOR SALAH', 'PKT', 'SALAH SAMBUNG'].includes(status)) {
+                                        potensialSurvey += 1;
+                                    }
+                                    
+                                    semuaStatusTally[status] = (semuaStatusTally[status] || 0) + 1;
+                                });
+                            }
+                        });
+                    };
+
+                    processList(json.data.qualified || []);
+                    processList(json.data.non_qualified || []);
+
+                    setSamplingData({
+                        totalData: total,
+                        potensialSurvey: potensialSurvey,
+                        masukNPS: npsCount,
+                        semuaStatus: semuaStatusTally
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to fetch sampling score:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [month]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500 font-bold">
+                <div className="w-8 h-8 border-4 border-[#E60012] border-t-transparent rounded-full animate-spin mb-4"></div>
+                Memuat Data Survey Sampling...
+            </div>
+        );
+    }
+
+    // Prepare Doughnut Chart Data
+    const donutLabels = Object.keys(samplingData.semuaStatus).sort((a, b) => samplingData.semuaStatus[b] - samplingData.semuaStatus[a]);
+    const donutValues = donutLabels.map(l => samplingData.semuaStatus[l]);
+    const totalDonut = donutValues.reduce((a, b) => a + b, 0);
+
+    let currentPct = 0;
+    const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#64748b', '#ec4899', '#14b8a6'];
+    const gradientStops = donutValues.map((val, idx) => {
+        const pct = (val / totalDonut) * 100;
+        const color = colors[idx % colors.length];
+        const stop = `${color} ${currentPct}% ${currentPct + pct}%`;
+        currentPct += pct;
+        return stop;
+    }).join(', ');
+
+    const conicBackground = totalDonut > 0 ? `conic-gradient(${gradientStops})` : 'conic-gradient(#e5e7eb 0% 100%)';
+
+    return (
+        <div className="animate-in fade-in duration-300 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Card 1: Total Data */}
+                <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
+                    <h4 className="font-display font-bold text-md text-[#111111] mb-6">Ringkasan Data Survey</h4>
+
+                    <div className="space-y-6">
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-600">Total Data (Filter Bulan)</span>
+                                <span className="text-2xl font-black text-[#111111]">{samplingData.totalData}</span>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 w-full rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-600">Potensial Survey</span>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black text-[#111111]">{samplingData.potensialSurvey}</span>
+                                    <span className="text-xs text-gray-500 font-medium ml-2">({samplingData.totalData > 0 ? Math.round((samplingData.potensialSurvey / samplingData.totalData) * 100) : 0}%)</span>
+                                </div>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${samplingData.totalData > 0 ? (samplingData.potensialSurvey / samplingData.totalData) * 100 : 0}%` }}></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-600">Tersurvey (NPS)</span>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black text-[#111111]">{samplingData.masukNPS}</span>
+                                    <span className="text-xs text-gray-500 font-medium ml-2">({samplingData.totalData > 0 ? Math.round((samplingData.masukNPS / samplingData.totalData) * 100) : 0}%)</span>
+                                </div>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${samplingData.totalData > 0 ? (samplingData.masukNPS / samplingData.totalData) * 100 : 0}%` }}></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Card 2: Semua Status */}
+                <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm flex flex-col">
+                    <h4 className="font-display font-bold text-md text-[#111111] mb-6">Komposisi Semua Status Survey</h4>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-8 flex-1">
+                        {totalDonut === 0 ? (
+                            <div className="w-full h-full flex items-center justify-center text-sm text-gray-400 border border-dashed rounded-lg py-12">Tidak ada data</div>
+                        ) : (
+                            <>
+                                <div className="relative w-48 h-48 shrink-0">
+                                    <div className="w-full h-full rounded-full" style={{ background: conicBackground }}></div>
+                                    <div className="absolute inset-4 bg-white rounded-full flex flex-col items-center justify-center">
+                                        <span className="text-3xl font-black text-[#111111]">{totalDonut}</span>
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 w-full space-y-3">
+                                    {donutLabels.map((label, idx) => {
+                                        const color = colors[idx % colors.length];
+                                        const val = samplingData.semuaStatus[label];
+                                        const pct = Math.round((val / totalDonut) * 100);
+                                        return (
+                                            <div key={label} className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
+                                                    <span className="font-bold text-gray-700">{label}</span>
+                                                </div>
+                                                <div className="font-black text-[#111111]">
+                                                    {val} <span className="text-gray-400 font-medium text-xs ml-1">({pct}%)</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
@@ -343,7 +541,7 @@ const SalesPerformaTab = ({ month }) => {
                 const params = new URLSearchParams({ bulan: month });
                 const res = await fetch(`https://csdwindo.com/api/panel/sales_score.php?${params}`);
                 const json = await res.json();
-                
+
                 if (json.status && json.data) {
                     setPerformaData(json.data.performa || []);
                 } else {
@@ -390,15 +588,15 @@ const SalesPerformaTab = ({ month }) => {
         <div className="animate-in fade-in duration-300">
             <div className="mb-8">
                 <h3 className="font-display font-bold text-lg mb-4 text-[#111111]">Ranking Performa Sales (Evaluasi Follow Up)</h3>
-                
+
                 <div className="overflow-x-auto rounded-xl border border-[#E5E5E5] shadow-sm">
                     <table className="w-full text-left border-collapse bg-white">
                         <thead className="bg-gray-50 border-b border-[#E5E5E5]">
                             <tr className="text-[11px] font-black uppercase tracking-wider text-gray-600">
                                 <th className="p-3 text-center border-r border-gray-200">Rank</th>
-                                <th className="p-3 border-r border-gray-200 text-center">Skor<br/>Performa</th>
+                                <th className="p-3 border-r border-gray-200 text-center">Skor<br />Performa</th>
                                 <th className="p-3 border-r border-gray-200">Sales</th>
-                                <th className="p-3 border-r border-gray-200 text-center">Total<br/>Konsumen</th>
+                                <th className="p-3 border-r border-gray-200 text-center">Total<br />Konsumen</th>
                                 <th className="p-3 border-r border-gray-200">
                                     <div className="flex flex-col items-center">
                                         <span>Tingkat Validitas Data</span>
@@ -417,7 +615,7 @@ const SalesPerformaTab = ({ month }) => {
                                         <span className="text-[9px] text-gray-400 font-medium normal-case">(Kehadiran Delivery)</span>
                                     </div>
                                 </th>
-                                <th className="p-3 text-center border-r border-gray-200">Tingkat<br/>Komplain</th>
+                                <th className="p-3 text-center border-r border-gray-200">Tingkat<br />Komplain</th>
                             </tr>
                         </thead>
                         <tbody className="text-sm">
@@ -450,15 +648,15 @@ const SalesPerformaTab = ({ month }) => {
                                         </td>
                                         <td className="p-3 font-bold text-[#111111] border-r border-gray-100 whitespace-nowrap">{row.sales}</td>
                                         <td className="p-3 text-center font-bold border-r border-gray-100">{row.total_konsumen}</td>
-                                        
+
                                         <td className="p-3 border-r border-gray-100 w-48">
                                             <div className="flex items-center justify-between mb-1">
                                                 <span className="text-xs font-bold text-gray-700">{row.valid_rate}%</span>
                                                 <span className="text-[10px] text-gray-500 font-medium">{row.total_konsumen - row.invalid_numbers}/{row.total_konsumen} Valid</span>
                                             </div>
                                             <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full ${row.valid_rate >= 90 ? 'bg-green-500' : row.valid_rate >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                                                <div
+                                                    className={`h-full ${row.valid_rate >= 90 ? 'bg-green-500' : row.valid_rate >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
                                                     style={{ width: `${row.valid_rate}%` }}
                                                 ></div>
                                             </div>
@@ -476,8 +674,8 @@ const SalesPerformaTab = ({ month }) => {
                                                 <span className="text-[10px] text-gray-500 font-medium">{row.pkt_yes} Hadir / {row.pkt_yes + row.pkt_no} Total</span>
                                             </div>
                                             <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full ${row.pkt_compliance >= 80 ? 'bg-blue-500' : row.pkt_compliance >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                                                <div
+                                                    className={`h-full ${row.pkt_compliance >= 80 ? 'bg-blue-500' : row.pkt_compliance >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
                                                     style={{ width: `${row.pkt_compliance}%` }}
                                                 ></div>
                                             </div>
@@ -511,7 +709,7 @@ const CSFollowUpTab = ({ month }) => {
                 const params = new URLSearchParams({ bulan: month });
                 const res = await fetch(`https://csdwindo.com/api/panel/sales_score.php?${params}`);
                 const json = await res.json();
-                
+
                 if (json.status && json.data && json.data.cs_performa) {
                     setCsData(json.data.cs_performa);
                 } else {
@@ -546,14 +744,14 @@ const CSFollowUpTab = ({ month }) => {
 
     const { pola_harian } = csData;
     const maxPola = Math.max(...Object.values(pola_harian));
-    
+
     // Hitung persentase kehadiran (Hari Kerja Efektif / Total Hari Kerja Senin-Jumat)
     const kehadiranPct = csData.total_hari_kerja > 0 ? Math.round((csData.hari_kerja_efektif / csData.total_hari_kerja) * 100) : 0;
 
     return (
         <div className="animate-in fade-in duration-300 space-y-6">
             <h3 className="font-display font-bold text-xl text-[#111111]">Produktivitas Staff Follow Up (CS)</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Total Data */}
                 <div className="bg-white border border-[#E5E5E5] rounded-xl p-5 shadow-sm">
@@ -606,7 +804,7 @@ const CSFollowUpTab = ({ month }) => {
                 <div className="space-y-6">
                     <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
                         <h4 className="font-display font-bold text-md text-[#111111] mb-4">Rasio Kontak Efektif</h4>
-                        
+
                         <div className="flex items-end justify-between mb-2">
                             <div>
                                 <div className="text-4xl font-black text-[#111111]">{csData.kontak_efektif_pct}%</div>
@@ -622,22 +820,20 @@ const CSFollowUpTab = ({ month }) => {
                             <div className="bg-blue-500 h-full transition-all duration-1000" style={{ width: `${csData.kontak_efektif_pct}%` }}></div>
                             <div className="bg-red-300 h-full transition-all duration-1000" style={{ width: `${100 - csData.kontak_efektif_pct}%` }}></div>
                         </div>
-                        
+
                         <div className="flex justify-between mt-3 text-xs font-bold">
                             <div className="flex items-center gap-1 text-blue-600"><span className="w-2 h-2 rounded-full bg-blue-500"></span> {csData.kontak_efektif} Kontak Sukses</div>
                             <div className="flex items-center gap-1 text-red-500"><span className="w-2 h-2 rounded-full bg-red-400"></span> {csData.kontak_gagal} Kontak Gagal</div>
                         </div>
                     </div>
 
-                    <div className={`border rounded-xl p-6 shadow-sm ${
-                        csData.skor_produktivitas === 'Tinggi' ? 'bg-green-50 border-green-200' :
-                        csData.skor_produktivitas === 'Sedang' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'
-                    }`}>
+                    <div className={`border rounded-xl p-6 shadow-sm ${csData.skor_produktivitas === 'Tinggi' ? 'bg-green-50 border-green-200' :
+                            csData.skor_produktivitas === 'Sedang' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'
+                        }`}>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className={`p-2 rounded-lg ${
-                                csData.skor_produktivitas === 'Tinggi' ? 'bg-green-100 text-green-700' :
-                                csData.skor_produktivitas === 'Sedang' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                            }`}>
+                            <div className={`p-2 rounded-lg ${csData.skor_produktivitas === 'Tinggi' ? 'bg-green-100 text-green-700' :
+                                    csData.skor_produktivitas === 'Sedang' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                }`}>
                                 <AlertTriangle size={24} />
                             </div>
                             <div>
@@ -646,11 +842,11 @@ const CSFollowUpTab = ({ month }) => {
                             </div>
                         </div>
                         <p className="text-sm mt-3 font-medium opacity-90 leading-relaxed">
-                            {csData.skor_produktivitas === 'Tinggi' 
+                            {csData.skor_produktivitas === 'Tinggi'
                                 ? "Kinerja sangat baik. Volume harian tinggi dengan response time yang sangat ideal."
-                                : csData.skor_produktivitas === 'Sedang' 
-                                ? "Kinerja cukup baik namun bisa ditingkatkan. Perhatikan akumulasi data di hari tertentu."
-                                : `Konsisten dengan volume harian yang sangat rendah (${csData.avg_follow_up_per_hari} data/hari) dan response time yang lambat (${csData.avg_response_time} hari). Terindikasi penumpukan tugas atau kendala operasional.`
+                                : csData.skor_produktivitas === 'Sedang'
+                                    ? "Kinerja cukup baik namun bisa ditingkatkan. Perhatikan akumulasi data di hari tertentu."
+                                    : `Konsisten dengan volume harian yang sangat rendah (${csData.avg_follow_up_per_hari} data/hari) dan response time yang lambat (${csData.avg_response_time} hari). Terindikasi penumpukan tugas atau kendala operasional.`
                             }
                         </p>
                     </div>
@@ -659,22 +855,22 @@ const CSFollowUpTab = ({ month }) => {
                 {/* Konten Kanan: Pola Kerja Harian */}
                 <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
                     <h4 className="font-display font-bold text-md text-[#111111] mb-6">Pola Kerja Harian</h4>
-                    
+
                     <div className="space-y-4">
                         {Object.entries(pola_harian).map(([hari, jumlah]) => {
                             const pct = maxPola > 0 ? (jumlah / maxPola) * 100 : 0;
                             const totalPct = csData.total_data > 0 ? Math.round((jumlah / csData.total_data) * 100) : 0;
-                            
+
                             // Highlight khusus hari Minggu atau hari dengan aktivitas mencolok
                             const isWeekend = hari === 'Sabtu' || hari === 'Minggu';
                             const barColor = isWeekend ? 'bg-gray-300' : (pct === 100 ? 'bg-[#E60012]' : 'bg-gray-800');
-                            
+
                             return (
                                 <div key={hari} className="flex items-center gap-4">
                                     <div className={`w-16 text-sm font-bold ${isWeekend ? 'text-gray-400' : 'text-gray-700'}`}>{hari}</div>
                                     <div className="flex-1 flex items-center gap-3">
                                         <div className="flex-1 h-6 bg-gray-100 rounded-md overflow-hidden flex items-center">
-                                            <motion.div 
+                                            <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${pct}%` }}
                                                 transition={{ duration: 1, ease: "easeOut" }}
@@ -690,9 +886,9 @@ const CSFollowUpTab = ({ month }) => {
                             );
                         })}
                     </div>
-                    
+
                     <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-600 border border-gray-100">
-                        <strong className="text-[#111111]">Indikasi Analisis: </strong> 
+                        <strong className="text-[#111111]">Indikasi Analisis: </strong>
                         Hari dengan persentase dominan (warna merah) seringkali menunjukkan akumulasi kerja akibat tertunda di hari-hari sebelumnya. Hari Sabtu dan Minggu ditandai abu-abu karena berada di luar 5 hari kerja efektif.
                     </div>
                 </div>
@@ -708,7 +904,7 @@ const DailyTrendChart = ({ data, month }) => {
     const [hoverInfo, setHoverInfo] = useState(null);
     const [year, monthNum] = month.split('-');
     const daysInMonth = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
-    
+
     // Build array of values for each day
     const chartData = Array.from({ length: daysInMonth }, (_, i) => {
         const day = i + 1;
@@ -719,12 +915,12 @@ const DailyTrendChart = ({ data, month }) => {
     });
 
     const maxValue = Math.max(...chartData.map(d => d.val), 5); // min axis 5
-    
+
     const w = 1000;
     const h = 250;
     const padX = 40;
     const padY = 40;
-    
+
     const points = chartData.map((d, i) => {
         const x = padX + (i / (daysInMonth - 1)) * (w - 2 * padX);
         const y = h - padY - (d.val / maxValue) * (h - 2 * padY);
@@ -754,18 +950,18 @@ const DailyTrendChart = ({ data, month }) => {
         <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm col-span-full mt-6">
             <h4 className="font-display font-bold text-md text-[#111111] mb-6">Tren Harian (Bulan {month})</h4>
             <div className="w-full h-64 relative" onMouseLeave={() => setHoverInfo(null)}>
-                
+
                 {/* HTML Tooltip Overlay */}
                 <AnimatePresence>
                     {hoverInfo && (
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, y: 5, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 5, scale: 0.95 }}
                             transition={{ duration: 0.15 }}
                             className="absolute z-10 bg-[#111111] text-white p-3 rounded-lg shadow-xl pointer-events-none"
                             style={{
-                                left: `${(hoverInfo.x / w) * 100}%`, 
+                                left: `${(hoverInfo.x / w) * 100}%`,
                                 top: `${(hoverInfo.y / h) * 100}%`,
                                 transform: 'translate(-50%, -130%)'
                             }}
@@ -802,30 +998,30 @@ const DailyTrendChart = ({ data, month }) => {
                                     <text x={d.x} y={h - padY + 20} textAnchor="middle" className="text-[10px] fill-gray-400 font-medium">{d.day}</text>
                                 )}
                                 {/* Invisible larger circle to increase hover area */}
-                                <circle cx={d.x} cy={d.y} r="12" fill="transparent" 
-                                        onMouseEnter={() => setHoverInfo(d)} 
-                                        className="cursor-pointer" />
+                                <circle cx={d.x} cy={d.y} r="12" fill="transparent"
+                                    onMouseEnter={() => setHoverInfo(d)}
+                                    className="cursor-pointer" />
                                 {/* Visible Dot */}
-                                <circle cx={d.x} cy={d.y} r={d.val > 0 || hoverInfo?.day === d.day ? "4" : "2"} 
-                                        fill={hoverInfo?.day === d.day ? "#111111" : (d.val > 0 ? "#E60012" : "#d1d5db")} 
-                                        className="transition-all pointer-events-none" />
+                                <circle cx={d.x} cy={d.y} r={d.val > 0 || hoverInfo?.day === d.day ? "4" : "2"}
+                                    fill={hoverInfo?.day === d.day ? "#111111" : (d.val > 0 ? "#E60012" : "#d1d5db")}
+                                    className="transition-all pointer-events-none" />
                             </g>
                         );
                     })}
 
                     {/* Area Fill */}
-                    <polygon 
-                        fill="url(#gradient-line)" 
+                    <polygon
+                        fill="url(#gradient-line)"
                         points={`${padX},${h - padY} ${pathData.replace(/^M/, 'L')} L ${w - padX},${h - padY}`}
                         opacity="0.15"
                     />
-                    
+
                     {/* The Smooth Line */}
-                    <path 
+                    <path
                         d={pathData}
-                        fill="none" 
-                        stroke="#E60012" 
-                        strokeWidth="3" 
+                        fill="none"
+                        stroke="#E60012"
+                        strokeWidth="3"
                         strokeLinejoin="round"
                         strokeLinecap="round"
                         className="drop-shadow-sm"
@@ -844,7 +1040,10 @@ const DailyTrendChart = ({ data, month }) => {
 };
 
 const SalesSurveyAnalysis = () => {
-    const [month, setMonth] = useState('2026-05');
+    const [month, setMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
     const [showMonthPicker, setShowMonthPicker] = useState(false);
     const [activeTab, setActiveTab] = useState('score'); // 'score' | 'performa'
     const monthPickerRef = useRef(null);
@@ -924,9 +1123,8 @@ const SalesSurveyAnalysis = () => {
             <div className="flex border-b border-[#E5E5E5] mb-6 gap-6 shrink-0">
                 <button
                     onClick={() => setActiveTab('score')}
-                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${
-                        activeTab === 'score' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
-                    }`}
+                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'score' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
+                        }`}
                 >
                     <Star size={18} />
                     Sales Score
@@ -935,10 +1133,20 @@ const SalesSurveyAnalysis = () => {
                     )}
                 </button>
                 <button
+                    onClick={() => setActiveTab('sampling')}
+                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'sampling' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                >
+                    <PieChart size={18} />
+                    Survey Sampling
+                    {activeTab === 'sampling' && (
+                        <motion.div layoutId="activetab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E60012]" />
+                    )}
+                </button>
+                <button
                     onClick={() => setActiveTab('performa')}
-                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${
-                        activeTab === 'performa' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
-                    }`}
+                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'performa' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
+                        }`}
                 >
                     <Users size={18} />
                     Sales Performa
@@ -948,9 +1156,8 @@ const SalesSurveyAnalysis = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('cs')}
-                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${
-                        activeTab === 'cs' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
-                    }`}
+                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'cs' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
+                        }`}
                 >
                     <Info size={18} />
                     CS Follow Up
@@ -962,9 +1169,10 @@ const SalesSurveyAnalysis = () => {
 
             {/* Content */}
             <div className="flex-1 min-h-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                {activeTab === 'score' ? <SalesScoreTab month={month} /> : 
-                 activeTab === 'performa' ? <SalesPerformaTab month={month} /> : 
-                 <CSFollowUpTab month={month} />}
+                {activeTab === 'score' ? <SalesScoreTab month={month} /> :
+                    activeTab === 'sampling' ? <SurveySamplingTab month={month} /> :
+                        activeTab === 'performa' ? <SalesPerformaTab month={month} /> :
+                            <CSFollowUpTab month={month} />}
             </div>
         </div>
     );

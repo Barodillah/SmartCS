@@ -105,7 +105,7 @@ History Penanganan: ${data.penanganan || '-'}`;
                 method: "POST",
                 headers: { "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "xiaomi/mimo-v2-flash",
+                    model: "google/gemini-2.5-flash-lite",
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userMsg }
@@ -479,7 +479,7 @@ const DissatisfactionAddModal = ({ isOpen, onClose, onSuccess, showToast }) => {
                             </div>
                             <div className="relative" onClick={e => e.stopPropagation()}>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Tanggal Service *</label>
-                                <div 
+                                <div
                                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm cursor-pointer flex justify-between items-center bg-white"
                                     onClick={() => setOpenDatePicker(openDatePicker === 'tgl_svc' ? null : 'tgl_svc')}
                                 >
@@ -490,7 +490,7 @@ const DissatisfactionAddModal = ({ isOpen, onClose, onSuccess, showToast }) => {
                                 </div>
                                 <AnimatePresence>
                                     {openDatePicker === 'tgl_svc' && (
-                                        <CustomDatePicker 
+                                        <CustomDatePicker
                                             currentDate={formData.tgl_svc}
                                             onSelect={(date) => {
                                                 handleChange('tgl_svc', date);
@@ -503,7 +503,7 @@ const DissatisfactionAddModal = ({ isOpen, onClose, onSuccess, showToast }) => {
                             </div>
                             <div className="relative" onClick={e => e.stopPropagation()}>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Tanggal Survey *</label>
-                                <div 
+                                <div
                                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm cursor-pointer flex justify-between items-center bg-white"
                                     onClick={() => setOpenDatePicker(openDatePicker === 'tgl_srvy' ? null : 'tgl_srvy')}
                                 >
@@ -514,7 +514,7 @@ const DissatisfactionAddModal = ({ isOpen, onClose, onSuccess, showToast }) => {
                                 </div>
                                 <AnimatePresence>
                                     {openDatePicker === 'tgl_srvy' && (
-                                        <CustomDatePicker 
+                                        <CustomDatePicker
                                             currentDate={formData.tgl_srvy}
                                             onSelect={(date) => {
                                                 handleChange('tgl_srvy', date);
@@ -675,8 +675,8 @@ const Dissatisfaction = () => {
                     <button
                         onClick={() => setFilterNew(!filterNew)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded border text-sm font-bold transition-colors ${filterNew
-                                ? 'bg-red-50 border-red-200 text-[#E60012]'
-                                : 'bg-white border-[#E5E5E5] text-gray-600 hover:bg-gray-50'
+                            ? 'bg-red-50 border-red-200 text-[#E60012]'
+                            : 'bg-white border-[#E5E5E5] text-gray-600 hover:bg-gray-50'
                             }`}
                     >
                         Belum Selesai

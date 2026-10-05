@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-const CustomMonthPicker = ({ currentMonth, onSelect, onClose }) => {
+const CustomMonthPicker = ({ currentMonth, onSelect, onClose, showAllOption, align = 'center' }) => {
     // currentMonth format: "YYYY-MM" or ""
     const now = new Date();
     const initialYear = currentMonth ? parseInt(currentMonth.split('-')[0]) : now.getFullYear();
@@ -26,12 +26,19 @@ const CustomMonthPicker = ({ currentMonth, onSelect, onClose }) => {
         return viewYear === now.getFullYear() && monthIndex === now.getMonth();
     };
 
+    let alignClasses = "left-1/2 -translate-x-1/2";
+    if (align === 'right') {
+        alignClasses = "right-0";
+    } else if (align === 'left') {
+        alignClasses = "left-0";
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white border border-[#E5E5E5] rounded-lg shadow-xl p-4 z-50 w-64"
+            className={`absolute top-full mt-2 bg-white border border-[#E5E5E5] rounded-lg shadow-xl p-4 z-50 w-64 ${alignClasses}`}
         >
             <div className="flex items-center justify-between mb-4">
                 <button type="button" onClick={() => setViewYear(viewYear - 1)} className="p-1 hover:bg-gray-100 rounded text-gray-600">
@@ -63,6 +70,17 @@ const CustomMonthPicker = ({ currentMonth, onSelect, onClose }) => {
                     );
                 })}
             </div>
+            {showAllOption && (
+                <div className="mt-3 pt-3 border-t border-[#E5E5E5]">
+                    <button
+                        type="button"
+                        onClick={() => onSelect('')}
+                        className={`w-full py-2 px-1 rounded text-sm font-medium transition-colors ${!selectedMonth ? 'bg-[#111111] text-white font-bold' : 'text-gray-700 hover:bg-gray-100'}`}
+                    >
+                        Semua Data
+                    </button>
+                </div>
+            )}
         </motion.div>
     );
 };

@@ -43,7 +43,7 @@ const getSalam = () => {
 
 const formatPhone = (telp) => {
     if (!telp) return '';
-    let phone = telp.replace(/\D/g, '');
+    let phone = String(telp).replace(/\D/g, '');
     if (phone.startsWith('0')) phone = phone.substring(1);
     if (!phone.startsWith('62')) phone = '62' + phone;
     return phone;
@@ -329,6 +329,17 @@ const PanelWhatsapp = () => {
     const [pktData, setPktData] = useState([]);
     const [pajakStnkData, setPajakStnkData] = useState([]);
     const [bpkbReadyData, setBpkbReadyData] = useState([]);
+    const [blastData, setBlastData] = useState(() => {
+        const stored = localStorage.getItem('blastManualData');
+        return stored ? JSON.parse(stored).data : [];
+    });
+    const [blastHeaders, setBlastHeaders] = useState(() => {
+        const stored = localStorage.getItem('blastManualData');
+        return stored ? JSON.parse(stored).headers : [];
+    });
+    const [blastTemplate, setBlastTemplate] = useState(() => {
+        return localStorage.getItem('blastManualTemplate') || '';
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [updatingIds, setUpdatingIds] = useState(new Set());
@@ -653,6 +664,80 @@ const PanelWhatsapp = () => {
         reader.readAsBinaryString(file);
     };
 
+    const handleBlastFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+
+                if (data && data.length > 0) {
+                    const headers = Object.keys(data[0]);
+                    const firstHeader = headers[0];
+                    
+                    if (!firstHeader || firstHeader.toLowerCase() !== 'wa') {
+                        showToast('Gagal: Kolom pertama (A1) harus berjudul "wa"', 'error');
+                        return;
+                    }
+
+                    setBlastData(data);
+                    setBlastHeaders(headers);
+                    localStorage.setItem('blastManualData', JSON.stringify({ data, headers }));
+                    showToast('Data excel berhasil dimuat', 'success');
+                } else {
+                    showToast('Data excel kosong atau format tidak valid', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal memproses file Excel', 'error');
+            } finally {
+                setIsUploading(false);
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const handleClearBlastData = () => {
+        if(window.confirm('Yakin ingin menghapus data excel sementara?')) {
+            setBlastData([]);
+            setBlastHeaders([]);
+            localStorage.removeItem('blastManualData');
+        }
+    };
+
+    const handleTemplateChange = (e) => {
+        const val = e.target.value;
+        setBlastTemplate(val);
+        localStorage.setItem('blastManualTemplate', val);
+    };
+
+    const handleSendBlast = (item) => {
+        let msg = blastTemplate;
+        blastHeaders.forEach(header => {
+            // escape header if it has special regex chars, though mostly alphanumeric
+            const safeHeader = header.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(`{{${safeHeader}}}`, 'g');
+            msg = msg.replace(regex, item[header] != null ? String(item[header]) : '');
+        });
+
+        // Use the first header which is guaranteed to be 'wa'
+        const phoneKey = blastHeaders[0];
+        const telp = item[phoneKey];
+        if (!telp) {
+            showToast('Peringatan: Kolom "wa" kosong pada baris ini', 'error');
+            return;
+        }
+
+        openWhatsapp(String(telp), msg);
+    };
+
     const tabs = [
         { key: 'Konfirmasi', label: 'Konfirmasi', count: konfirmasiData.length },
         { key: 'H-1', label: 'H-1', count: h1Data.length },
@@ -660,6 +745,7 @@ const PanelWhatsapp = () => {
         { key: 'H+2 PKT', label: 'H+2 PKT', count: pktData.length },
         { key: 'Pajak STNK', label: 'Pajak STNK', count: pajakStnkData.length },
         { key: 'BPKB Ready', label: 'BPKB Ready', count: bpkbReadyData.length },
+        { key: 'Blast Manual', label: 'Blast Manual', count: blastData.length },
     ];
 
     const currentData = activeTab === 'Konfirmasi' ? konfirmasiData
@@ -668,7 +754,8 @@ const PanelWhatsapp = () => {
                 : activeTab === 'H+2 PKT' ? pktData
                     : activeTab === 'Pajak STNK' ? pajakStnkData
                         : activeTab === 'BPKB Ready' ? bpkbReadyData
-                            : [];
+                            : activeTab === 'Blast Manual' ? blastData
+                                : [];
 
     let displayData = [...currentData];
     if (activeTab === 'H-30 Menit') {
@@ -688,6 +775,7 @@ const PanelWhatsapp = () => {
         else if (activeTab === 'H+2 PKT') handlePkt(item);
         else if (activeTab === 'Pajak STNK') handlePajakStnk(item);
         else if (activeTab === 'BPKB Ready') handleBpkbReady(item);
+        else if (activeTab === 'Blast Manual') handleSendBlast(item);
     };
 
     return (
@@ -739,15 +827,17 @@ const PanelWhatsapp = () => {
                 </div>
 
                 {/* Table Header */}
-                <div className="bg-[#fcfcfc] border-b border-[#E5E5E5] grid grid-cols-[60px_90px_2fr_2fr_2fr_80px_120px] gap-3 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider shrink-0 hidden md:grid">
-                    <div>{activeTab === 'H+2 PKT' ? 'FU' : activeTab === 'Pajak STNK' ? 'Sisa' : activeTab === 'BPKB Ready' ? '-' : 'Jam'}</div>
-                    <div>{activeTab === 'H+2 PKT' ? 'Warranty' : activeTab === 'Pajak STNK' ? 'Jatuh Tempo' : activeTab === 'BPKB Ready' ? 'Tanggal' : 'Tanggal'}</div>
-                    <div>Nama</div>
-                    <div>Kendaraan</div>
-                    <div>{activeTab === 'H+2 PKT' ? 'Sales' : activeTab === 'Pajak STNK' ? 'TNKB' : activeTab === 'BPKB Ready' ? 'Sales / SPV' : 'Service'}</div>
-                    <div>Status</div>
-                    <div className="text-right">Aksi</div>
-                </div>
+                {activeTab !== 'Blast Manual' && (
+                    <div className="bg-[#fcfcfc] border-b border-[#E5E5E5] grid grid-cols-[60px_90px_2fr_2fr_2fr_80px_120px] gap-3 p-4 text-xs font-bold text-gray-500 uppercase tracking-wider shrink-0 hidden md:grid">
+                        <div>{activeTab === 'H+2 PKT' ? 'FU' : activeTab === 'Pajak STNK' ? 'Sisa' : activeTab === 'BPKB Ready' ? '-' : 'Jam'}</div>
+                        <div>{activeTab === 'H+2 PKT' ? 'Warranty' : activeTab === 'Pajak STNK' ? 'Jatuh Tempo' : activeTab === 'BPKB Ready' ? 'Tanggal' : 'Tanggal'}</div>
+                        <div>Nama</div>
+                        <div>Kendaraan</div>
+                        <div>{activeTab === 'H+2 PKT' ? 'Sales' : activeTab === 'Pajak STNK' ? 'TNKB' : activeTab === 'BPKB Ready' ? 'Sales / SPV' : 'Service'}</div>
+                        <div>Status</div>
+                        <div className="text-right">Aksi</div>
+                    </div>
+                )}
 
                 {/* Content */}
                 <div className="overflow-y-auto flex-1 p-2 md:p-0 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
@@ -755,14 +845,14 @@ const PanelWhatsapp = () => {
                         <div className="flex items-center justify-center h-40">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#E60012] border-t-transparent"></div>
                         </div>
-                    ) : activeTab === 'BPKB Ready' && displayData.length === 0 ? (
+                    ) : (activeTab === 'BPKB Ready' || activeTab === 'Blast Manual') && displayData.length === 0 ? (
                         <div className="p-6 md:p-10 max-w-2xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300">
-                            <h2 className="text-xl font-bold mb-6 text-center">Upload Data BPKB (Excel)</h2>
+                            <h2 className="text-xl font-bold mb-6 text-center">Upload Data {activeTab} (Excel)</h2>
                             <div className="relative">
                                 <input
                                     type="file"
                                     accept=".xlsx, .xls"
-                                    onChange={handleFileUpload}
+                                    onChange={activeTab === 'Blast Manual' ? handleBlastFileUpload : handleFileUpload}
                                     disabled={isUploading}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />
@@ -776,9 +866,15 @@ const PanelWhatsapp = () => {
                                     <span className="text-sm font-bold text-[#111111]">
                                         {isUploading ? 'Memproses File...' : 'Klik atau drag file kesini untuk upload'}
                                     </span>
-                                    {!isUploading && (
+                                    {!isUploading && activeTab === 'BPKB Ready' && (
                                         <span className="text-xs text-gray-500 mt-2 text-center max-w-xs">
                                             Format file harus .xlsx / .xls dan Nomor Rangka berada pada kolom pertama (Kolom A)
+                                        </span>
+                                    )}
+                                    {!isUploading && activeTab === 'Blast Manual' && (
+                                        <span className="text-xs text-gray-500 mt-2 text-center max-w-xs">
+                                            Format file harus .xlsx / .xls. Baris pertama (Row 1) akan dijadikan variabel.<br/>
+                                            <strong className="text-red-500">Penting: Kolom pertama (A1) WAJIB berjudul "wa".</strong>
                                         </span>
                                     )}
                                 </div>
@@ -794,6 +890,59 @@ const PanelWhatsapp = () => {
                                 {activeTab === 'H+2 PKT' && 'Tidak ada data survey PKT dengan umur WA kurang dari 3 hari.'}
                                 {activeTab === 'Pajak STNK' && 'Tidak ada konsumen yang perlu diingatkan pajak STNK dalam 30 hari kedepan.'}
                             </p>
+                        </div>
+                    ) : activeTab === 'Blast Manual' && displayData.length > 0 ? (
+                        <div className="flex flex-col h-full overflow-hidden animate-in fade-in duration-300">
+                            <div className="p-4 bg-gray-50 border-b border-[#E5E5E5] shrink-0 shadow-sm z-10 relative">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Template Pesan WhatsApp</label>
+                                <textarea 
+                                    className="w-full border border-gray-300 rounded p-3 text-sm focus:border-[#E60012] focus:outline-none min-h-[100px] shadow-inner"
+                                    placeholder="Gunakan kurawal ganda untuk data dinamis. Contoh: Halo {{Nama}}, promo untuk mobil {{Kendaraan}} Anda..."
+                                    value={blastTemplate}
+                                    onChange={handleTemplateChange}
+                                />
+                                <div className="mt-3 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4">
+                                    <div className="flex-1">
+                                        <span className="text-xs font-bold text-gray-500 mr-2">Kolom Tersedia:</span>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {blastHeaders.map(h => (
+                                                <span key={h} className="bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded text-[10px] font-mono shadow-sm">
+                                                    {`{{${h}}}`}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <button onClick={handleClearBlastData} className="bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
+                                        Hapus Data Excel
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-auto bg-white w-full scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                                <table className="w-full text-sm text-left border-collapse min-w-max">
+                                    <thead className="bg-[#fcfcfc] sticky top-0 z-20 shadow-sm">
+                                        <tr>
+                                            {blastHeaders.map((header, idx) => (
+                                                <th key={idx} className="px-4 py-3 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-[#E5E5E5] whitespace-nowrap">{header}</th>
+                                            ))}
+                                            <th className="px-4 py-3 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-[#E5E5E5] text-right sticky right-0 bg-[#fcfcfc] shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayData.map((item, rowIdx) => (
+                                            <tr key={rowIdx} className="border-b border-[#E5E5E5] hover:bg-gray-50 transition-colors">
+                                                {blastHeaders.map((header, colIdx) => (
+                                                    <td key={colIdx} className="px-4 py-3 text-gray-700 whitespace-nowrap max-w-[200px] truncate" title={item[header]}>{item[header]}</td>
+                                                ))}
+                                                <td className="px-4 py-3 text-right sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                                                    <button onClick={() => handleSendBlast(item)} className="bg-[#25D366] hover:bg-[#1DA851] text-white px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-sm transition-colors">
+                                                        <WhatsappIcon size={12} /> Kirim
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     ) : (
                         <div className="divide-y divide-[#E5E5E5]">

@@ -23,15 +23,15 @@ export const formatCurrency = (val) => {
 export const models = [
   {
     name: "Destinator",
-    price: 395000000,
+    price: 402000000,
     img: "https://csdwindo.com/media/mmksi/destinator.png",
-    badge: "NEW"
+    badge: "POPULAR"
   },
   {
-    name: "Xforce",
-    price: 390000000,
-    img: "https://csdwindo.com/media/mmksi/xforce.png",
-    badge: "POPULAR"
+    name: "New Xforce HEV",
+    price: 455000000,
+    img: "https://csdwindo.com/wp-content/uploads/newxforcetr.png",
+    badge: "NEW"
   },
   {
     name: "Fuso Canter",

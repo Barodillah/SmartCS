@@ -8,7 +8,10 @@ import { parseChatMarkdown } from '../../utils/markdownParser';
 
 const NPSDetail = () => {
     const navigate = useNavigate();
-    const [month, setMonth] = useState('2026-04');
+    const [month, setMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
     const [cabang, setCabang] = useState('All');
     const [divisi, setDivisi] = useState('Sales');
     const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -155,7 +158,7 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                 method: "POST",
                 headers: { "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "anthropic/claude-3.5-haiku",
+                    model: "google/gemini-2.5-flash-lite",
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userMsg }
@@ -462,7 +465,7 @@ Catatan/Note: ${selectedDetail.note || '-'}`;
                                                 <div className="font-bold text-[#111111] text-sm">{selectedDetail.survey_status || '-'}</div>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex flex-col">
                                                 <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1"><FileText size={12} /> Note NPS Tele</div>

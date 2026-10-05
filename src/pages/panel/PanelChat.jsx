@@ -237,7 +237,7 @@ const PanelChat = () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    "model": "xiaomi/mimo-v2-flash",
+                    "model": "google/gemini-2.5-flash-lite",
                     "messages": [
                         {
                             "role": "system",
@@ -480,10 +480,10 @@ const PanelChat = () => {
                                             <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : 'items-start'}`}>
                                                 <div
                                                     className={`max-w-[85%] p-3.5 text-[13px] leading-relaxed shadow-sm ${msg.sender_type === 'user'
-                                                            ? 'bg-[#111111] text-white'
-                                                            : msg.sender_type === 'cs'
-                                                                ? 'bg-[#E60012] text-white'
-                                                                : 'bg-white text-[#444444] border border-[#E5E5E5]'
+                                                        ? 'bg-[#111111] text-white'
+                                                        : msg.sender_type === 'cs'
+                                                            ? 'bg-[#E60012] text-white'
+                                                            : 'bg-white text-[#444444] border border-[#E5E5E5]'
                                                         }`}
                                                     style={{ borderRadius: msg.sender_type === 'user' ? '12px 12px 0 12px' : '0 12px 12px 12px' }}
                                                 >

@@ -6,7 +6,10 @@ import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 
 const NPSReport = () => {
     const navigate = useNavigate();
-    const [month, setMonth] = useState('2026-04');
+    const [month, setMonth] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
     const [cabang, setCabang] = useState('All');
     const [divisi, setDivisi] = useState('Sales');
     const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -16,6 +19,7 @@ const NPSReport = () => {
     const [prevQuarterData, setPrevQuarterData] = useState([]);
     const [fyData, setFyData] = useState([]);
     const [fyPrevData, setFyPrevData] = useState([]);
+    const [fyMonthlyData, setFyMonthlyData] = useState([]);
     const [summary, setSummary] = useState({ promoters: 0, passives: 0, detractors: 0, total: 0, nps: 0, lastUpdate: null });
     const [loading, setLoading] = useState(false);
     const [copiedLabel, setCopiedLabel] = useState(null);
@@ -107,6 +111,19 @@ const NPSReport = () => {
                 const pFyRes = await fetch(`https://csdwindo.com/api/panel/nps_report.php?${pFyParams}`);
                 const pFyJson = await pFyRes.json();
 
+                // 6. Fiscal Year Data per month for projection
+                const fyMonthlyPromises = fyMonths.map(async (m) => {
+                    const params = new URLSearchParams({ bulan: m, divisi, cabang });
+                    try {
+                        const res = await fetch(`https://csdwindo.com/api/panel/nps_report.php?${params}`);
+                        const data = await res.json();
+                        return { month: m, data: data.status ? data.data : [] };
+                    } catch (e) {
+                        return { month: m, data: [] };
+                    }
+                });
+                const fyMonthlyResults = await Promise.all(fyMonthlyPromises);
+
                 // Process Monthly Data
                 if (json.status && json.data && json.data.length > 0) {
                     let rows = json.data.map(r => ({
@@ -188,6 +205,28 @@ const NPSReport = () => {
                     setFyPrevData(pFyJson.data);
                 }
 
+                // Process FY Monthly Data
+                const processedMonthly = fyMonthlyResults.map(res => {
+                    const dataRows = res.data;
+                    let targetRow = { promoters: 0, passives: 0, detractors: 0, total: 0 };
+                    if (dataRows && dataRows.length > 0) {
+                        targetRow = (cabang === 'All') 
+                            ? (dataRows.find(r => r.cabang === 'Dwindo') || dataRows[dataRows.length - 1])
+                            : dataRows[0];
+                    }
+                    const { promoters, passives, detractors, total } = targetRow;
+                    const nps = total > 0 ? Math.round(((promoters - detractors) / total) * 100) : 0;
+                    return {
+                        month: res.month,
+                        promoters,
+                        passives,
+                        detractors,
+                        total,
+                        nps
+                    };
+                });
+                setFyMonthlyData(processedMonthly);
+
             } catch (err) {
                 console.error('Failed to fetch NPS data:', err);
             } finally {
@@ -224,7 +263,7 @@ const NPSReport = () => {
     };
 
     const maxTotal = Math.max(...chartData.map(d => d.promoters + d.passives + d.detractors), 1);
-    const targetNPS = divisi === 'Sales' ? 84 : 82;
+    const targetNPS = 84;
     const currentMonthStr = new Date().toISOString().slice(0, 7);
     const isCurrentMonth = month === currentMonthStr;
     let requiredPromoters = 0;
@@ -444,7 +483,7 @@ const NPSReport = () => {
                                                 <td className="p-4 text-center cursor-pointer hover:bg-green-50 transition-colors text-green-600" onClick={() => handleCopy(curMonth.promoters, bName + '-p')}>{curMonth.promoters}</td>
                                                 <td className="p-4 text-center cursor-pointer hover:bg-amber-50 transition-colors text-amber-600" onClick={() => handleCopy(curMonth.passives, bName + '-a')}>{curMonth.passives}</td>
                                                 <td className="p-4 text-center cursor-pointer hover:bg-red-50 transition-colors text-red-600" onClick={() => handleCopy(curMonth.detractors, bName + '-d')}>{curMonth.detractors}</td>
-                                                <td className={`p-4 text-center border-l-2 border-gray-100 font-black cursor-pointer ${curNps >= (divisi === 'Sales' ? 84 : 82) ? 'text-green-600' : 'text-[#111111]'}`} onClick={() => handleCopy(curNps + '%', bName + '-nps')}>
+                                                <td className={`p-4 text-center border-l-2 border-gray-100 font-black cursor-pointer ${curNps >= 84 ? 'text-green-600' : 'text-[#111111]'}`} onClick={() => handleCopy(curNps + '%', bName + '-nps')}>
                                                     {copiedLabel === bName + '-nps' ? <span className="text-sm animate-pulse">COPIED</span> : `${curNps}%`}
                                                 </td>
                                                 <td className="p-4 text-center border-l border-gray-100 cursor-pointer" onClick={() => handleCopy(fPrevNps + '%', bName + '-fyprev')}>{fPrevNps}%</td>
@@ -465,13 +504,23 @@ const NPSReport = () => {
                         </table>
                     </div>
                 </div>
+
+                {/* Proyeksi Target Card */}
+                {fyMonthlyData.length === 12 && (
+                    <ProyeksiTargetCard
+                        fyMonthlyData={fyMonthlyData}
+                        selectedMonth={month}
+                        cabang={cabang}
+                        fyYear={getCurrentFY(month)}
+                    />
+                )}
             </div>
         </div>
     );
 };
 
 const NPSBenchmarkCard = ({ title, subtitle, data, cabang, prevData, handleCopy, copiedLabel, isQuarterly = false, divisi }) => {
-    const targetNPS = divisi === 'Sales' ? 84 : 82;
+    const targetNPS = 84;
     return (
         <div className="bg-white border border-[#E5E5E5] rounded-xl p-8 shadow-sm">
             <div className="flex items-center justify-between mb-0">
@@ -638,5 +687,219 @@ const NPSLine = ({ data }) => {
     );
 };
 
+const ProyeksiTargetCard = ({ fyMonthlyData, selectedMonth, cabang, fyYear }) => {
+    const targetNPS = 84;
+    const monthsLabel = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+
+    // Find index of selected month
+    const selectedIdx = fyMonthlyData.findIndex(d => d.month === selectedMonth);
+    const splitIdx = selectedIdx >= 0 ? selectedIdx : 0; // If not found, assume 0
+
+    // Past months sum
+    let pastPromoters = 0;
+    let pastDetractors = 0;
+    let pastTotal = 0;
+    for (let i = 0; i < splitIdx; i++) {
+        pastPromoters += fyMonthlyData[i].promoters || 0;
+        pastDetractors += fyMonthlyData[i].detractors || 0;
+        pastTotal += fyMonthlyData[i].total || 0;
+    }
+
+    // Calculation for estimation (Weighted Volume)
+    const avgTotalPerMonth = splitIdx > 0 ? Math.ceil(pastTotal / splitIdx) : 50; 
+    const remainingMonths = 12 - splitIdx;
+    
+    // Future requirements
+    const finalTotal = pastTotal + (avgTotalPerMonth * remainingMonths);
+    const requiredFinalScore = Math.ceil((targetNPS / 100) * finalTotal);
+    const pastScore = pastPromoters - pastDetractors;
+    
+    const requiredFutureScoreTotal = requiredFinalScore - pastScore;
+    const reqScorePerMonth = remainingMonths > 0 ? requiredFutureScoreTotal / remainingMonths : 0;
+    const estimationNPS = avgTotalPerMonth > 0 ? (reqScorePerMonth / avgTotalPerMonth) * 100 : targetNPS;
+
+    // Build chart points
+    const chartPoints = fyMonthlyData.map((d, i) => {
+        const isPast = i < splitIdx;
+        const actualVal = isPast ? d.nps : Math.round(estimationNPS * 10) / 10;
+        
+        let ytdPromoters = 0;
+        let ytdDetractors = 0;
+        let ytdTotal = 0;
+        
+        for (let j = 0; j <= i; j++) {
+            if (j < splitIdx) {
+                ytdPromoters += fyMonthlyData[j].promoters || 0;
+                ytdDetractors += fyMonthlyData[j].detractors || 0;
+                ytdTotal += fyMonthlyData[j].total || 0;
+            } else {
+                ytdTotal += avgTotalPerMonth;
+                ytdPromoters += reqScorePerMonth; // we simulate the required net score entirely as promoters
+            }
+        }
+        
+        const ytdAvg = ytdTotal > 0 ? Math.round(((ytdPromoters - ytdDetractors) / ytdTotal) * 100 * 10) / 10 : 0;
+        
+        // Target Promotor per month:
+        const targetPromotor = isPast ? d.promoters : Math.ceil(reqScorePerMonth);
+        const estVol = isPast ? d.total : avgTotalPerMonth;
+
+        return {
+            monthLabel: monthsLabel[i],
+            actual: actualVal,
+            ytdAvg: ytdAvg,
+            isEstimated: !isPast,
+            total: estVol,
+            promoters: targetPromotor
+        };
+    });
+
+    const getCoord = (val, max = 100, min = -100) => {
+        const scaleMax = 100;
+        const scaleMin = -20;
+        let pct = ((val - scaleMin) / (scaleMax - scaleMin)) * 100;
+        if (pct > 100) pct = 100;
+        if (pct < 0) pct = 0;
+        return 100 - pct;
+    };
+
+    const targetY = getCoord(targetNPS);
+
+    return (
+        <div className="bg-white border border-[#E5E5E5] rounded-xl p-8 shadow-sm mt-6">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h2 className="font-bold text-xl text-[#111111]">Proyeksi Target (Weighted)</h2>
+                    <p className="text-sm text-gray-500 mt-1">Estimasi pencapaian target NPS FY {fyYear} berdasarkan aktual rata-rata sampling.</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-bold bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+                    <div className="flex items-center gap-2"><div className="w-4 h-0.5 bg-red-500"></div> Target (84)</div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-0.5 bg-blue-500"></div> YTD Average</div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-0.5 bg-amber-500"></div> Actual/Est per Bulan</div>
+                </div>
+            </div>
+
+            <div className="relative h-[400px] w-full pt-4 pb-8 pl-8 pr-4">
+                {/* Background Grid */}
+                <div className="absolute inset-0 pt-4 pb-8 pl-8 pr-4 flex flex-col justify-between pointer-events-none">
+                    {[100, 80, 60, 40, 20, 0, -20].map((val) => (
+                        <div key={val} className="flex items-center w-full relative">
+                            <span className="absolute -left-8 text-[10px] text-gray-400 font-bold w-6 text-right">{val}</span>
+                            <div className="flex-1 border-b border-gray-100 border-dashed"></div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* SVG Chart Layer */}
+                <svg className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                    {/* Target Line */}
+                    <line x1="0" y1={`${targetY}%`} x2="100%" y2={`${targetY}%`} stroke="#EF4444" strokeWidth="2" strokeDasharray="5,5" />
+
+                    {/* Split Vertical Line */}
+                    {splitIdx > 0 && splitIdx < 12 && (
+                        <line x1={`${((splitIdx - 0.5) / 11) * 100}%`} y1="0" x2={`${((splitIdx - 0.5) / 11) * 100}%`} y2="100%" stroke="#D1D5DB" strokeWidth="2" strokeDasharray="4,4" />
+                    )}
+
+                    {/* Actual / Estimation Line Segments */}
+                    {chartPoints.map((p, i) => {
+                        if (i === 0) return null;
+                        const prev = chartPoints[i - 1];
+                        return (
+                            <line 
+                                key={`act-line-${i}`}
+                                x1={`${((i - 1) / 11) * 100}%`} y1={`${getCoord(prev.actual)}%`}
+                                x2={`${(i / 11) * 100}%`} y2={`${getCoord(p.actual)}%`}
+                                stroke={p.isEstimated && prev.isEstimated ? "#FDE68A" : "#F59E0B"}
+                                strokeWidth="3"
+                            />
+                        );
+                    })}
+
+                    {/* YTD Avg Line Segments */}
+                    {chartPoints.map((p, i) => {
+                        if (i === 0) return null;
+                        const prev = chartPoints[i - 1];
+                        return (
+                            <line 
+                                key={`ytd-line-${i}`}
+                                x1={`${((i - 1) / 11) * 100}%`} y1={`${getCoord(prev.ytdAvg)}%`}
+                                x2={`${(i / 11) * 100}%`} y2={`${getCoord(p.ytdAvg)}%`}
+                                stroke="#3B82F6"
+                                strokeWidth="3"
+                            />
+                        );
+                    })}
+
+                    {/* Points */}
+                    {chartPoints.map((p, i) => (
+                        <g key={`group-${i}`}>
+                            {/* Actual/Est point */}
+                            <circle cx={`${(i / 11) * 100}%`} cy={`${getCoord(p.actual)}%`} r="5" fill={p.isEstimated ? "#FDE68A" : "#F59E0B"} stroke="#fff" strokeWidth="2" />
+                            
+                            {/* YTD Avg point */}
+                            <circle cx={`${(i / 11) * 100}%`} cy={`${getCoord(p.ytdAvg)}%`} r="5" fill="#3B82F6" stroke="#fff" strokeWidth="2" />
+                        </g>
+                    ))}
+                </svg>
+
+                {/* Tooltip Hover Areas */}
+                <div className="absolute inset-0 pt-4 pb-8 pl-8 pr-4 pointer-events-none">
+                    {chartPoints.map((p, i) => (
+                        <div 
+                            key={`hover-${i}`} 
+                            className="absolute inset-y-0 w-8 -ml-4 group pointer-events-auto cursor-crosshair z-50"
+                            style={{ left: `${(i / 11) * 100}%` }}
+                        >
+                            {/* Hover Column Indicator */}
+                            <div className="absolute inset-y-0 inset-x-0 bg-gray-100/50 opacity-0 group-hover:opacity-100 rounded transition-opacity"></div>
+                            
+                            {/* Tooltip Card */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-gray-200 shadow-2xl rounded-xl p-3 text-left w-48 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 pointer-events-none z-[100]">
+                                <div className="text-[10px] text-gray-500 uppercase tracking-widest font-black text-center mb-1.5 border-b border-gray-100 pb-1.5">{p.monthLabel} {p.isEstimated ? '(ESTIMASI)' : '(AKTUAL)'}</div>
+                                
+                                <div className="space-y-1 mb-2">
+                                    <div className="flex justify-between items-center text-xs font-bold text-gray-700">
+                                        <span>Total Sampling</span>
+                                        <span>{p.total}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs font-bold text-green-600">
+                                        <span>{p.isEstimated ? 'Target Promotor' : 'Promotor'}</span>
+                                        <span>{p.promoters > 0 ? p.promoters : 0}</span>
+                                    </div>
+                                    {p.isEstimated && (
+                                        <div className="text-[9px] text-gray-400 italic leading-tight text-center mt-1">
+                                            (Asumsi 0 Detractor)
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1 pt-1.5 border-t border-gray-100">
+                                    <div className="flex justify-between items-center text-[11px] font-bold bg-amber-50 px-1.5 py-1 rounded">
+                                        <span className="text-amber-600">Skor (NPS)</span>
+                                        <span className="text-amber-700">{p.actual}%</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[11px] font-bold bg-blue-50 px-1.5 py-1 rounded">
+                                        <span className="text-blue-600">YTD Average</span>
+                                        <span className="text-blue-700">{p.ytdAvg}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* X Axis Labels */}
+                <div className="absolute bottom-0 left-8 right-4 flex justify-between items-end">
+                    {chartPoints.map((p, i) => (
+                        <div key={i} className="text-center w-8 -ml-4 flex flex-col items-center">
+                            <span className={`text-[10px] font-black ${p.isEstimated ? 'text-gray-400' : 'text-[#111111]'}`}>{p.monthLabel}</span>
+                            {p.isEstimated && <span className="text-[8px] bg-gray-100 text-gray-400 px-1 rounded uppercase mt-0.5">EST</span>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default NPSReport;

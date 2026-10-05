@@ -76,8 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     $recordStatus = (strtoupper($oldData['status']) === 'DATANG' || strtoupper($oldData['status']) === 'WALK IN') ? 'IMPORT_UPDATE' : 'IMPORT';
                     
+                    $beforeRecordEscaped = mysqli_real_escape_string($conn, $beforeRecord);
+                    $afterRecordEscaped = mysqli_real_escape_string($conn, $afterRecord);
+                    
                     mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
-                                         VALUES ($id, '$user', '$recordStatus', '$beforeRecord', '$afterRecord')");
+                                         VALUES ($id, '$user', '$recordStatus', '$beforeRecordEscaped', '$afterRecordEscaped')");
                     $successCount++;
                 } else {
                     $errorCount++;
@@ -94,8 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (mysqli_query($conn, $query)) {
                     $id = mysqli_insert_id($conn);
                     $recordInfo = "$tanggal - $jam - $kendaraan - $nopol - $nama - $telp - $jenis - $keluhan";
+                    $recordInfoEscaped = mysqli_real_escape_string($conn, $recordInfo);
                     mysqli_query($conn, "INSERT INTO booking_record (booking_id, user, status, `before`, `after`) 
-                                         VALUES ($id, '$user', 'IMPORT', '', 'New Walk In: $recordInfo')");
+                                         VALUES ($id, '$user', 'IMPORT', '', 'New Walk In: $recordInfoEscaped')");
                     $successCount++;
                 } else {
                     $errorCount++;
@@ -103,7 +107,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // === Sync potensi_service: update status to DATANG if nopol exists ===
-            if ($pdo && !empty($nopol)) {
+            $isOlderThan30Days = false;
+            if (!empty($tanggal)) {
+                $dateTimestamp = strtotime($tanggal);
+                if ($dateTimestamp !== false) {
+                    $diffDays = (time() - $dateTimestamp) / (60 * 60 * 24);
+                    if ($diffDays > 30) {
+                        $isOlderThan30Days = true;
+                    }
+                }
+            }
+
+            if ($pdo && !empty($nopol) && !$isOlderThan30Days) {
                 try {
                     $stmtPotensi = $pdo->prepare("UPDATE potensi_service SET status = 'DATANG' WHERE nopol = ? AND status != 'DATANG'");
                     $stmtPotensi->execute([$nopol]);

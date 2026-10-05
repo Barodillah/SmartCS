@@ -3,7 +3,177 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car, ChevronLeft, ShieldAlert, Loader2 } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
+import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import { CustomSelect, LegacyFormModal } from '../../components/panel/booking/LegacyBookingModals';
+
+const LEGACY_VEHICLES = [
+    "MITSUBISHI PAJERO", "MITSUBISHI XPANDER", "MITSUBISHI DESTINATOR", "MITSUBISHI XFORCE",
+    "MITSUBISHI ECLIPSE CROSS", "MITSUBISHI TRITON", "MITSUBISHI OUTLANDER", "MITSUBISHI OUTLANDER PHEV",
+    "MITSUBISHI MIRAGE", "MITSUBISHI LANCER", "MITSUBISHI DELICA", "MITSUBISHI GRANDIS",
+    "MITSUBISHI L300", "FUSO COLT DIESEL", "FUSO CANTER", "MITSUBISHI COLT T120SS"
+];
+
+const AddManualModal = ({ isOpen, onClose, onAdd }) => {
+    const [formData, setFormData] = useState({
+        nopol: '', rangka: '', nama: '', telp: '', kendaraan: '', service_terakhir: '', expected_date: '', potensi_service: ''
+    });
+    const [isFetchingNopol, setIsFetchingNopol] = useState(false);
+    const [showDatePicker1, setShowDatePicker1] = useState(false);
+    const [showDatePicker2, setShowDatePicker2] = useState(false);
+
+    const serviceOptions = [
+        { value: '1.000 KM', label: '1.000 KM' },
+        { value: '10.000 KM', label: '10.000 KM' },
+        { value: '20.000 KM', label: '20.000 KM' },
+        { value: '30.000 KM', label: '30.000 KM' },
+        { value: '40.000 KM', label: '40.000 KM' },
+        { value: '50.000 KM', label: '50.000 KM' },
+        { value: 'Perawatan Berkala', label: 'Perawatan Berkala' },
+    ];
+
+    useEffect(() => {
+        if (!formData.nopol || formData.nopol.length < 3) return;
+        const delayDebounceFn = setTimeout(async () => {
+            setIsFetchingNopol(true);
+            try {
+                const res = await fetch(`https://csdwindo.com/api/panel/data_booking.php?nopol=${formData.nopol}`);
+                const data = await res.json();
+                if (data.status && data.data) {
+                    setFormData(prev => ({
+                        ...prev,
+                        kendaraan: data.data.kendaraan || prev.kendaraan,
+                        nama: data.data.nama || prev.nama,
+                        telp: data.data.telp || prev.telp
+                    }));
+                }
+            } catch (err) {}
+            finally {
+                setIsFetchingNopol(false);
+            }
+        }, 800);
+        return () => clearTimeout(delayDebounceFn);
+    }, [formData.nopol]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        let newValue = value;
+        if (name === 'nopol') newValue = value.toUpperCase().replace(/\s/g, '');
+        else if (name === 'nama') newValue = value.toUpperCase();
+        else if (name === 'rangka') newValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
+        else if (name === 'telp') {
+            newValue = value.replace(/\D/g, '');
+            if (newValue.startsWith('62')) newValue = '0' + newValue.substring(2);
+            else if (newValue.length > 0 && !newValue.startsWith('0')) newValue = '0' + newValue;
+        }
+        setFormData(prev => ({ ...prev, [name]: newValue }));
+    };
+
+    const handleServiceTerakhirChange = (date) => {
+        const d = new Date(date);
+        d.setMonth(d.getMonth() + 6);
+        const expected = d.toISOString().split('T')[0];
+        setFormData(prev => ({ ...prev, service_terakhir: date, expected_date: expected }));
+        setShowDatePicker1(false);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onAdd(formData);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-white rounded-xl w-full max-w-2xl shadow-2xl overflow-visible flex flex-col"
+            >
+                <div className="p-4 border-b border-[#E5E5E5] flex items-center justify-between bg-gray-50 rounded-t-xl">
+                    <h3 className="text-lg font-bold text-[#111111] font-display">Add Manual Potensi Service</h3>
+                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-[#E60012] transition-colors"><X size={20} /></button>
+                </div>
+                <div className="p-6 overflow-visible">
+                    <form id="add-manual-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="relative">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Nomor Polisi</label>
+                            <div className="relative">
+                                <input type="text" name="nopol" value={formData.nopol} onChange={handleChange} required placeholder="B 1234 ABC" className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-[#111111] font-mono text-sm focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none transition-all pr-10" />
+                                {isFetchingNopol && <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><Loader2 size={16} className="animate-spin" /></div>}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">No. Rangka</label>
+                            <input type="text" name="rangka" value={formData.rangka} onChange={handleChange} maxLength={17} required placeholder="MK2..." className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-[#111111] font-mono text-sm focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none transition-all" />
+                            <p className="text-[10px] mt-1 text-gray-400">{formData.rangka.length}/17 karakter</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Nama Customer</label>
+                            <input type="text" name="nama" value={formData.nama} onChange={handleChange} required placeholder="NAMA LENGKAP" className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-[#111111] text-sm focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none transition-all" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Phone / WA</label>
+                            <input type="text" name="telp" value={formData.telp} onChange={handleChange} required placeholder="08123456789" className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-[#111111] text-sm focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none transition-all" />
+                        </div>
+                        <div className="relative z-[60]">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Kendaraan</label>
+                            <CustomSelect
+                                value={formData.kendaraan}
+                                onChange={(val) => setFormData(prev => ({ ...prev, kendaraan: val }))}
+                                options={LEGACY_VEHICLES.map(v => ({ label: v, value: v }))}
+                                placeholder="- Pilih Kendaraan -"
+                                allowCustom={true}
+                            />
+                        </div>
+                        <div className="relative z-[50]">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Potensi Service</label>
+                            <CustomSelect
+                                value={formData.potensi_service}
+                                onChange={(val) => setFormData(prev => ({ ...prev, potensi_service: val }))}
+                                options={serviceOptions}
+                                placeholder="- Pilih Potensi -"
+                                allowCustom={true}
+                            />
+                        </div>
+                        <div className="relative z-[40]">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Last Service</label>
+                            <div onClick={() => setShowDatePicker1(!showDatePicker1)} className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-left text-sm flex items-center justify-between cursor-pointer">
+                                <span>{formData.service_terakhir || 'Pilih Tanggal'}</span>
+                                <Calendar size={16} className="text-[#E60012]" />
+                            </div>
+                            <AnimatePresence>
+                                {showDatePicker1 && (
+                                    <CustomDatePicker currentDate={formData.service_terakhir} onSelect={handleServiceTerakhirChange} onClose={() => setShowDatePicker1(false)} />
+                                )}
+                            </AnimatePresence>
+                        </div>
+                        <div className="relative z-[30]">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Expected Date</label>
+                            <div onClick={() => setShowDatePicker2(!showDatePicker2)} className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-left text-sm flex items-center justify-between cursor-pointer">
+                                <span>{formData.expected_date || 'Pilih Tanggal'}</span>
+                                <Calendar size={16} className="text-[#E60012]" />
+                            </div>
+                            <AnimatePresence>
+                                {showDatePicker2 && (
+                                    <CustomDatePicker currentDate={formData.expected_date} onSelect={(date) => { setFormData(prev => ({ ...prev, expected_date: date })); setShowDatePicker2(false); }} onClose={() => setShowDatePicker2(false)} />
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </form>
+                </div>
+                <div className="p-4 border-t border-[#E5E5E5] bg-gray-50 flex justify-end gap-2 rounded-b-xl">
+                    <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-[#111111]">Batal</button>
+                    <button type="submit" form="add-manual-form" className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors shadow-md flex items-center gap-2">
+                        <Check size={16} /> Add Potential
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
 
 const DetailModal = ({ isOpen, onClose, item, onProcess, onNext, mainFilter, onWhatsapp, onBooking }) => {
     const [copiedField, setCopiedField] = useState(null);
@@ -454,6 +624,20 @@ const PotensiBooking = () => {
     const [cleanFilterSA, setCleanFilterSA] = useState('');
     const [cleanFilterStatus, setCleanFilterStatus] = useState('');
     const [isLoadingClean, setIsLoadingClean] = useState(false);
+    const [cleanMonthFilter, setCleanMonthFilter] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    });
+    const [showCleanMonthPicker, setShowCleanMonthPicker] = useState(false);
+    const [showAddManual, setShowAddManual] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const [cleanCurrentPage, setCleanCurrentPage] = useState(1);
+    const cleanRowsPerPage = 50;
+
+    useEffect(() => {
+        setCleanCurrentPage(1);
+    }, [cleanFilterSA, cleanFilterStatus, mainFilter, cleanMonthFilter, refreshTrigger]);
 
     // Booking Form Modal states
     const [showBookingForm, setShowBookingForm] = useState(false);
@@ -489,10 +673,15 @@ const PotensiBooking = () => {
                 let url = 'https://csdwindo.com/api/potensi_service.php?action=list';
                 if (cleanFilterSA) url += `&sa=${encodeURIComponent(cleanFilterSA)}`;
                 if (cleanFilterStatus) url += `&status=${encodeURIComponent(cleanFilterStatus)}`;
+                if (cleanMonthFilter) url += `&month=${encodeURIComponent(cleanMonthFilter)}`;
                 const res = await fetch(url);
                 const json = await res.json();
                 if (json.status && json.data) {
-                    const mappedData = json.data.map(d => ({
+                    let filtered = json.data;
+                    if (cleanMonthFilter) {
+                        filtered = filtered.filter(d => d.time && d.time.startsWith(cleanMonthFilter));
+                    }
+                    const mappedData = filtered.map(d => ({
                         ...d,
                         name: d.nama,
                         phone: d.telp,
@@ -513,7 +702,7 @@ const PotensiBooking = () => {
             }
         };
         fetchCleanData();
-    }, [mainFilter, cleanFilterSA, cleanFilterStatus]);
+    }, [mainFilter, cleanFilterSA, cleanFilterStatus, cleanMonthFilter, refreshTrigger]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -553,6 +742,42 @@ const PotensiBooking = () => {
             const plate = (item.plate || item.nopol || '').replace(/\s/g, '').toUpperCase();
             return !allCleanNopols.has(plate);
         });
+    const totalCleanPages = Math.ceil(currentData.length / cleanRowsPerPage);
+    const paginatedData = mainFilter === 'clean' ? currentData.slice((cleanCurrentPage - 1) * cleanRowsPerPage, cleanCurrentPage * cleanRowsPerPage) : currentData;
+
+    const handleAddManualSubmit = async (formData) => {
+        try {
+            const postData = {
+                action: 'add',
+                nopol: formData.nopol,
+                nama: formData.nama,
+                telp: formData.telp,
+                kendaraan: formData.kendaraan,
+                service_terakhir: formData.service_terakhir,
+                source: 'MANUAL',
+                rangka: formData.rangka,
+                potensi_service: formData.potensi_service,
+                expected_date: formData.expected_date,
+            };
+
+            const res = await fetch('https://csdwindo.com/api/potensi_service.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+            });
+            const json = await res.json();
+            if (json.status) {
+                showToast('Data potensi manual berhasil ditambahkan', 'success');
+                setShowAddManual(false);
+                setRefreshTrigger(prev => prev + 1); // trigger cleanData reload
+            } else {
+                showToast(json.message || 'Gagal menyimpan data', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        }
+    };
 
     const handleAction = async (type, item, payload) => {
         if (type === 'clean') {
@@ -714,48 +939,86 @@ const PotensiBooking = () => {
                 <p className="text-gray-500 text-sm mt-1">Daftar customer yang berpotensi melakukan booking service berdasarkan waktu atau kilometer.</p>
             </div>
 
-            {/* Main Filter Toggle */}
-            <div className="flex bg-white border border-[#E5E5E5] p-1 mb-6 inline-flex rounded-sm">
-                <button
-                    onClick={() => {
-                        setMainFilter('booking');
-                        setActiveTab('6_bulan');
-                    }}
-                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'booking' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
-                    style={mainFilter === 'booking' ? { clipPath: ANGULAR_CLIP } : {}}
-                >
-                    Data Booking
-                </button>
-                <button
-                    onClick={() => {
-                        setMainFilter('pkt');
-                        setActiveTab('1k');
-                    }}
-                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'pkt' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
-                    style={mainFilter === 'pkt' ? { clipPath: ANGULAR_CLIP } : {}}
-                >
-                    Data PKT
-                </button>
-                <button
-                    onClick={() => {
-                        setMainFilter('clean');
-                        setActiveTab('');
-                    }}
-                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'clean' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
-                    style={mainFilter === 'clean' ? { clipPath: ANGULAR_CLIP } : {}}
-                >
-                    Clean Data
-                </button>
-                <button
-                    onClick={() => {
-                        setMainFilter('report');
-                        setActiveTab('');
-                    }}
-                    className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'report' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
-                    style={mainFilter === 'report' ? { clipPath: ANGULAR_CLIP } : {}}
-                >
-                    Report
-                </button>
+            {/* Main Filter Toggle & Month Picker */}
+            <div className="flex justify-between items-start mb-6">
+                <div className="flex bg-white border border-[#E5E5E5] p-1 inline-flex rounded-sm">
+                    <button
+                        onClick={() => {
+                            setMainFilter('booking');
+                            setActiveTab('6_bulan');
+                        }}
+                        className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'booking' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
+                        style={mainFilter === 'booking' ? { clipPath: ANGULAR_CLIP } : {}}
+                    >
+                        Data Booking
+                    </button>
+                    <button
+                        onClick={() => {
+                            setMainFilter('pkt');
+                            setActiveTab('1k');
+                        }}
+                        className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'pkt' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
+                        style={mainFilter === 'pkt' ? { clipPath: ANGULAR_CLIP } : {}}
+                    >
+                        Data PKT
+                    </button>
+                    <button
+                        onClick={() => {
+                            setMainFilter('clean');
+                            setActiveTab('');
+                        }}
+                        className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'clean' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
+                        style={mainFilter === 'clean' ? { clipPath: ANGULAR_CLIP } : {}}
+                    >
+                        Clean Data
+                    </button>
+                    <button
+                        onClick={() => {
+                            setMainFilter('report');
+                            setActiveTab('');
+                        }}
+                        className={`px-6 py-2 text-sm font-bold uppercase tracking-wider transition-all ${mainFilter === 'report' ? 'bg-[#E60012] text-white' : 'text-gray-500 hover:text-[#111111]'}`}
+                        style={mainFilter === 'report' ? { clipPath: ANGULAR_CLIP } : {}}
+                    >
+                        Report
+                    </button>
+                </div>
+
+                <div className="flex gap-2 relative z-20">
+                    <button
+                        onClick={() => setShowAddManual(true)}
+                        className="bg-[#E60012] text-white border border-[#E60012] hover:bg-red-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm"
+                    >
+                        <span className="text-sm font-bold">Add Manual</span>
+                    </button>
+                    {(mainFilter === 'clean' || mainFilter === 'report') && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowCleanMonthPicker(!showCleanMonthPicker)}
+                                className="bg-white border border-[#E5E5E5] hover:border-gray-400 px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm group"
+                            >
+                                <Calendar size={16} className="text-[#E60012] group-hover:scale-110 transition-transform" />
+                                <span className="text-sm font-bold text-gray-700">
+                                    {cleanMonthFilter ? new Date(cleanMonthFilter + '-01').toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : 'Semua Data'}
+                                </span>
+                            </button>
+                            <AnimatePresence>
+                                {showCleanMonthPicker && (
+                                    <CustomMonthPicker
+                                        currentMonth={cleanMonthFilter}
+                                        onSelect={(m) => {
+                                            setCleanMonthFilter(m);
+                                            setShowCleanMonthPicker(false);
+                                        }}
+                                        onClose={() => setShowCleanMonthPicker(false)}
+                                        showAllOption={true}
+                                        align="right"
+                                    />
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Sub Tabs or Filters */}
@@ -1069,8 +1332,8 @@ const PotensiBooking = () => {
                                     <tr>
                                         <td colSpan={5} className="py-12 text-center text-gray-500">Loading data...</td>
                                     </tr>
-                                ) : currentData.length > 0 ? (
-                                    currentData.map((item) => (
+                                ) : paginatedData.length > 0 ? (
+                                    paginatedData.map((item) => (
                                         <tr
                                             key={item.id || item.plate || item.nopol}
                                             onClick={() => {
@@ -1172,6 +1435,32 @@ const PotensiBooking = () => {
                             </tbody>
                         </table>
                     </div>
+                    {mainFilter === 'clean' && totalCleanPages > 1 && (
+                        <div className="p-4 border-t border-[#E5E5E5] flex items-center justify-between bg-[#F9F9F9]">
+                            <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                                Menampilkan {(cleanCurrentPage - 1) * cleanRowsPerPage + 1} - {Math.min(cleanCurrentPage * cleanRowsPerPage, currentData.length)} dari {currentData.length} data
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCleanCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={cleanCurrentPage === 1}
+                                    className="px-3 py-1.5 rounded border border-[#E5E5E5] bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-xs flex items-center gap-1 uppercase tracking-wider shadow-sm"
+                                >
+                                    <ChevronLeft size={14} /> Prev
+                                </button>
+                                <div className="flex items-center px-4 py-1.5 text-xs font-black text-[#111111] bg-white border border-[#E5E5E5] rounded shadow-sm">
+                                    HAL {cleanCurrentPage} / {totalCleanPages}
+                                </div>
+                                <button
+                                    onClick={() => setCleanCurrentPage(p => Math.min(totalCleanPages, p + 1))}
+                                    disabled={cleanCurrentPage === totalCleanPages}
+                                    className="px-3 py-1.5 rounded border border-[#E5E5E5] bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-xs flex items-center gap-1 uppercase tracking-wider shadow-sm"
+                                >
+                                    Next <ChevronRight size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -1263,6 +1552,15 @@ const PotensiBooking = () => {
                         {toast.type === 'error' ? <ShieldAlert size={16} /> : <Check size={16} />}
                         {toast.message}
                     </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showAddManual && (
+                    <AddManualModal
+                        isOpen={showAddManual}
+                        onClose={() => setShowAddManual(false)}
+                        onAdd={handleAddManualSubmit}
+                    />
                 )}
             </AnimatePresence>
         </div>

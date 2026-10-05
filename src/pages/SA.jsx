@@ -378,7 +378,7 @@ Tulis pesan WhatsApp-nya langsung:`;
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-lite-001',
+          model: 'google/gemini-2.5-flash-lite',
           messages: [
             { role: 'user', content: systemPrompt }
           ],
@@ -566,21 +566,21 @@ Tulis pesan WhatsApp-nya langsung:`;
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      
+
       if (data.status) {
         showToast('Walk In berhasil ditambahkan');
         setShowWalkInModal(false);
         setWalkInForm({ nopol: '', kendaraan: '', nama: '', telp: '' });
-        
+
         // Fetch to get the new id and select it
         const newBookingsRes = await fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${currentDate}`);
         const newBookingsData = await newBookingsRes.json();
         if (newBookingsData.status) {
-            setBookings(newBookingsData.data);
-            const savedItem = newBookingsData.data.find(b => b.nopol === payload.nopol && b.status === 'WALK IN');
-            if (savedItem) {
-                setSelectedKonfirmasi(savedItem);
-            }
+          setBookings(newBookingsData.data);
+          const savedItem = newBookingsData.data.find(b => b.nopol === payload.nopol && b.status === 'WALK IN');
+          if (savedItem) {
+            setSelectedKonfirmasi(savedItem);
+          }
         }
       } else {
         showToast(data.message || 'Gagal menyimpan', 'error');
@@ -1691,7 +1691,7 @@ Tulis pesan WhatsApp-nya langsung:`;
                     className="w-full p-3 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
-                
+
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     type="button"

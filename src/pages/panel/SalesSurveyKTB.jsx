@@ -3,6 +3,7 @@ import { Search, ShieldAlert, Check, FileText, X, Filter, ChevronLeft, ChevronRi
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import SurveySearchModal from '../../components/panel/survey/SurveySearchModal';
+import * as XLSX from 'xlsx';
 
 const API_BASE = 'https://csdwindo.com/api/panel/warranty_ktb.php';
 
@@ -76,7 +77,63 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose }) => {
     );
 };
 
-const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
+const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp, onRunnerClick }) => {
+    const [runnerDataLocal, setRunnerDataLocal] = useState(null);
+    const [loadingRunner, setLoadingRunner] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen || !data?.rangka) {
+            setRunnerDataLocal(null);
+            return;
+        }
+        setLoadingRunner(true);
+        fetch(`https://runner.cuma.click/api/vehicles/${data.rangka}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success' && res.data) {
+                    setRunnerDataLocal(res.data);
+                } else {
+                    setRunnerDataLocal(null);
+                }
+            })
+            .catch(() => setRunnerDataLocal(null))
+            .finally(() => setLoadingRunner(false));
+    }, [isOpen, data]);
+
+    const renderRunnerAction = () => {
+        if (loadingRunner) {
+            return <div className="ml-2 w-4 h-4 rounded-full border-2 border-gray-200 border-t-[#E60012] animate-spin inline-block"></div>;
+        }
+
+        if (runnerDataLocal) {
+            return (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); if (onRunnerClick) onRunnerClick(runnerDataLocal); }} 
+                    className="inline-flex items-center justify-center p-1 bg-red-50 text-[#E60012] rounded hover:bg-[#E60012] hover:text-white transition-colors ml-2" 
+                    title="Lihat Data KTB Runner"
+                >
+                    <MapPin size={14} />
+                </button>
+            );
+        }
+
+        const waText = encodeURIComponent(`Halo Bapak/Ibu ${data?.nama || ''},\n\nTerima kasih telah mempercayakan pembelian kendaraan Mitsubishi di Dealer kami.\n\nKami ingin menginformasikan bahwa untuk setiap pembelian Unit Canter, Bapak/Ibu mendapatkan fasilitas *GRATIS GPS Runner* untuk unit berikut:\n\nKendaraan: ${data?.kendaraan || ''}\nNo. Rangka: ${data?.rangka || ''}\n\nSangat disarankan untuk segera melakukan aktivasi, karena sayang sekali jika tidak dimanfaatkan mumpung masih gratis dan dilengkapi dengan berbagai fitur canggih untuk memantau kendaraan Bapak/Ibu.\n\nJika Bapak/Ibu ingin melakukan aktivasi, bisa langsung melalui link berikut:\nhttps://runner.csdwindo.com\n\nJika ada pertanyaan lebih lanjut atau butuh bantuan aktivasi, silakan balas pesan ini ya.\n\nTerima kasih dan salam hangat.`);
+        const waNumber = data?.telp?.startsWith('0') ? `62${data.telp.substring(1)}` : data?.telp;
+
+        return (
+            <a 
+                href={`https://wa.me/${waNumber}?text=${waText}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center justify-center p-1 bg-green-50 text-green-600 rounded hover:bg-green-600 hover:text-white transition-colors ml-2"
+                title="Kirim WA Reminder Aktivasi GPS Runner"
+            >
+                <MessageCircle size={14} />
+            </a>
+        );
+    };
+
     if (!isOpen || !data) return null;
 
     return (
@@ -120,7 +177,7 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col"><span className="text-gray-500 text-xs">Kendaraan</span><span className="font-medium">{data.kendaraan}</span></div>
-                            <div className="flex flex-col"><span className="text-gray-500 text-xs">No. Rangka</span><span className="font-medium">{data.rangka}</span></div>
+                            <div className="flex flex-col"><span className="text-gray-500 text-xs">No. Rangka</span><span className="font-medium flex items-center">{data.rangka}{renderRunnerAction()}</span></div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col"><span className="text-gray-500 text-xs">Sales / SPV</span><span className="font-medium">{data.sales} / {data.spv}</span></div>
@@ -149,60 +206,6 @@ const SalesSurveyDetailModal = ({ isOpen, data, onClose, onFollowUp }) => {
                 </div>
             </motion.div>
         </motion.div>
-    );
-};
-
-const VehicleInfoIcon = ({ rangka, kendaraan, nama, telp, onClick }) => {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!rangka) {
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        fetch(`https://runner.cuma.click/api/vehicles/${rangka}`)
-            .then(res => res.json())
-            .then(res => {
-                if (res.status === 'success' && res.data) {
-                    setData(res.data);
-                }
-            })
-            .catch(() => {})
-            .finally(() => setLoading(false));
-    }, [rangka]);
-
-    if (loading) {
-        return <div className="ml-2 w-4 h-4 rounded-full border-2 border-gray-200 border-t-[#E60012] animate-spin inline-block"></div>;
-    }
-
-    if (data) {
-        return (
-            <button 
-                onClick={(e) => { e.stopPropagation(); onClick(data); }} 
-                className="inline-flex items-center justify-center p-1 bg-red-50 text-[#E60012] rounded hover:bg-[#E60012] hover:text-white transition-colors ml-2" 
-                title="Lihat Data KTB Runner"
-            >
-                <MapPin size={14} />
-            </button>
-        );
-    }
-
-    const waText = encodeURIComponent(`Halo Bapak/Ibu ${nama},\n\nTerima kasih telah mempercayakan pembelian kendaraan Mitsubishi di Dealer kami.\n\nKami ingin menginformasikan bahwa untuk setiap pembelian Unit Canter, Bapak/Ibu mendapatkan fasilitas *GRATIS GPS Runner* untuk unit berikut:\n\nKendaraan: ${kendaraan}\nNo. Rangka: ${rangka}\n\nSangat disarankan untuk segera melakukan aktivasi, karena sayang sekali jika tidak dimanfaatkan mumpung masih gratis dan dilengkapi dengan berbagai fitur canggih untuk memantau kendaraan Bapak/Ibu.\n\nJika Bapak/Ibu ingin melakukan aktivasi, bisa langsung melalui link berikut:\nhttps://runner.csdwindo.com\n\nJika ada pertanyaan lebih lanjut atau butuh bantuan aktivasi, silakan balas pesan ini ya.\n\nTerima kasih dan salam hangat.`);
-    const waNumber = telp?.startsWith('0') ? `62${telp.substring(1)}` : telp;
-
-    return (
-        <a 
-            href={`https://wa.me/${waNumber}?text=${waText}`}
-            target="_blank" 
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center justify-center p-1 bg-green-50 text-green-600 rounded hover:bg-green-600 hover:text-white transition-colors ml-2"
-            title="Kirim WA Reminder Aktivasi GPS Runner"
-        >
-            <MessageCircle size={14} />
-        </a>
     );
 };
 
@@ -283,6 +286,7 @@ const RunnerDetailModal = ({ isOpen, data, onClose }) => {
 };
 
 const SalesSurveyKTB = () => {
+    const adminUser = JSON.parse(sessionStorage.getItem('admin_user') || '{}');
     const [surveys, setSurveys] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -300,6 +304,60 @@ const SalesSurveyKTB = () => {
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    };
+
+    const handleDownloadExcel = async () => {
+        if (!surveys || surveys.length === 0) {
+            showToast('Tidak ada data untuk didownload', 'error');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const chunkSize = 10;
+            const runnerStatuses = {};
+            
+            for (let i = 0; i < surveys.length; i += chunkSize) {
+                const chunk = surveys.slice(i, i + chunkSize);
+                await Promise.all(chunk.map(async (item) => {
+                    if (!item.rangka) return;
+                    try {
+                        const res = await fetch(`https://runner.cuma.click/api/vehicles/${item.rangka}`);
+                        const data = await res.json();
+                        if (data.status === 'success' && data.data?.vehicle?.status) {
+                            runnerStatuses[item.rangka] = data.data.vehicle.status;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch runner status for', item.rangka);
+                    }
+                }));
+            }
+
+            const dataToExport = surveys.map((item, index) => ({
+                'No': index + 1,
+                'Nama': item.nama || '',
+                'No. Telp': item.telp?.startsWith('0') ? item.telp : `0${item.telp}`,
+                'Kendaraan': item.kendaraan || '',
+                'Rangka': item.rangka || '',
+                'Sales': item.sales || '',
+                'SPV': item.spv || '',
+                'Status': displayStatus(item.status) || '',
+                'Runner Status': runnerStatuses[item.rangka] || '-'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Survey KTB");
+            
+            const fileName = `Data_Survey_KTB_${month || 'All'}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+            showToast('Excel berhasil didownload');
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal mendownload excel', 'error');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -408,6 +466,11 @@ const SalesSurveyKTB = () => {
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center">
+                    {adminUser?.role === 'staff' && (
+                        <button onClick={handleDownloadExcel} className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-bold shadow-sm transition-colors h-10 mr-1" disabled={isLoading}>
+                             <FileText size={16} /> Download Excel
+                        </button>
+                    )}
                     <div className="flex items-center gap-1 bg-white border border-[#E5E5E5] p-1 rounded w-fit relative" ref={monthPickerRef}>
                         <button onClick={() => setIsSearchOpen(true)}
                             className="p-1.5 bg-red-50 text-[#E60012] hover:bg-[#E60012] hover:text-white rounded transition-colors mr-1 border border-red-100"
@@ -496,7 +559,6 @@ const SalesSurveyKTB = () => {
                                         <div className="font-bold text-gray-800">{item.kendaraan}</div>
                                         <div className="font-mono mt-0.5 text-gray-500 flex items-center">
                                             {item.rangka}
-                                            <VehicleInfoIcon rangka={item.rangka} kendaraan={item.kendaraan} nama={item.nama} telp={item.telp} onClick={(data) => setRunnerData(data)} />
                                         </div>
                                     </div>
 
@@ -519,7 +581,8 @@ const SalesSurveyKTB = () => {
 
             <AnimatePresence>
                 {detailData && <SalesSurveyDetailModal isOpen={!!detailData} data={detailData} onClose={() => setDetailData(null)}
-                    onFollowUp={(d) => { setDetailData(null); setFollowUpData(d); }} />}
+                    onFollowUp={(d) => { setDetailData(null); setFollowUpData(d); }}
+                    onRunnerClick={(d) => setRunnerData(d)} />}
             </AnimatePresence>
             <AnimatePresence>
                 {followUpData && <SalesSurveyFollowUpModal isOpen={!!followUpData} data={followUpData} onClose={() => setFollowUpData(null)} />}

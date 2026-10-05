@@ -14,6 +14,7 @@ import ArticleDetail from './pages/ArticleDetail';
 import Cetak from './pages/Cetak';
 import BookingService from './pages/BookingService';
 import CustomerSurvey from './pages/CustomerSurvey';
+import WaBlast from './pages/WaBlast';
 
 // Panel Views
 import PanelLayout from './components/layout/PanelLayout';
@@ -75,6 +76,9 @@ function App() {
 
                 {/* Standalone Route for SA */}
                 <Route path="/sa" element={<SA />} />
+
+                {/* Standalone Route for WA Blast Public */}
+                <Route path="/wa-blast" element={<WaBlast />} />
 
                 {/* Admin/CS Panel Routes */}
                 <Route path="/panel" element={<PanelLayout />}>

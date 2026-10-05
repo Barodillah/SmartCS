@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import SurveySearchModal from '../../components/panel/survey/SurveySearchModal';
 import { parseChatMarkdown } from '../../utils/markdownParser';
+import * as XLSX from 'xlsx';
 
 const API_BASE = 'https://csdwindo.com/api/panel/sales_survey.php';
 
@@ -60,7 +61,7 @@ const guessGender = async (name) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "~google/gemini-flash-latest",
+                model: "google/gemini-2.5-flash-lite",
                 messages: [
                     { role: "system", content: "Tebak gender dari nama orang Indonesia. Balas HANYA dengan satu kata: Bapak atau Ibu. Jika tidak yakin balas Bapak/Ibu." },
                     { role: "user", content: name }
@@ -372,7 +373,7 @@ Catatan NPS: ${npsData.note || '-'}`;
                 method: "POST",
                 headers: { "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "xiaomi/mimo-v2-flash",
+                    model: "google/gemini-2.5-flash-lite",
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userMsg }
@@ -770,6 +771,87 @@ const SalesSurvey = () => {
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
     };
 
+    const handleDownloadExcel = async () => {
+        if (!surveys || surveys.length === 0) {
+            showToast('Tidak ada data untuk didownload', 'error');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Fetch NPS data for the last 6 months to get actual NPS Status and Note
+            const months = [];
+            const now = new Date();
+            for (let i = 0; i < 6; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+            }
+            const bulanParam = months.join(',');
+
+            const npsRes = await fetch(`https://csdwindo.com/api/panel/nps_detail.php?bulan=${bulanParam}&divisi=Sales&cabang=All`);
+            const npsData = await npsRes.json();
+
+            const npsMap = {};
+            if (npsData?.status && npsData.data?.list) {
+                npsData.data.list.forEach(item => {
+                    if (item.rangka) {
+                        npsMap[item.rangka] = {
+                            status: item.status_nps,
+                            note: item.note
+                        };
+                    }
+                });
+            }
+
+            const dataToExport = surveys.map((item, index) => {
+                let nps = '';
+                let noteNps = '';
+
+                if (item.rangka && npsMap[item.rangka]) {
+                    nps = npsMap[item.rangka].status || '';
+                    noteNps = npsMap[item.rangka].note || '';
+                }
+
+                if (!nps && item.est) {
+                    const nilai = parseInt(item.est, 10);
+                    if (!isNaN(nilai)) {
+                        if (nilai >= 9 && nilai <= 10) nps = 'Promotor';
+                        else if (nilai >= 7 && nilai <= 8) nps = 'Passive';
+                        else if (nilai >= 0 && nilai <= 6) nps = 'Detractor';
+                    }
+                }
+
+                return {
+                    'No': index + 1,
+                    'Nama': item.nama || '',
+                    'No. Telp': item.telp ? `0${item.telp}` : '',
+                    'Kendaraan': item.kendaraan || '',
+                    'Rangka': item.rangka || '',
+                    'Sales': item.sales || '',
+                    'SPV': item.spv || '',
+                    'Status': displayStatus(item.status) || '',
+                    'Est. Nilai': item.est || '',
+                    'Note': item.note || '',
+                    'NPS': nps,
+                    'Note NPS': noteNps
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Survey");
+
+            const fileName = `Data_Survey_${month || 'All'}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+            showToast('Excel berhasil didownload');
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal mendownload excel', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (monthPickerRef.current && !monthPickerRef.current.contains(event.target)) {
@@ -947,6 +1029,11 @@ const SalesSurvey = () => {
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center">
+                    {adminUser?.role === 'staff' && (
+                        <button onClick={handleDownloadExcel} className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-bold shadow-sm transition-colors h-10 mr-1" disabled={isLoading}>
+                            <FileText size={16} /> Download Excel
+                        </button>
+                    )}
                     <div className="flex items-center gap-1 bg-white border border-[#E5E5E5] p-1 rounded w-fit relative" ref={monthPickerRef}>
                         <button onClick={() => setIsSearchOpen(true)}
                             className="p-1.5 bg-red-50 text-[#E60012] hover:bg-[#E60012] hover:text-white rounded transition-colors mr-1 border border-red-100"

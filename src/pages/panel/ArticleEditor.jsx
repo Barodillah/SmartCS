@@ -181,7 +181,7 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                     'X-Title': 'SmartCS Article Generator'
                 },
                 body: JSON.stringify({
-                    model: 'qwen/qwen3.5-flash-02-23',
+                    model: 'google/gemini-2.5-flash',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: 'Buatkan artikel berdasarkan konteks berikut:\n\n' + aiContext }

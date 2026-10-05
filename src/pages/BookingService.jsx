@@ -448,7 +448,14 @@ export default function BookingService() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const result = await res.json();
+            
+            let result;
+            try {
+                result = await res.json();
+            } catch (err) {
+                console.error("Non-JSON API Response", err);
+                throw new Error("Terjadi kesalahan di server (Respon tidak valid).");
+            }
 
             if (result.status) {
                 // Update potensi_service status to BOOKING if applicable

@@ -252,7 +252,9 @@ if ($method === 'GET') {
     $rankingNonQualified = [];
 
     foreach ($rekapSales as $sales => $data) {
-        $ratio = $data['total'] > 0 ? ($data['surveyed'] / $data['total']) * 100 : 0;
+        $surveyed_nps = isset($data['detail_nps']) ? count($data['detail_nps']) : 0;
+        $unsurveyed_nps = $data['total'] - $surveyed_nps;
+        $ratio = $data['total'] > 0 ? ($surveyed_nps / $data['total']) * 100 : 0;
         
         $promotor = $data['promotor'];
         $passiver = $data['passiver'];
@@ -272,8 +274,8 @@ if ($method === 'GET') {
             'sales' => $sales,
             'spv' => $data['spv'] ?? '',
             'total' => $data['total'],
-            'surveyed' => $data['surveyed'],
-            'unsurveyed' => $data['unsurveyed'],
+            'surveyed' => $surveyed_nps,
+            'unsurveyed' => $unsurveyed_nps,
             'ratio' => round($ratio, 2),
             'skor' => round($skor, 2),
             'promotor' => $promotor,

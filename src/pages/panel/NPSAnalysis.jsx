@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import { parseChatMarkdown } from '../../utils/markdownParser';
 
-const AI_MODEL = 'qwen/qwen3-235b-a22b-2507';
+const AI_MODEL = 'google/gemini-2.5-flash-lite';
 const CACHE_PREFIX = 'nps_ai_';
 const stripThink = (text) => text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
