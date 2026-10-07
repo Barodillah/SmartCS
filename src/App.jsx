@@ -47,6 +47,7 @@ import KonsumenBooking from './pages/panel/KonsumenBooking';
 import Dissatisfaction from './pages/panel/Dissatisfaction';
 import SA from './pages/SA';
 import SalesSurveyAnalysis from './pages/panel/SalesSurveyAnalysis';
+import SalesRate from './pages/panel/SalesRate';
 function App() {
     // Detect if we are on specific subdomains
     const isBookingSubdomain = window.location.hostname.startsWith('booking.');
@@ -105,6 +106,7 @@ function App() {
                     <Route path="nps-detail" element={<NPSDetail />} />
                     <Route path="nps-analysis" element={<NPSAnalysis />} />
                     <Route path="analysis/sales-survey" element={<SalesSurveyAnalysis />} />
+                    <Route path="sales-rate" element={<SalesRate />} />
                     <Route path="warranty/mmksi" element={<WarrantyMMKSI />} />
                     <Route path="warranty/ktb" element={<WarrantyKTB />} />
                     <Route path="data-pdi/mmksi" element={<DataPDIMMKSI />} />

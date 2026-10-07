@@ -263,7 +263,6 @@ export const LegacyDetailModal = ({ isOpen, onClose, data, onEdit, onDelete }) =
         setWaGeneratedText('');
 
         try {
-            const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
             const bookingContext = formatBookingWhatsApp(data);
 
             const systemPrompt = `Kamu adalah Customer Service Assistant untuk dealer mobil Mitsubishi Dwindo.
@@ -280,11 +279,10 @@ ${bookingContext}
 
 Buatkan draft pesannya sekarang:`;
 
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
                     model: 'google/gemini-2.5-flash-lite',

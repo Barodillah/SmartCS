@@ -2079,13 +2079,10 @@ const VirtualCS = () => {
         }
 
         try {
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const response = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
                     'Content-Type': 'application/json',
-                    'HTTP-Referer': window.location.origin,
-                    'X-Title': 'DINA - Dwindo Intelligent Assistant'
                 },
                 body: JSON.stringify({
                     model: import.meta.env.VITE_OPENROUTER_MODEL,

@@ -207,13 +207,6 @@ const WaBlast = () => {
 
         setIsGenerating(true);
         try {
-            const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-            if (!apiKey) {
-                showToast('API Key OpenRouter tidak ditemukan di .env', 'error');
-                setIsGenerating(false);
-                return;
-            }
-
             const availableVars = blastHeaders.filter(h => h.toLowerCase() !== 'wa').map(h => `{{${h}}}`).join(', ');
 
             const systemPrompt = `Anda adalah asisten pembuat template pesan WhatsApp profesional.
@@ -236,10 +229,9 @@ PENTING:
 
 Balas HANYA dengan isi template pesan saja, tanpa tambahan penjelasan apapun.`;
 
-            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${apiKey}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({

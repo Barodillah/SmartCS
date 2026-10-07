@@ -101,9 +101,9 @@ History Penanganan: ${data.penanganan || '-'}`;
                 userMsg += `\n\nKonteks tambahan dari user: ${context}`;
             }
 
-            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "google/gemini-2.5-flash-lite",
                     messages: [

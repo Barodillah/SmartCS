@@ -191,6 +191,7 @@ const PanelSidebar = ({ isOpen, setIsOpen, isMinimized, setIsMinimized }) => {
         { name: 'MMKSI', path: '/panel/sales-survey/mmksi' },
         { name: 'KTB', path: '/panel/sales-survey/ktb' },
         { name: 'Analysis', path: '/panel/analysis/sales-survey' },
+        { name: 'Sales Rate', path: '/panel/sales-rate' },
     ];
 
     const npsSubMenu = [

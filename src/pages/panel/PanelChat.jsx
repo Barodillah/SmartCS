@@ -230,10 +230,9 @@ const PanelChat = () => {
                 .map(msg => `${msg.sender_type === 'user' ? 'User' : 'CS'}: ${msg.message}`)
                 .join('\n');
 
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const response = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({

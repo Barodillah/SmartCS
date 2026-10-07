@@ -172,13 +172,10 @@ Berikan output dalam format JSON yang valid (tanpa markdown code block) dengan s
 
 Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Bintaro.`;
 
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-                    'HTTP-Referer': window.location.origin,
-                    'X-Title': 'SmartCS Article Generator'
                 },
                 body: JSON.stringify({
                     model: 'google/gemini-2.5-flash',

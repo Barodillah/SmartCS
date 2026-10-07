@@ -157,13 +157,9 @@ const guessGender = async (name) => {
         const cacheKey = name.trim().toLowerCase();
         if (genderCache.has(cacheKey)) return genderCache.get(cacheKey);
 
-        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-        if (!apiKey) return "Bapak/Ibu";
-
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({

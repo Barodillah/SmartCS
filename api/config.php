@@ -19,6 +19,9 @@ define('DB_NAME', '');
 define('DB_USER', 'u444914729_smartcs');
 define('DB_PASS', '');
 
+// --- API Keys ---
+define('OPENROUTER_API_KEY', 'sk-or-v1-xxxxxxxxxxxxxxxxxxx');
+
 function getDB()
 {
     static $pdo = null;

@@ -9,10 +9,7 @@ if (empty($body['context'])) {
     jsonResponse(false, 'Konteks artikel wajib diisi.', null, 400);
 }
 
-$apiKey = $body['api_key'] ?? '';
-if (empty($apiKey)) {
-    jsonResponse(false, 'API key tidak ditemukan.', null, 400);
-}
+$apiKey = OPENROUTER_API_KEY;
 
 $context = $body['context'];
 

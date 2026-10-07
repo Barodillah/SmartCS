@@ -261,7 +261,6 @@ const LeadManager = ({ label, title, desc, icon }) => {
         setAiGeneratedText('');
 
         try {
-            const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
             const leadContext = formatWhatsAppText(selectedLead);
             const recentMessages = selectedLead.recent_messages && selectedLead.recent_messages.length > 0
                 ? selectedLead.recent_messages.map(m => `${m.sender_type === 'user' ? 'Konsumen' : 'DINA (Bot)'}: ${m.message}`).join('\n')
@@ -284,11 +283,10 @@ ${recentMessages}
 
 Buatkan draft balasan pesannya sekarang:`;
 
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
                     model: 'google/gemini-2.5-flash-lite',
