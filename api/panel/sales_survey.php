@@ -243,6 +243,7 @@ if ($method === 'GET') {
     $note    = mysqli_real_escape_string($conn, $body['note'] ?? '');
     $pkt     = mysqli_real_escape_string($conn, $body['pkt'] ?? 'No');
     $wa_date = mysqli_real_escape_string($conn, $body['wa_date'] ?? '');
+    $log_wa  = mysqli_real_escape_string($conn, $body['log_wa'] ?? '');
 
     if ($id <= 0 || empty($status)) {
         echo json_encode(['status' => false, 'message' => 'ID dan status wajib diisi']);
@@ -260,7 +261,8 @@ if ($method === 'GET') {
 
     if (mysqli_query($conn, $updateQuery)) {
         // Insert record log
-        $recordQuery = "INSERT INTO surveyupdate_record (id, time, unit_id, status, pkt, note) VALUES (NULL, NULL, $id, '$status', '$pkt', '$note')";
+        $recordNote = !empty($log_wa) ? trim("$log_wa | $note", " |") : $note;
+        $recordQuery = "INSERT INTO surveyupdate_record (id, time, unit_id, status, pkt, note) VALUES (NULL, NULL, $id, '$status', '$pkt', '$recordNote')";
         mysqli_query($conn, $recordQuery);
 
         echo json_encode(['status' => true, 'message' => 'Status survey berhasil diperbarui']);

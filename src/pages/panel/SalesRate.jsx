@@ -1,6 +1,255 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Info } from 'lucide-react';
+import { Users, Info, Clock, AlertCircle, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+
+const SummaryNPSChart = ({ data }) => {
+    const targetNPS = 84;
+    return (
+        <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between mb-0">
+                <div>
+                    <h2 className="font-bold text-xl text-[#111111]">NPS Semua Tim</h2>
+                    <p className="text-sm text-gray-500 mt-1">Perbandingan Nilai NPS berdasarkan SPV</p>
+                </div>
+                <div className="flex gap-6 text-xs font-bold bg-gray-50 px-4 py-2 rounded-lg border border-gray-100 hidden sm:flex">
+                    <div className="flex items-center gap-2"><div className="w-4 h-0.5 border-t-2 border-dashed border-red-500"></div> Target Nasional ({targetNPS})</div>
+                </div>
+            </div>
+
+            <div className="relative h-[400px] flex items-end pb-16">
+                <div className="flex-1 flex items-end justify-around h-full pb-10 pt-10 relative overflow-x-auto overflow-y-hidden">
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-10 pt-10 min-w-[600px]">
+                        {[100, 75, 50, 25, 0].map((val) => (
+                            <div key={val} className="flex items-center w-full">
+                                <div className="flex-1 border-b border-gray-100 border-dashed"></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="absolute inset-0 pointer-events-none pb-10 pt-10 z-40 min-w-[600px]">
+                        <div className="relative w-full h-full">
+                            <div className="absolute left-0 right-0 border-t-2 border-dashed border-red-500 flex items-center justify-end" style={{ bottom: `${targetNPS}%` }}>
+                                <span className="text-[11px] font-black text-red-500 bg-white px-2 py-0.5 rounded shadow-sm absolute right-0 translate-x-4 -translate-y-1/2">
+                                    Target {targetNPS}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {data.map((item, idx) => {
+                        const total = item.promoters + item.passives + item.detractors;
+                        const pPct = total > 0 ? Math.round((item.promoters / total) * 100) : 0;
+                        const aPct = total > 0 ? Math.round((item.passives / total) * 100) : 0;
+                        const dPct = total > 0 ? (100 - pPct - aPct) : 0;
+                        const npsScore = total > 0 ? Math.round(((item.promoters - item.detractors) / total) * 100) : 0;
+
+                        return (
+                            <div key={item.label} className="flex flex-col items-center group relative h-full flex-1 px-1 sm:px-2 min-w-[60px]">
+                                {idx === 1 && (
+                                    <div className="absolute left-[-5%] top-[-5%] bottom-[-5%] w-px border-l-2 border-red-400 border-dashed opacity-50"></div>
+                                )}
+                                <div className="w-full max-w-[60px] h-full flex flex-col-reverse rounded overflow-hidden shadow-md border border-white relative z-10 transition-transform duration-300 group-hover:scale-[1.02]">
+                                    <div className="w-full bg-red-500 flex items-center justify-center text-[10px] sm:text-xs text-white font-black overflow-hidden" style={{ height: `${dPct}%` }}>
+                                        {dPct > 5 && `${dPct}%`}
+                                    </div>
+                                    <div className="w-full bg-amber-400 flex items-center justify-center text-[10px] sm:text-xs text-white font-black overflow-hidden" style={{ height: `${aPct}%` }}>
+                                        {aPct > 5 && `${aPct}%`}
+                                    </div>
+                                    <div className="w-full bg-green-500 flex items-center justify-center text-[10px] sm:text-xs text-white font-black overflow-hidden" style={{ height: `${pPct}%` }}>
+                                        {pPct > 5 && `${pPct}%`}
+                                    </div>
+                                </div>
+                                <div className="absolute left-1/2 -translate-x-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-black rounded-full border-2 border-white shadow-lg z-30" style={{ bottom: `calc(${Math.max(0, npsScore)}% - 6px)` }}>
+                                    <div className="absolute left-1/2 -translate-x-1/2 -top-8 sm:-top-11 bg-black text-white text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1 rounded font-black whitespace-nowrap shadow-xl">
+                                        {npsScore}%
+                                    </div>
+                                </div>
+                                <div className="absolute -bottom-10 text-[9px] sm:text-[10px] text-gray-700 font-black uppercase tracking-wider text-center px-0.5 w-full max-w-[80px] line-clamp-2">
+                                    {item.label}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const SummaryTab = ({ spvData }) => {
+    let totalData = 0;
+    let potensialSurvey = 0;
+    let masukNPS = 0;
+    const semuaStatusTally = {};
+    let totalPromotor = 0;
+    let totalPassive = 0;
+    let totalDetractor = 0;
+
+    const chartData = [];
+
+    spvData.forEach(spvRow => {
+        totalData += spvRow.total || 0;
+        totalPromotor += spvRow.promotor || 0;
+        totalPassive += spvRow.passiver || 0;
+        totalDetractor += spvRow.detraktor || 0;
+
+        if (spvRow.sales_list) {
+            spvRow.sales_list.forEach(sale => {
+                masukNPS += sale.detail_nps ? sale.detail_nps.length : 0;
+                
+                if (sale.detail_survey) {
+                    sale.detail_survey.forEach(survey => {
+                        const status = survey.status_detail ? survey.status_detail.toUpperCase() : 'BLANK';
+                        if (!['NOMOR SALAH', 'PKT', 'SALAH SAMBUNG'].includes(status)) {
+                            potensialSurvey += 1;
+                        }
+                        semuaStatusTally[status] = (semuaStatusTally[status] || 0) + 1;
+                    });
+                }
+            });
+        }
+        
+        chartData.push({
+            label: spvRow.spv,
+            promoters: spvRow.promotor || 0,
+            passives: spvRow.passiver || 0,
+            detractors: spvRow.detraktor || 0
+        });
+    });
+
+    chartData.unshift({
+        label: 'Total Semua',
+        promoters: totalPromotor,
+        passives: totalPassive,
+        detractors: totalDetractor
+    });
+
+    const donutLabels = Object.keys(semuaStatusTally).sort((a, b) => semuaStatusTally[b] - semuaStatusTally[a]);
+    const donutValues = donutLabels.map(l => semuaStatusTally[l]);
+    const totalDonut = donutValues.reduce((a, b) => a + b, 0);
+
+    let currentPct = 0;
+    const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#64748b', '#ec4899', '#14b8a6'];
+    const gradientStops = donutValues.map((val, idx) => {
+        const pct = (val / totalDonut) * 100;
+        const color = colors[idx % colors.length];
+        const stop = `${color} ${currentPct}% ${currentPct + pct}%`;
+        currentPct += pct;
+        return stop;
+    }).join(', ');
+
+    const conicBackground = totalDonut > 0 ? `conic-gradient(${gradientStops})` : 'conic-gradient(#e5e7eb 0% 100%)';
+
+    return (
+        <div className="animate-in fade-in duration-300 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Card 1: Total Data */}
+                <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm">
+                    <h4 className="font-display font-bold text-md text-[#111111] mb-6">Ringkasan Data Survey</h4>
+                    <div className="space-y-6">
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-600">Total Data (Filter Tanggal)</span>
+                                <span className="text-2xl font-black text-[#111111]">{totalData}</span>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 w-full rounded-full"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-600">Potensial Survey</span>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black text-[#111111]">{potensialSurvey}</span>
+                                    <span className="text-xs text-gray-500 font-medium ml-2">({totalData > 0 ? Math.round((potensialSurvey / totalData) * 100) : 0}%)</span>
+                                </div>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${totalData > 0 ? (potensialSurvey / totalData) * 100 : 0}%` }}></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex justify-between items-end mb-2">
+                                <span className="text-sm font-bold text-gray-600">Tersurvey (NPS)</span>
+                                <div className="text-right">
+                                    <span className="text-2xl font-black text-[#111111]">{masukNPS}</span>
+                                    <span className="text-xs text-gray-500 font-medium ml-2">({totalData > 0 ? Math.round((masukNPS / totalData) * 100) : 0}%)</span>
+                                </div>
+                            </div>
+                            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${totalData > 0 ? (masukNPS / totalData) * 100 : 0}%` }}></div>
+                            </div>
+                        </div>
+
+                        {/* Alert Selisih Potensial Survey */}
+                        {potensialSurvey - masukNPS > 0 ? (
+                            <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
+                                <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h5 className="font-bold text-sm text-red-800 mb-0.5">Potensial Survey</h5>
+                                    <p className="text-xs text-red-600 leading-relaxed">
+                                        Terdapat selisih <span className="font-black text-red-700">{potensialSurvey - masukNPS}</span> konsumen (<span className="font-bold">{potensialSurvey > 0 ? Math.round(((potensialSurvey - masukNPS) / potensialSurvey) * 100) : 0}%</span>) yang belum Tersurvey (NPS).
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-green-50 border border-green-100 rounded-lg p-3 flex items-start gap-3">
+                                <Info size={18} className="text-green-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <h5 className="font-bold text-sm text-green-800 mb-0.5">Potensial Survey</h5>
+                                    <p className="text-xs text-green-600 leading-relaxed">
+                                        Seluruh data Potensial Survey telah berhasil Tersurvey (NPS).
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Card 2: Semua Status */}
+                <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm flex flex-col">
+                    <h4 className="font-display font-bold text-md text-[#111111] mb-6">Komposisi Semua Status</h4>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 flex-1">
+                        {totalDonut === 0 ? (
+                            <div className="w-full h-full flex items-center justify-center text-sm text-gray-400 border border-dashed rounded-lg py-12">Tidak ada data</div>
+                        ) : (
+                            <>
+                                <div className="relative w-36 h-36 shrink-0">
+                                    <div className="w-full h-full rounded-full" style={{ background: conicBackground }}></div>
+                                    <div className="absolute inset-3 bg-white rounded-full flex flex-col items-center justify-center">
+                                        <span className="text-xl font-black text-[#111111]">{totalDonut}</span>
+                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Total</span>
+                                    </div>
+                                </div>
+                                <div className="flex-1 w-full space-y-3">
+                                    {donutLabels.map((label, idx) => {
+                                        const color = colors[idx % colors.length];
+                                        const val = semuaStatusTally[label];
+                                        const pct = Math.round((val / totalDonut) * 100);
+                                        return (
+                                            <div key={label} className="flex items-center justify-between text-xs">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }}></span>
+                                                    <span className="font-bold text-gray-700 truncate max-w-[120px]" title={label}>{label}</span>
+                                                </div>
+                                                <div className="font-black text-[#111111] whitespace-nowrap ml-2">
+                                                    {val} <span className="text-gray-400 font-medium ml-1">({pct}%)</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <SummaryNPSChart data={chartData} />
+        </div>
+    );
+};
 
 const SalesRate = () => {
     const today = new Date();
@@ -20,7 +269,7 @@ const SalesRate = () => {
     const [spvData, setSpvData] = useState([]);
     
     // Tabs state
-    const [activeTab, setActiveTab] = useState('spv');
+    const [activeTab, setActiveTab] = useState('summary');
     const [minData, setMinData] = useState(0); // 0 means show all
     
     // For Expandable Rows and Modals
@@ -28,6 +277,8 @@ const SalesRate = () => {
     const [showAllSpvModal, setShowAllSpvModal] = useState(false);
     const [selectedSurveyDetails, setSelectedSurveyDetails] = useState(null);
     const [selectedNpsDetails, setSelectedNpsDetails] = useState(null);
+    const [selectedWarrantyDetails, setSelectedWarrantyDetails] = useState(null);
+    const [warrantyTab, setWarrantyTab] = useState('spv'); // 'spv' or 'sales'
 
     // Compute flattened sales list
     const allSales = React.useMemo(() => {
@@ -138,6 +389,18 @@ const SalesRate = () => {
             {/* Tabs */}
             <div className="flex border-b border-[#E5E5E5] mb-6 gap-6 shrink-0">
                 <button
+                    onClick={() => setActiveTab('summary')}
+                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'summary' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                >
+                    <BarChart3 size={18} />
+                    Summary
+                    {activeTab === 'summary' && (
+                        <motion.div layoutId="salestab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E60012]" />
+                    )}
+                </button>
+
+                <button
                     onClick={() => setActiveTab('spv')}
                     className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'spv' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
                         }`}
@@ -159,11 +422,22 @@ const SalesRate = () => {
                         <motion.div layoutId="salestab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E60012]" />
                     )}
                 </button>
+                <button
+                    onClick={() => setActiveTab('warranty')}
+                    className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'warranty' ? 'text-[#E60012]' : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                >
+                    <Clock size={18} />
+                    Warranty Time
+                    {activeTab === 'warranty' && (
+                        <motion.div layoutId="salestab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E60012]" />
+                    )}
+                </button>
             </div>
 
             {/* Main Content */}
             <div className="flex-1 min-h-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                {activeTab === 'spv' ? (
+                {activeTab === 'summary' ? <SummaryTab spvData={spvData} /> : activeTab === 'spv' ? (
                     <>
                     {/* Table SPV Qualified */}
                     <div className="mb-8">
@@ -548,7 +822,7 @@ const SalesRate = () => {
                     </div>
                 )}
                 </>
-                ) : (
+                ) : activeTab === 'sales' ? (
                 <>
                     <div className="mb-8 animate-in fade-in zoom-in-95 duration-200">
                         <div className="overflow-x-auto rounded-xl border border-[#E5E5E5] shadow-sm">
@@ -745,11 +1019,525 @@ const SalesRate = () => {
                                 </table>
                             </div>
                         </div>
-                    )}
-                    </>
                 )}
+                </>
+                                                                ) : activeTab === 'warranty' ? (
+                    <div className="mb-8 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                            <h3 className="font-display font-bold text-lg text-[#111111]">Rata-rata Waktu Warranty {warrantyTab === 'spv' ? 'per Tim' : 'Semua Sales'}</h3>
+                            
+                            {/* Toggle Warranty Tabs */}
+                            <div className="flex p-1 bg-gray-100 rounded-lg shrink-0">
+                                <button
+                                    onClick={() => setWarrantyTab('spv')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${warrantyTab === 'spv' ? 'bg-white text-[#111111] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                                >
+                                    Per Tim
+                                </button>
+                                <button
+                                    onClick={() => setWarrantyTab('sales')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${warrantyTab === 'sales' ? 'bg-white text-[#111111] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                                >
+                                    Semua Sales
+                                </button>
+                            </div>
+                        </div>
+
+                        {warrantyTab === 'spv' ? (
+                        <>
+                            <div className="mb-8">
+                                {minData > 0 && <h3 className="font-display font-bold text-lg mb-4 text-[#111111]">Tim Memenuhi Syarat (Min. {minData} Data)</h3>}
+                                <div className="overflow-x-auto rounded-xl border border-[#E5E5E5] shadow-sm">
+                                    <table className="w-full text-left border-collapse bg-white">
+                                        <thead className="bg-gray-50 border-b border-[#E5E5E5]">
+                                            <tr className="text-[11px] font-black uppercase tracking-wider text-gray-600">
+                                                <th className="p-3 border-r border-gray-200 w-64">Supervisor (SPV)</th>
+                                                <th className="p-3 border-r border-gray-200 text-center w-32">Rata-rata Waktu</th>
+                                                <th className="p-3 text-center w-48">
+                                                    <div className="flex flex-col items-center">
+                                                        <span>Status Konsumen</span>
+                                                        <span className="text-[9px] text-gray-400 font-medium normal-case">(Belum Warranty / Total)</span>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-sm">
+                                            {loading ? (
+                                                <tr>
+                                                    <td colSpan={3} className="p-12 text-center text-gray-500 font-bold">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <div className="w-4 h-4 border-2 border-[#E60012] border-t-transparent rounded-full animate-spin"></div>
+                                                            Memuat data...
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : spvData.filter(d => d.warranty_count >= minData).length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={3} className="p-12 text-center text-gray-400 font-bold">
+                                                        Tidak ada data yang memenuhi kriteria.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                spvData.filter(d => d.warranty_count >= minData).sort((a, b) => a.avg_warranty - b.avg_warranty).map((row, idx) => {
+                                                    const isExpanded = expandedSpv === 'wq_' + row.spv;
+                                                    return (
+                                                    <React.Fragment key={idx}>
+                                                        <tr 
+                                                            className={`hover:bg-gray-50 transition-colors border-b border-gray-100 cursor-pointer ${isExpanded ? 'bg-gray-50' : ''}`}
+                                                            onClick={() => setExpandedSpv(isExpanded ? null : 'wq_' + row.spv)}
+                                                        >
+                                                            <td className="p-3 font-bold text-[#111111] border-r border-gray-100 whitespace-nowrap">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Users size={16} className="text-gray-400" />
+                                                                    <span className="border-b-2 border-dashed border-gray-300 pb-0.5 group-hover:border-red-400 transition-colors">
+                                                                        {row.spv}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="text-[10px] text-gray-400 mt-1 font-medium ml-6">
+                                                                    {row.sales_list.length} Sales
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-center border-r border-gray-100">
+                                                                <div className={`font-black text-lg ${row.avg_warranty <= 3 ? 'text-green-600' : row.avg_warranty <= 7 ? 'text-amber-600' : 'text-red-600'}`}>
+                                                                    {row.avg_warranty} <span className="text-xs text-gray-500 font-medium">Hari</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-center cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedWarrantyDetails({ title: `Tim ${row.spv}`, details: row.detail_warranty });
+                                                                }}
+                                                            >
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <div className={`flex flex-col items-center justify-center w-14 rounded py-1 border transition-colors ${row.pdi_count === 0 ? 'bg-green-50 border-green-100 group-hover:bg-green-100' : 'bg-red-50 border-red-100 group-hover:bg-red-100'}`}>
+                                                                        <span className={`text-[9px] font-bold uppercase tracking-tighter ${row.pdi_count === 0 ? 'text-green-600' : 'text-red-600'}`}>Belum</span>
+                                                                        <span className={`text-sm font-black ${row.pdi_count === 0 ? 'text-green-700' : 'text-red-700'}`}>{row.pdi_count}</span>
+                                                                    </div>
+                                                                    <span className="text-gray-300 font-black">/</span>
+                                                                    <div className="flex flex-col items-center justify-center w-14 bg-gray-50 rounded py-1 border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Total</span>
+                                                                        <span className="text-sm font-black text-gray-700">{row.warranty_count}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        {isExpanded && (
+                                                            <tr className="bg-[#F8F9FA] border-b border-gray-200">
+                                                                <td colSpan={3} className="p-4">
+                                                                    <div className="bg-white rounded-lg border border-[#E5E5E5] shadow-sm overflow-hidden ml-8">
+                                                                        <div className="px-4 py-3 bg-gray-50 border-b border-[#E5E5E5] flex justify-between items-center">
+                                                                            <h4 className="font-bold text-[#111111] text-sm flex items-center gap-2">
+                                                                                <div className="w-1.5 h-4 bg-[#E60012] rounded-full"></div>
+                                                                                Daftar Sales - Tim {row.spv}
+                                                                            </h4>
+                                                                        </div>
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse">
+                                                                                <thead className="bg-white border-b border-gray-100">
+                                                                                    <tr className="text-[10px] font-black uppercase tracking-wider text-gray-500">
+                                                                                        <th className="p-2.5 text-center border-r border-gray-50 w-10">No</th>
+                                                                                        <th className="p-2.5 border-r border-gray-50 w-48">Nama Sales</th>
+                                                                                        <th className="p-2.5 border-r border-gray-50 w-32 text-center">Rata-rata Waktu</th>
+                                                                                        <th className="p-2.5 text-center w-48">
+                                                                                            <div className="flex flex-col items-center">
+                                                                                                <span>Status Konsumen</span>
+                                                                                                <span className="text-[8px] text-gray-400 font-medium normal-case">(Belum / Total)</span>
+                                                                                            </div>
+                                                                                        </th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody className="text-sm">
+                                                                                    {row.sales_list && row.sales_list.length > 0 ? (
+                                                                                        [...row.sales_list].sort((a,b) => a.avg_warranty - b.avg_warranty).map((salesRow, sIdx) => (
+                                                                                            <tr key={sIdx} className="border-b border-gray-50 hover:bg-gray-50/50 last:border-0 transition-colors">
+                                                                                                <td className="p-2.5 text-center text-gray-400 font-bold border-r border-gray-50">{sIdx + 1}</td>
+                                                                                                <td className="p-2.5 font-bold text-gray-800 border-r border-gray-50">{salesRow.sales}</td>
+                                                                                                <td className="p-2.5 text-center border-r border-gray-50">
+                                                                                                    <span className={`font-black ${salesRow.avg_warranty <= 3 ? 'text-green-600' : salesRow.avg_warranty <= 7 ? 'text-amber-600' : 'text-red-600'}`}>
+                                                                                                        {salesRow.avg_warranty} Hari
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                                <td className="p-2.5 text-center cursor-pointer hover:bg-gray-100 transition-colors rounded-md group"
+                                                                                                    onClick={() => setSelectedWarrantyDetails({ title: `Sales ${salesRow.sales}`, details: salesRow.detail_warranty })}
+                                                                                                >
+                                                                                                    <div className="flex items-center justify-center gap-1.5">
+                                                                                                        <div className={`flex flex-col items-center justify-center w-12 rounded border transition-colors ${salesRow.pdi_count === 0 ? 'bg-green-50 border-green-100 group-hover:bg-green-100' : 'bg-red-50 border-red-100 group-hover:bg-red-100'}`}>
+                                                                                                            <span className={`text-sm font-black ${salesRow.pdi_count === 0 ? 'text-green-700' : 'text-red-700'}`}>{salesRow.pdi_count}</span>
+                                                                                                        </div>
+                                                                                                        <span className="text-gray-300 font-black">/</span>
+                                                                                                        <div className="flex flex-col items-center justify-center w-12 bg-gray-50 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                                                                                            <span className="text-sm font-black text-gray-500">{salesRow.warranty_count}</span>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        ))
+                                                                                    ) : (
+                                                                                        <tr>
+                                                                                            <td colSpan={4} className="p-4 text-center text-gray-400 font-bold text-xs">Belum ada data sales di tim ini</td>
+                                                                                        </tr>
+                                                                                    )}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {minData > 0 && spvData.filter(d => d.warranty_count < minData).length > 0 && (
+                            <div className="mb-8 opacity-60 hover:opacity-100 transition-opacity">
+                                <h3 className="font-display font-bold text-lg mb-4 text-gray-500">Tim Tidak Memenuhi Syarat (Di Bawah {minData} Data)</h3>
+                                <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                                    <table className="w-full text-left border-collapse bg-gray-50">
+                                        <thead className="bg-gray-100 border-b border-gray-200">
+                                            <tr className="text-[11px] font-black uppercase tracking-wider text-gray-500">
+                                                <th className="p-3 border-r border-gray-200 w-64">Supervisor (SPV)</th>
+                                                <th className="p-3 border-r border-gray-200 text-center w-32">Rata-rata Waktu</th>
+                                                <th className="p-3 text-center w-48">
+                                                    <div className="flex flex-col items-center">
+                                                        <span>Status Konsumen</span>
+                                                        <span className="text-[9px] text-gray-400 font-medium normal-case">(Belum Warranty / Total)</span>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-sm">
+                                            {spvData.filter(d => d.warranty_count < minData).sort((a, b) => a.avg_warranty - b.avg_warranty).map((row, idx) => {
+                                                const isExpanded = expandedSpv === 'wunq_' + row.spv;
+                                                return (
+                                                <React.Fragment key={idx}>
+                                                    <tr 
+                                                        className={`hover:bg-gray-100 transition-colors border-b border-gray-200 cursor-pointer ${isExpanded ? 'bg-gray-100' : ''}`}
+                                                        onClick={() => setExpandedSpv(isExpanded ? null : 'wunq_' + row.spv)}
+                                                    >
+                                                        <td className="p-3 font-bold text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                                                            <div className="flex items-center gap-2">
+                                                                <Users size={16} className="text-gray-400" />
+                                                                <span className="border-b-2 border-dashed border-gray-300 pb-0.5">
+                                                                    {row.spv}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-[10px] text-gray-400 mt-1 font-medium ml-6">
+                                                                {row.sales_list.length} Sales
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 text-center border-r border-gray-200">
+                                                            <div className="font-black text-lg text-gray-500">
+                                                                {row.avg_warranty} <span className="text-xs font-medium">Hari</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 text-center cursor-pointer hover:bg-gray-200 transition-colors group"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedWarrantyDetails({ title: `Tim ${row.spv}`, details: row.detail_warranty });
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className={`flex flex-col items-center justify-center w-14 rounded py-1 border transition-colors ${row.pdi_count === 0 ? 'bg-green-50 border-green-100 group-hover:bg-green-100' : 'bg-red-50 border-red-100 group-hover:bg-red-100'}`}>
+                                                                    <span className={`text-[9px] font-bold uppercase tracking-tighter ${row.pdi_count === 0 ? 'text-green-500' : 'text-red-400'}`}>Belum</span>
+                                                                    <span className={`text-sm font-black ${row.pdi_count === 0 ? 'text-green-600' : 'text-red-400'}`}>{row.pdi_count}</span>
+                                                                </div>
+                                                                <span className="text-gray-300 font-black">/</span>
+                                                                <div className="flex flex-col items-center justify-center w-14 bg-gray-50 rounded py-1 border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Total</span>
+                                                                    <span className="text-sm font-black text-gray-500">{row.warranty_count}</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {isExpanded && (
+                                                        <tr className="bg-[#F8F9FA] border-b border-gray-200">
+                                                            <td colSpan={3} className="p-4">
+                                                                <div className="bg-white rounded-lg border border-[#E5E5E5] shadow-sm overflow-hidden ml-8">
+                                                                    <div className="px-4 py-3 bg-gray-50 border-b border-[#E5E5E5] flex justify-between items-center">
+                                                                        <h4 className="font-bold text-gray-600 text-sm flex items-center gap-2">
+                                                                            <div className="w-1.5 h-4 bg-gray-300 rounded-full"></div>
+                                                                            Daftar Sales - Tim {row.spv}
+                                                                        </h4>
+                                                                    </div>
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-left border-collapse">
+                                                                            <thead className="bg-white border-b border-gray-100">
+                                                                                <tr className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                                                                                    <th className="p-2.5 text-center border-r border-gray-50 w-10">No</th>
+                                                                                    <th className="p-2.5 border-r border-gray-50 w-48">Nama Sales</th>
+                                                                                    <th className="p-2.5 border-r border-gray-50 w-32 text-center">Rata-rata Waktu</th>
+                                                                                    <th className="p-2.5 text-center w-48">
+                                                                                        <div className="flex flex-col items-center">
+                                                                                            <span>Status Konsumen</span>
+                                                                                            <span className="text-[8px] text-gray-400 font-medium normal-case">(Belum / Total)</span>
+                                                                                        </div>
+                                                                                    </th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="text-sm">
+                                                                                {row.sales_list && row.sales_list.length > 0 ? (
+                                                                                    [...row.sales_list].sort((a,b) => a.avg_warranty - b.avg_warranty).map((salesRow, sIdx) => (
+                                                                                        <tr key={sIdx} className="border-b border-gray-50 hover:bg-gray-50/50 last:border-0 transition-colors">
+                                                                                            <td className="p-2.5 text-center text-gray-400 font-bold border-r border-gray-50">{sIdx + 1}</td>
+                                                                                            <td className="p-2.5 font-bold text-gray-500 border-r border-gray-50">{salesRow.sales}</td>
+                                                                                            <td className="p-2.5 text-center border-r border-gray-50 text-gray-500 font-black">
+                                                                                                {salesRow.avg_warranty} Hari
+                                                                                            </td>
+                                                                                            <td className="p-2.5 text-center cursor-pointer hover:bg-gray-100 transition-colors rounded-md group"
+                                                                                                onClick={() => setSelectedWarrantyDetails({ title: `Sales ${salesRow.sales}`, details: salesRow.detail_warranty })}
+                                                                                            >
+                                                                                                <div className="flex items-center justify-center gap-1.5">
+                                                                                                    <div className={`flex flex-col items-center justify-center w-12 rounded border transition-colors ${salesRow.pdi_count === 0 ? 'bg-green-50 border-green-100 group-hover:bg-green-100' : 'bg-red-50 border-red-100 group-hover:bg-red-100'}`}>
+                                                                                                        <span className={`text-sm font-black ${salesRow.pdi_count === 0 ? 'text-green-600' : 'text-red-400'}`}>{salesRow.pdi_count}</span>
+                                                                                                    </div>
+                                                                                                    <span className="text-gray-300 font-black">/</span>
+                                                                                                    <div className="flex flex-col items-center justify-center w-12 bg-gray-50 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                                                                                        <span className="text-sm font-black text-gray-500">{salesRow.warranty_count}</span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    ))
+                                                                                ) : (
+                                                                                    <tr>
+                                                                                        <td colSpan={4} className="p-4 text-center text-gray-300 font-bold text-xs">Belum ada data sales di tim ini</td>
+                                                                                    </tr>
+                                                                                )}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
+                                                );
+                                            })
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            )}
+                        </>
+                        ) : (
+                        <>
+                            <div className="mb-8">
+                                {minData > 0 && <h3 className="font-display font-bold text-lg mb-4 text-[#111111]">Sales Memenuhi Syarat (Min. {minData} Data)</h3>}
+                                <div className="overflow-x-auto rounded-xl border border-[#E5E5E5] shadow-sm">
+                                    <table className="w-full text-left border-collapse bg-white">
+                                        <thead className="bg-gray-50 border-b border-[#E5E5E5]">
+                                            <tr className="text-[11px] font-black uppercase tracking-wider text-gray-600">
+                                                <th className="p-3 text-center border-r border-gray-200 w-12">No</th>
+                                                <th className="p-3 border-r border-gray-200 w-64">Nama Sales</th>
+                                                <th className="p-3 border-r border-gray-200 text-center w-32">Rata-rata Waktu</th>
+                                                <th className="p-3 text-center w-48">
+                                                    <div className="flex flex-col items-center">
+                                                        <span>Status Konsumen</span>
+                                                        <span className="text-[9px] text-gray-400 font-medium normal-case">(Belum Warranty / Total)</span>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-sm">
+                                            {loading ? (
+                                                <tr>
+                                                    <td colSpan={4} className="p-12 text-center text-gray-500 font-bold">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <div className="w-4 h-4 border-2 border-[#E60012] border-t-transparent rounded-full animate-spin"></div>
+                                                            Memuat data...
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : allSales.filter(d => d.warranty_count >= minData).length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={4} className="p-12 text-center text-gray-400 font-bold">
+                                                        Tidak ada data yang memenuhi kriteria.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                [...allSales].filter(d => d.warranty_count >= minData).sort((a, b) => a.avg_warranty - b.avg_warranty).map((salesRow, idx) => (
+                                                    <tr key={idx} className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                                        <td className="p-3 text-center border-r border-gray-100">
+                                                            <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${idx === 0 ? 'bg-yellow-100 text-yellow-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                                {idx + 1}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 font-bold text-[#111111] border-r border-gray-100 whitespace-nowrap">
+                                                            <div>{salesRow.sales}</div>
+                                                            <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1 mt-1">
+                                                                <div className="w-1.5 h-1.5 bg-[#E60012] rounded-full"></div>
+                                                                {salesRow.spvName}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 text-center border-r border-gray-100">
+                                                            <div className={`font-black text-lg ${salesRow.avg_warranty <= 3 ? 'text-green-600' : salesRow.avg_warranty <= 7 ? 'text-amber-600' : 'text-red-600'}`}>
+                                                                {salesRow.avg_warranty} <span className="text-xs text-gray-500 font-medium">Hari</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3 text-center cursor-pointer hover:bg-gray-100 transition-colors group"
+                                                            onClick={() => setSelectedWarrantyDetails({ title: `Sales ${salesRow.sales}`, details: salesRow.detail_warranty })}
+                                                        >
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className={`flex flex-col items-center justify-center w-14 rounded py-1 border transition-colors ${salesRow.pdi_count === 0 ? 'bg-green-50 border-green-100 group-hover:bg-green-100' : 'bg-red-50 border-red-100 group-hover:bg-red-100'}`}>
+                                                                    <span className={`text-[9px] font-bold uppercase tracking-tighter ${salesRow.pdi_count === 0 ? 'text-green-600' : 'text-red-600'}`}>Belum</span>
+                                                                    <span className={`text-sm font-black ${salesRow.pdi_count === 0 ? 'text-green-700' : 'text-red-700'}`}>{salesRow.pdi_count}</span>
+                                                                </div>
+                                                                <span className="text-gray-300 font-black">/</span>
+                                                                <div className="flex flex-col items-center justify-center w-14 bg-gray-50 rounded py-1 border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Total</span>
+                                                                    <span className="text-sm font-black text-gray-700">{salesRow.warranty_count}</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {minData > 0 && allSales.filter(d => d.warranty_count < minData).length > 0 && (
+                            <div className="mb-8 opacity-60 hover:opacity-100 transition-opacity">
+                                <h3 className="font-display font-bold text-lg mb-4 text-gray-500">Sales Tidak Memenuhi Syarat (Di Bawah {minData} Data)</h3>
+                                <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                                    <table className="w-full text-left border-collapse bg-gray-50">
+                                        <thead className="bg-gray-100 border-b border-gray-200">
+                                            <tr className="text-[11px] font-black uppercase tracking-wider text-gray-500">
+                                                <th className="p-3 text-center border-r border-gray-200 w-12">No</th>
+                                                <th className="p-3 border-r border-gray-200 w-64">Nama Sales</th>
+                                                <th className="p-3 border-r border-gray-200 text-center w-32">Rata-rata Waktu</th>
+                                                <th className="p-3 text-center w-48">
+                                                    <div className="flex flex-col items-center">
+                                                        <span>Status Konsumen</span>
+                                                        <span className="text-[9px] text-gray-400 font-medium normal-case">(Belum Warranty / Total)</span>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-sm">
+                                            {[...allSales].filter(d => d.warranty_count < minData).sort((a, b) => a.avg_warranty - b.avg_warranty).map((salesRow, idx) => (
+                                                <tr key={idx} className="hover:bg-gray-100 transition-colors border-b border-gray-200 last:border-0">
+                                                    <td className="p-3 text-center border-r border-gray-200">
+                                                        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-gray-200 text-gray-500">
+                                                            {idx + 1}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 font-bold text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                                                        <div>{salesRow.sales}</div>
+                                                        <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1 mt-1">
+                                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                                            {salesRow.spvName}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-center border-r border-gray-200">
+                                                        <div className="font-black text-lg text-gray-500">
+                                                            {salesRow.avg_warranty} <span className="text-xs font-medium">Hari</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-center cursor-pointer hover:bg-gray-200 transition-colors group"
+                                                        onClick={() => setSelectedWarrantyDetails({ title: `Sales ${salesRow.sales}`, details: salesRow.detail_warranty })}
+                                                    >
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <div className={`flex flex-col items-center justify-center w-14 rounded py-1 border transition-colors ${salesRow.pdi_count === 0 ? 'bg-green-50 border-green-100 group-hover:bg-green-100' : 'bg-red-50 border-red-100 group-hover:bg-red-100'}`}>
+                                                                <span className={`text-[9px] font-bold uppercase tracking-tighter ${salesRow.pdi_count === 0 ? 'text-green-500' : 'text-red-400'}`}>Belum</span>
+                                                                <span className={`text-sm font-black ${salesRow.pdi_count === 0 ? 'text-green-600' : 'text-red-400'}`}>{salesRow.pdi_count}</span>
+                                                            </div>
+                                                            <span className="text-gray-300 font-black">/</span>
+                                                            <div className="flex flex-col items-center justify-center w-14 bg-gray-50 rounded py-1 border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Total</span>
+                                                                <span className="text-sm font-black text-gray-500">{salesRow.warranty_count}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            )}
+                        </>
+                        )}
+                    </div>
+                ) : null}
             </div>
 
+            {/* Modal Warranty Details */}
+            <AnimatePresence>
+                {selectedWarrantyDetails && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[85vh]"
+                        >
+                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 shrink-0">
+                                <div>
+                                    <h3 className="font-display font-bold text-lg text-[#111111]">Detail Konsumen & Waktu Warranty</h3>
+                                    <p className="text-sm text-gray-500 font-medium">{selectedWarrantyDetails.title}</p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedWarrantyDetails(null)}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
+                            <div className="p-0 overflow-y-auto bg-white flex-1 min-h-0">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+                                        <tr className="text-[10px] font-black uppercase tracking-wider text-gray-500">
+                                            <th className="p-3 text-center border-r border-gray-50 w-12">No</th>
+                                            <th className="p-3 border-r border-gray-50">Nama Konsumen</th>
+                                            <th className="p-3 border-r border-gray-50">Kendaraan & Rangka</th>
+                                            <th className="p-3 border-r border-gray-50 text-center">Tgl PDI</th>
+                                            <th className="p-3 border-r border-gray-50 text-center">Tgl WA / Update</th>
+                                            <th className="p-3 text-center">Selisih Waktu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {selectedWarrantyDetails.details && selectedWarrantyDetails.details.length > 0 ? (
+                                            selectedWarrantyDetails.details.map((item, idx) => (
+                                                <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors last:border-0">
+                                                    <td className="p-3 pl-4 text-center text-gray-500 font-bold">{idx + 1}</td>
+                                                    <td className="p-3 font-bold text-[#111111]">{item.nama}</td>
+                                                    <td className="p-3">
+                                                        <div className="font-bold text-gray-800 text-xs">{item.kendaraan}</div>
+                                                        <div className="text-[10px] text-gray-500 font-medium">{item.rangka}</div>
+                                                    </td>
+                                                    <td className="p-3 text-center font-medium text-xs text-gray-600">
+                                                        {item.pdi_date && item.pdi_date !== '0000-00-00' ? item.pdi_date.substring(0, 10) : '-'}
+                                                    </td>
+                                                    <td className="p-3 text-center font-medium text-xs text-gray-600">
+                                                        {item.status === 'PDI' ? <span className="text-red-500 font-bold">Belum Warranty</span> : (item.wa_date && item.wa_date !== '0000-00-00' ? item.wa_date.substring(0, 10) : '-')}
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-black ${item.status === 'PDI' ? 'bg-red-100 text-red-700' : item.days <= 3 ? 'bg-green-100 text-green-700' : item.days <= 7 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {item.days} Hari
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={6} className="p-8 text-center text-gray-400 font-bold">Belum ada data detail konsumen</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Modal Semua SPV & Sales */}
             <AnimatePresence>

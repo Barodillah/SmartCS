@@ -87,10 +87,7 @@ if ($method === 'GET') {
     $status   = mysqli_real_escape_string($conn, $body['status'] ?? '');
     $pkt_date = mysqli_real_escape_string($conn, $body['pkt_date'] ?? '');
     
-    // Additional survey fields
-    $est      = isset($body['est']) ? mysqli_real_escape_string($conn, $body['est']) : null;
-    $note     = isset($body['note']) ? mysqli_real_escape_string($conn, $body['note']) : null;
-    $pkt      = isset($body['pkt']) ? mysqli_real_escape_string($conn, $body['pkt']) : null;
+
 
     if ($id <= 0 || empty($status)) {
         echo json_encode(['status' => false, 'message' => 'ID dan status wajib diisi']);
@@ -100,22 +97,12 @@ if ($method === 'GET') {
     $updates = ["status = '$status'"];
     if (!empty($pkt_date)) $updates[] = "pkt_date = '$pkt_date'";
     
-    // Only update est, note, and pkt if they are provided (prevent errors if columns don't exist and not passed)
-    if ($est !== null) $updates[] = "est = '$est'";
-    if ($note !== null) $updates[] = "note = '$note'";
-    if ($pkt !== null) $updates[] = "pkt = '$pkt'";
+
 
     $updateString = implode(', ', $updates);
     $updateQuery = "UPDATE pkt_cv SET $updateString WHERE id = $id";
 
     if (mysqli_query($conn, $updateQuery)) {
-        // If it's a survey update (not just PDI to PKT), we should also insert a log
-        if ($est !== null || $note !== null) {
-            $logPkt = $pkt !== null ? $pkt : 'No';
-            $recordQuery = "INSERT INTO surveyupdate_record VALUES (NULL, NULL, $id, '$status', '$logPkt')";
-            mysqli_query($conn, $recordQuery);
-        }
-        
         echo json_encode(['status' => true, 'message' => 'Data berhasil disimpan']);
     } else {
         http_response_code(500);

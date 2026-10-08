@@ -19,7 +19,7 @@ if ($method === 'GET') {
         jsonResponse(false, 'Database connection failed', null, 500);
     }
 
-    $query = "SELECT * FROM surveyupdate WHERE status != 'PDI' AND wa_date BETWEEN '$start_date' AND '$end_date'";
+    $query = "SELECT * FROM surveyupdate WHERE (status != 'PDI' AND wa_date BETWEEN '$start_date' AND '$end_date') OR (status = 'PDI' AND pdi_date BETWEEN '$start_date' AND '$end_date')";
     $result = mysqli_query($conn, $query);
     if (!$result) {
         jsonResponse(false, 'Legacy DB Query Error: ' . mysqli_error($conn), null, 500);
@@ -65,13 +65,59 @@ if ($method === 'GET') {
                 'passiver' => 0,
                 'detraktor' => 0,
                 'detail_nps' => [],
-                'detail_survey' => []
+                'detail_survey' => [],
+                'warranty_total_days' => 0,
+                'warranty_count' => 0,
+                'pdi_count' => 0,
+                'detail_warranty' => []
             ];
+        }
+
+        $status = strtoupper($row['status']);
+        $isPDI = ($status === 'PDI');
+
+        // Kalkulasi Warranty
+        $pdi_date_str = $row['pdi_date'] ?? null;
+        $wa_date_str = $row['wa_date'] ?? null;
+        
+        if (!empty($pdi_date_str) && $pdi_date_str !== '0000-00-00' && $pdi_date_str !== '0000-00-00 00:00:00') {
+            $pdiDate = new DateTime($pdi_date_str);
+            if ($isPDI) {
+                $endDate = new DateTime(); // Hari ini
+            } else {
+                if (!empty($wa_date_str) && $wa_date_str !== '0000-00-00' && $wa_date_str !== '0000-00-00 00:00:00') {
+                    $endDate = new DateTime($wa_date_str);
+                } else {
+                    $endDate = new DateTime();
+                }
+            }
+            $diff = $pdiDate->diff($endDate);
+            $warranty_days = $diff->days;
+            
+            $rekapSales[$spv][$sales]['warranty_total_days'] += $warranty_days;
+            $rekapSales[$spv][$sales]['warranty_count']++;
+            
+            if ($isPDI) {
+                $rekapSales[$spv][$sales]['pdi_count']++;
+            }
+            
+            $rekapSales[$spv][$sales]['detail_warranty'][] = [
+                'nama' => $row['nama'] ?? 'Unknown',
+                'kendaraan' => $row['kendaraan'] ?? 'Unknown',
+                'rangka' => $row['rangka'] ?? '',
+                'status' => $status,
+                'pdi_date' => $pdi_date_str,
+                'wa_date' => $wa_date_str,
+                'days' => $warranty_days
+            ];
+        }
+
+        if ($isPDI) {
+            continue; // Skip Survey/NPS logic for PDI
         }
 
         $rekapSales[$spv][$sales]['total']++;
 
-        $status = strtoupper($row['status']);
         $isSurveyed = false;
         $survey_status_label = 'Sudah';
         
@@ -152,6 +198,10 @@ if ($method === 'GET') {
         $spvPromotor = 0;
         $spvPassiver = 0;
         $spvDetraktor = 0;
+        $spvWarrantyTotalDays = 0;
+        $spvWarrantyCount = 0;
+        $spvPdiCount = 0;
+        $spvDetailWarranty = [];
         $salesList = [];
 
         foreach ($salesDataMap as $salesName => $data) {
@@ -172,6 +222,8 @@ if ($method === 'GET') {
             $nps_normal = ($nps + 100) / 2;
             $skor = ($ratio * 0.5) + ($nps_normal * 0.5);
 
+            $avg_warranty = $data['warranty_count'] > 0 ? round($data['warranty_total_days'] / $data['warranty_count'], 1) : 0;
+
             $salesItem = [
                 'sales' => $salesName,
                 'total' => $data['total'],
@@ -187,7 +239,11 @@ if ($method === 'GET') {
                 'detraktor_pct' => round($detraktorPct, 2),
                 'nps' => round($nps, 2),
                 'detail_nps' => $data['detail_nps'],
-                'detail_survey' => $data['detail_survey']
+                'detail_survey' => $data['detail_survey'],
+                'avg_warranty' => $avg_warranty,
+                'warranty_count' => $data['warranty_count'],
+                'pdi_count' => $data['pdi_count'],
+                'detail_warranty' => $data['detail_warranty']
             ];
             
             $salesList[] = $salesItem;
@@ -198,6 +254,10 @@ if ($method === 'GET') {
             $spvPromotor += $promotor;
             $spvPassiver += $passiver;
             $spvDetraktor += $detraktor;
+            $spvWarrantyTotalDays += $data['warranty_total_days'];
+            $spvWarrantyCount += $data['warranty_count'];
+            $spvPdiCount += $data['pdi_count'];
+            $spvDetailWarranty = array_merge($spvDetailWarranty, $data['detail_warranty']);
         }
 
         // Sort salesList by skor DESC
@@ -214,6 +274,8 @@ if ($method === 'GET') {
         $spvNpsNormal = ($spvNps + 100) / 2;
         $spvSkor = ($spvRatio * 0.5) + ($spvNpsNormal * 0.5);
 
+        $spvAvgWarranty = $spvWarrantyCount > 0 ? round($spvWarrantyTotalDays / $spvWarrantyCount, 1) : 0;
+
         $spvData[] = [
             'spv' => $spvName,
             'total' => $spvTotal,
@@ -224,6 +286,10 @@ if ($method === 'GET') {
             'detraktor' => $spvDetraktor,
             'nps' => round($spvNps, 2),
             'skor' => round($spvSkor, 2),
+            'avg_warranty' => $spvAvgWarranty,
+            'warranty_count' => $spvWarrantyCount,
+            'pdi_count' => $spvPdiCount,
+            'detail_warranty' => $spvDetailWarranty,
             'sales_list' => $salesList
         ];
     }

@@ -114,6 +114,11 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
     const [note, setNote] = useState('');
     const [pkt, setPkt] = useState('No');
 
+    const [sapaan, setSapaan] = useState("Bapak/Ibu");
+    const [waModalOpen, setWaModalOpen] = useState(false);
+    const [waDraft, setWaDraft] = useState('');
+    const [waLogType, setWaLogType] = useState('');
+
     useEffect(() => {
         if (data) {
             setStatus(displayStatus(data.status));
@@ -123,7 +128,40 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
         }
     }, [data]);
 
+    useEffect(() => {
+        if (isOpen && data?.nama) {
+            guessGender(data.nama).then(res => setSapaan(res));
+        }
+    }, [isOpen, data]);
+
     if (!isOpen || !data) return null;
+
+    const handleWAButton = (type) => {
+        const salam = getSalam();
+        const sapaanVal = sapaan;
+        const sapaanLower = sapaan.toLowerCase();
+        let draft = "";
+
+        if (type === "Whatsapp 1") {
+            draft = `${salam} ${sapaanVal} ${data.nama},\n\nSaya Cindy dari CS Mitsubishi Bintaro, ingin menyampaikan beberapa hal, bolehkan saya telpon atau melalui pesan chat saja?`;
+        } else if (type === "Whatsapp 2") {
+            draft = `Terima kasih telah merespon,\n\nApakah benar ${sapaanVal} ${data.nama} melakukan pembelian kendaraan ${data.kendaraan} dengan nomor rangka ${data.rangka || '-'} dengan ${data.sales} / ${data.spv} sebagai tenaga penjualnya?\n\nJika benar, bagaimana pak/bu pelayanan sales kami?\nApakah ${sapaanLower} terbantu atau sebaliknya?`;
+        } else if (type === "Whatsapp 3 Puas") {
+            draft = `Terima kasih atas penilaiannya ${sapaanLower},\n\nJika ${sapaanLower} puas maka mohon bantuannya akan ada survey di MMID atau Whatsapp Mitsubishi. Mohon berikan nilai 9/10 ya ${sapaanLower} untuk rekomendasinya, karena hanya nilai tersebut yang menandakan ${sapaanLower} puas dengan pelayanan sales kami.`;
+        } else if (type === "Whatsapp 3 Tidak Puas") {
+            draft = `Sebelumnya mohon maaf atas ketidaknyamannannya,\n\nKalo boleh tau bisa ceritakan lebih detail atas kendala yang ${sapaanLower} alami?`;
+        }
+
+        setWaDraft(draft);
+        setWaLogType(type);
+        setWaModalOpen(true);
+    };
+
+    const sendWA = () => {
+        window.open(`https://wa.me/62${data.telp}?text=${encodeURIComponent(waDraft)}`, '_blank');
+        onSave({ ...data, status: 'SURVEY_WA', pkt: 'No', log_wa: waLogType });
+        setWaModalOpen(false);
+    };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -136,15 +174,37 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
                 </div>
                 <div className="overflow-y-auto p-6 flex-1 bg-[#FAFAFA] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-900">
-                        <p className="mb-2"><strong>Script Follow Up:</strong></p>
-                        <p>Perkenalkan saya dari Mitsubishi Bintaro, benar saya bicara dengan Bapak/Ibu <strong>{data.nama}</strong>?</p>
-                        <p className="mt-2">Pada data kami Bapak/Ibu melakukan pembelian kendaraan <strong>{data.kendaraan}</strong> bersama Sales kami <strong>{data.sales}</strong>, apakah benar pak/bu?</p>
-                        <p className="mt-2">Saya ingin bertanya mengenai pelayanan sales kami ya pak/bu,</p>
-                        <ul className="list-disc pl-5 mt-1 space-y-1">
-                            <li>Apakah sales kami sudah menjelaskan fitur-fitur kendaraannya?</li>
-                            <li>Apakah bapak/ibu puas dan merasa terbantu dengan pelayanan sales kami?</li>
-                            <li>Apakah bapak/ibu ada saran atau masukan untuk pelayanan sales kami?</li>
-                        </ul>
+                        {status === 'DITOLAK/REJECT' || status === 'NOMOR SALAH' || status === 'SURVEY WA' || status === 'SURVEY_WA' ? (
+                            <div>
+                                <p className="mb-3 font-bold">Kirim Pesan WhatsApp:</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <button type="button" onClick={() => handleWAButton('Whatsapp 1')} className="px-3 py-2 bg-white border border-blue-200 rounded text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+                                        <MessageCircle size={14} /> Pesan Singkat
+                                    </button>
+                                    <button type="button" onClick={() => handleWAButton('Whatsapp 2')} className="px-3 py-2 bg-white border border-blue-200 rounded text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+                                        <MessageCircle size={14} /> Konfirmasi Pelayanan
+                                    </button>
+                                    <button type="button" onClick={() => handleWAButton('Whatsapp 3 Puas')} className="px-3 py-2 bg-white border border-green-200 rounded text-green-700 hover:bg-green-50 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+                                        <MessageCircle size={14} /> Feedback Puas
+                                    </button>
+                                    <button type="button" onClick={() => handleWAButton('Whatsapp 3 Tidak Puas')} className="px-3 py-2 bg-white border border-red-200 rounded text-red-700 hover:bg-red-50 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+                                        <MessageCircle size={14} /> Feedback Tidak Puas
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="mb-2"><strong>Script Follow Up:</strong></p>
+                                <p>Perkenalkan saya dari Mitsubishi Bintaro, benar saya bicara dengan Bapak/Ibu <strong>{data.nama}</strong>?</p>
+                                <p className="mt-2">Pada data kami Bapak/Ibu melakukan pembelian kendaraan <strong>{data.kendaraan}</strong> bersama Sales kami <strong>{data.sales}</strong>, apakah benar pak/bu?</p>
+                                <p className="mt-2">Saya ingin bertanya mengenai pelayanan sales kami ya pak/bu,</p>
+                                <ul className="list-disc pl-5 mt-1 space-y-1">
+                                    <li>Apakah sales kami sudah menjelaskan fitur-fitur kendaraannya?</li>
+                                    <li>Apakah bapak/ibu puas dan merasa terbantu dengan pelayanan sales kami?</li>
+                                    <li>Apakah bapak/ibu ada saran atau masukan untuk pelayanan sales kami?</li>
+                                </ul>
+                            </>
+                        )}
                     </div>
                     <form id="surveyForm" onSubmit={(e) => {
                         e.preventDefault();
@@ -212,6 +272,38 @@ const SalesSurveyFollowUpModal = ({ isOpen, data, onClose, onSave, isLoading }) 
                     </button>
                 </div>
             </motion.div>
+
+            <AnimatePresence>
+                {waModalOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[140] backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setWaModalOpen(false)}>
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#25D366] px-5 py-3 flex items-center justify-between text-white shrink-0">
+                                <h3 className="font-bold text-md flex items-center gap-2"><MessageCircle size={18} /> Kirim WhatsApp</h3>
+                                <button onClick={() => setWaModalOpen(false)} className="text-white/80 hover:text-white"><X size={18} /></button>
+                            </div>
+                            <div className="p-5 flex-1 bg-[#FAFAFA]">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Pesan yang akan dikirim:</label>
+                                <textarea
+                                    value={waDraft}
+                                    onChange={(e) => setWaDraft(e.target.value)}
+                                    rows={8}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#25D366] text-sm resize-none"
+                                />
+                                <p className="text-xs text-gray-500 mt-2">Menekan tombol kirim akan membuka tab WhatsApp baru dan otomatis mengubah status menjadi SURVEY WA.</p>
+                            </div>
+                            <div className="px-5 py-3 border-t border-gray-100 flex justify-end gap-3 bg-white">
+                                <button onClick={() => setWaModalOpen(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Batal</button>
+                                <button onClick={sendWA}
+                                    className="px-5 py-2 bg-[#25D366] text-white text-sm font-bold rounded shadow-md hover:bg-[#20bd5a] transition-colors flex items-center gap-2">
+                                    Kirim & Ubah Status
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
@@ -556,7 +648,7 @@ Catatan NPS: ${npsData.note || '-'}`;
                         </button>
                     )}
                     <button onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Tutup</button>
-                    {!['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'NOMOR SALAH', 'SALAH SAMBUNG'].includes(data.status) && (
+                    {!['PUAS', 'BIASA SAJA', 'TIDAK PUAS', 'SALAH SAMBUNG'].includes(data.status) && (
                         <button onClick={() => onFollowUp(data)}
                             className="px-6 py-2 bg-[#E60012] text-white text-sm font-bold rounded shadow-md hover:bg-red-700 transition-colors flex items-center gap-2">
                             Tindak Lanjut (Follow Up)
