@@ -817,22 +817,49 @@ Jika SEMUA validasi OK (nopol teridentifikasi, slot tersedia, tidak ada duplikat
 
 Jika ADA yang tidak valid (slot penuh, duplikat, hari libur, dll), informasikan masalahnya dan minta customer memperbaiki data yang bermasalah saja (jangan minta ulang semua data).
 
-**SOFT SELLING TAMBAHAN SERVICE (HALUS — OPSIONAL):**
-Saat menampilkan ringkasan hasil validasi, tanyakan dengan HALUS apakah AC kendaraannya masih nyaman. Cukup 1 kalimat, jangan memaksa. Jika customer tidak merespons tentang AC, lanjutkan tanpa mengulangi.
+**SOFT SELLING LAYANAN TAMBAHAN & PROGRAM (HALUS — OPSIONAL):**
+Saat menampilkan ringkasan hasil validasi, lakukan penawaran halus (cukup 1-2 kalimat, jangan memaksa). Jika customer tidak merespons atau menolak, lanjutkan ke langkah berikutnya tanpa mengulangi:
+
+1. **Perawatan AC (Semua Kendaraan):**
+   - Tanyakan dengan halus apakah AC kendaraannya masih nyaman dan dingin maksimal, atau tawarkan opsi pembersihan AC Clean / AC Care bersamaan dengan service berkala.
+
+2. **Extended SMART Package (Khusus Xpander atau Pajero dengan KM >= 50.000 / 60.000 - 100.000+ km):**
+   - **Kondisi:** Jika kendaraan customer teridentifikasi sebagai **Xpander** atau **Pajero** dan kilometer sudah mencapai **50.000 km ke atas** (paket SMART bawaan biasanya sudah habis).
+   - **Tawaran:** Informasikan secara ramah bahwa kendaraannya memenuhi syarat untuk mendaftar program **Extended SMART Package** resmi MMKSI untuk menghemat biaya service berkala s/d 25% dan terlindung dari kenaikan harga suku cadang/jasa.
+   - **Pilihan Paket (Harga per 1 Juli 2026, termasuk PPN 11%, 1XPM = 6 bulan):**
+     - **Xpander:**
+       - 1XPM: Rp 1.387.500
+       - 2XPM: Rp 2.386.500 (Rekomendasi)
+       - 4XPM: Rp 4.551.000
+       - 6XPM: Rp 6.660.000
+     - **Pajero:**
+       - 1XPM: Rp 2.497.500
+       - 2XPM: Rp 4.662.000 (Rekomendasi)
+       - 4XPM: Rp 9.102.000
+       - 6XPM: Rp 13.320.000
+   - **Detail & Brosur:** Jika customer menanyakan detail brosur, Anda dapat membagikan link brosur:
+     - Brosur Xpander: https://csdwindo.com/wp-content/uploads/xpanderxtended.webp
+     - Brosur Pajero: https://csdwindo.com/wp-content/uploads/1625123782-mmksi-press-release-mmksi-luncurkan-program-perpanjangan-paket-smart-untuk-pajero-sportjpg-optimized.webp
+   - Jika customer berminat mendaftar, tambahkan keterangan paket pilihan ke catatan booking. Jika tidak, lanjutkan proses booking seperti biasa.
 
 ### LANGKAH 3: Konfirmasi Data Konsumen dengan Nomor Telepon
-Setelah semua data booking valid dan terkonfirmasi, **WAJIB lakukan verifikasi identitas**:
+Setelah semua data booking valid dan terkonfirmasi, **lakukan konfirmasi nomor telepon**:
 
 **Jika nopol TERDAFTAR di sistem (data kendaraan ditemukan):**
-1. Minta customer untuk memberikan **nomor telepon lengkap** mereka.
-2. Sampaikan bahwa ini bertujuan untuk verifikasi keamanan agar tidak ada orang lain yang melakukan booking asal menggunakan nomor polisi tersebut.
-3. **Bandingkan** nomor yang diinput customer dengan **Nomor telepon utuh** yang ada di bagian [INTERNAL]. (Bandingkan angkanya saja, abaikan spasi atau karakter +62/0).
-4. Jika nomor telepon yang diinput **TIDAK SAMA / SALAH**, sampaikan: "Mohon maaf, data verifikasi belum sesuai. Nomor telepon yang Anda masukkan tidak sama dengan yang terdaftar untuk kendaraan ini." dan **DILARANG KERAS** menggunakan tag [SAVE_LEAD:booking].
-5. Jika nomor telepon yang diinput **BENAR / SESUAI**, barulah berikan ringkasan lengkap booking.
+1. Informasikan bahwa kendaraan terdaftar dengan nomor telepon yang disensor (format: **xxxx-xxxx-4451**). **DILARANG KERAS** menampilkan nomor telepon lengkap/utuh kepada customer.
+2. Tanyakan kepada customer: apakah benar ini nomor telepon Bapak/Ibu atau bukan?
+3. **Jika customer menjawab YA / BENAR** (misal: "ya benar nomor saya", "iya betul", "benar", "ya", dll):
+   - Cukup konfirmasi bahwa nomor sesuai (customer tidak perlu mengetik ulang nomor telepon).
+   - Gunakan nomor telepon terdaftar dari data [INTERNAL] (nomor telepon utuh) untuk data booking.
+   - Tampilkan ringkasan lengkap booking dan sertakan tag **[SAVE_LEAD:booking]**.
+4. **Jika customer menjawab BUKAN / SALAH** (misal: "bukan", "salah", "bukan nomor saya", "sudah ganti nomor", dll):
+   - Minta customer untuk menginformasikan nomor telepon/WhatsApp yang baru (hanya angka, minimal 8 digit dan maksimal 14 digit).
+   - Setelah customer memberikan nomor telepon baru, gunakan nomor telepon baru tersebut untuk data booking.
+   - Tampilkan ringkasan lengkap booking dan sertakan tag **[SAVE_LEAD:booking]**.
 
 **Jika nopol TIDAK TERDAFTAR di sistem (data baru):**
 1. Pada langkah 2 sudah diminta Nama Lengkap, No HP, dan Tipe Kendaraan.
-2. Setelah data lengkap, langsung berikan ringkasan lengkap booking.
+2. Setelah data lengkap, langsung berikan ringkasan lengkap booking dan sertakan tag **[SAVE_LEAD:booking]**.
 
 **Ringkasan booking yang ditampilkan:**
 - Nama pemilik
@@ -1636,9 +1663,9 @@ const VirtualCS = () => {
             }
         }
 
-        ctx += `\nINSTRUKSI: Tampilkan data ini ke customer untuk konfirmasi. Untuk nomor telepon, tampilkan versi MASKED saja (xxxx-xxxx-${d.telp.slice(-4)}). JANGAN tampilkan nomor telepon lengkap.`;
+        ctx += `\nINSTRUKSI: Tampilkan data ini ke customer untuk konfirmasi. Untuk nomor telepon, tampilkan versi MASKED saja (${maskedTelp}). JANGAN tampilkan nomor telepon lengkap.`;
         if (rawTelp) {
-            ctx += `\n**[INTERNAL — JANGAN TAMPILKAN KE CUSTOMER]** Nomor telepon utuh untuk SAVE_LEAD: ${rawTelp}. Gunakan nomor ini sebagai customer_phone saat emit tag [SAVE_LEAD]. Format harus angka saja diawali 0.`;
+            ctx += `\n**[INTERNAL — JANGAN TAMPILKAN KE CUSTOMER]** Nomor telepon utuh untuk SAVE_LEAD: ${rawTelp}. Gunakan nomor ini sebagai customer_phone saat emit tag [SAVE_LEAD] jika customer mengonfirmasi nomornya sudah benar. Jika customer menyampaikan nomornya salah/bukan dan memberikan nomor baru, gunakan nomor baru dari customer tersebut. Format harus angka saja diawali 0.`;
         }
 
         return ctx;
@@ -1877,129 +1904,6 @@ const VirtualCS = () => {
             }
         }
 
-        // Detect if user provided a phone number in booking context (code-level enforcement)
-        // This ensures customer actually typed their phone — prevents AI from silently copying internal data
-        if (isBookingContext() && verifiedPhone.current && !customerPhoneProvided.current) {
-            const phonePattern = /(?:(?:\+?62|0)\s*8[\d\s\-]{7,13}|\b8\d{8,12}\b)/;
-            if (phonePattern.test(text)) {
-                customerPhoneProvided.current = true;
-
-                // --- AUTO-SAVE pending booking if phone matches ---
-                if (pendingBookingData.current && verifiedPhone.current) {
-                    const stripPhonePrefixLocal = (phone) => {
-                        if (!phone) return '';
-                        let digits = phone.replace(/\D/g, '');
-                        if (digits.startsWith('62')) digits = digits.slice(2);
-                        if (digits.startsWith('0')) digits = digits.slice(1);
-                        return digits;
-                    };
-                    // Extract the phone number from user text
-                    const phoneMatch = text.match(/(?:\+?62|0)?\s*(8[\d\s\-]{7,13})/);
-                    const userPhoneRaw = phoneMatch ? phoneMatch[0].replace(/[\s\-]/g, '') : '';
-                    const userDigits = stripPhonePrefixLocal(userPhoneRaw);
-                    const verifiedDigits = stripPhonePrefixLocal(verifiedPhone.current);
-
-                    if (userDigits && userDigits === verifiedDigits) {
-                        const pd = pendingBookingData.current;
-                        const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
-
-                        // Use verifiedPhone as reliable source (from nopol lookup)
-                        const reliablePhone = verifiedPhone.current || normalizePhone(pd.customer_phone);
-
-                        if (sid) {
-                            // Normalize booking_time to round hour
-                            if (pd.data && pd.data.booking_time) {
-                                const validSlots = ['08:00', '09:00', '10:00', '11:00', '13:00'];
-                                let bt = pd.data.booking_time.replace('.', ':').trim();
-                                const btMatch = bt.match(/(\d{1,2})[.:](\d{2})/);
-                                if (btMatch) bt = `${parseInt(btMatch[1]).toString().padStart(2, '0')}:00`;
-                                if (!validSlots.includes(bt)) {
-                                    const hourNum = parseInt(bt);
-                                    bt = validSlots.reduce((prev, curr) =>
-                                        Math.abs(parseInt(curr) - hourNum) < Math.abs(parseInt(prev) - hourNum) ? curr : prev
-                                    );
-                                }
-                                pd.data.booking_time = bt;
-                            }
-
-                            // Save lead with retry
-                            const leadPayload = {
-                                session_id: sid,
-                                label: 'booking',
-                                customer_name: pd.customer_name,
-                                customer_phone: reliablePhone,
-                                customer_nopol: pd.customer_nopol ? pd.customer_nopol.replace(/\s+/g, '').toUpperCase() : null,
-                                vehicle_model: pd.vehicle_model || null,
-                                data: pd.data || {}
-                            };
-
-                            chatAPI.saveLead(leadPayload).then(result => {
-                                if (result?.status) {
-                                    setLeadSavedAlert({ show: true, label: 'booking' });
-                                    setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
-                                } else {
-                                    setTimeout(() => {
-                                        chatAPI.saveLead(leadPayload).then(r2 => {
-                                            if (r2?.status) {
-                                                setLeadSavedAlert({ show: true, label: 'booking' });
-                                                setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
-                                            }
-                                        }).catch(() => {});
-                                    }, 1000);
-                                }
-                            }).catch(() => {
-                                setTimeout(() => {
-                                    chatAPI.saveLead(leadPayload).catch(() => {});
-                                }, 1000);
-                            });
-
-                            // Sync to legacy booking
-                            if (pd.data) {
-                                const ld = pd.data;
-                                chatAPI.saveBookingLegacy({
-                                    tanggal: ld.booking_date || '',
-                                    jam: ld.booking_time || '',
-                                    kendaraan: pd.vehicle_model || '',
-                                    nopol: (pd.customer_nopol || '').replace(/\s+/g, ''),
-                                    nama: pd.customer_name || '',
-                                    telp: normalizePhone(pd.customer_phone) || '',
-                                    jenis: `${ld.service_type || ''} ${ld.service_km || ''}`.trim(),
-                                    keluhan: ld.keluhan || ''
-                                }).catch(() => {});
-                            }
-                        }
-
-                        // Clear pending data after save
-                        pendingBookingData.current = null;
-                        verificationAttempts.current = 0;
-
-                        // Inject system message so AI knows booking was saved
-                        conversationHistory.current.push({
-                            role: 'system',
-                            content: `[SISTEM] ✅ VERIFIKASI NOMOR TELEPON BERHASIL. Booking service telah OTOMATIS TERSIMPAN oleh sistem. Tampilkan ringkasan booking kepada customer dan sampaikan bahwa data sudah diteruskan ke Service Advisor. JANGAN emit tag [SAVE_LEAD] lagi.`
-                        });
-                    } else if (userDigits) {
-                        // Phone provided but doesn't match
-                        verificationAttempts.current += 1;
-                        const attemptsLeft = 3 - verificationAttempts.current;
-
-
-                        if (attemptsLeft > 0) {
-                            conversationHistory.current.push({
-                                role: 'system',
-                                content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL (percobaan ${verificationAttempts.current}/3). Nomor yang diinput customer TIDAK COCOK dengan data di sistem. Sisa kesempatan: ${attemptsLeft}x. Minta customer memasukkan nomor telepon yang benar sekali lagi.`
-                            });
-                        } else {
-                            conversationHistory.current.push({
-                                role: 'system',
-                                content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL 3x BERTURUT-TURUT. Booking DIBATALKAN. Sampaikan mohon maaf booking tidak dapat diproses.`
-                            });
-                            pendingBookingData.current = null;
-                        }
-                    }
-                }
-            }
-        }
 
         // Detect non-round booking times in user message (code-level enforcement)
         // Valid slots: 08:00, 09:00, 10:00, 11:00, 13:00
@@ -2156,57 +2060,6 @@ const VirtualCS = () => {
                         const isPlaceholder = (val) => !val || String(val).trim() === '' || String(val).trim() === '...' || String(val).toLowerCase().includes('belum');
 
                         if (sid && !isPlaceholder(cName) && !isPlaceholder(cPhone)) {
-                            // --- PHONE VERIFICATION for booking leads (code-level enforcement) ---
-                            if (leadLabel === 'booking' && verifiedPhone.current) {
-                                // STEP 1: Check if customer actually provided a phone number
-                                // This prevents AI from skipping verification and copying internal data
-                                if (!customerPhoneProvided.current) {
-
-                                    bookingPhoneRejected = true;
-
-                                    // Store booking data for auto-save when phone is provided later
-                                    pendingBookingData.current = leadJson;
-
-
-                                    conversationHistory.current.push({
-                                        role: 'system',
-                                        content: `[SISTEM] ⛔ BOOKING DIBLOKIR OLEH SISTEM. Kamu BELUM meminta customer untuk menginput nomor telepon mereka. DILARANG KERAS menyimpan booking tanpa verifikasi nomor telepon dari customer. LANGKAH WAJIB: Minta customer untuk mengetikkan nomor telepon lengkap mereka SEKARANG untuk verifikasi keamanan. Setelah customer memberikan nomor telepon yang benar, sistem akan OTOMATIS menyimpan booking. Kamu cukup tampilkan ringkasan booking dan sampaikan bahwa booking sudah tercatat. JANGAN emit tag [SAVE_LEAD] lagi karena sistem sudah menanganinya.`
-                                    });
-                                    continue;
-                                }
-
-                                // STEP 2: Check if the phone number matches
-                                const inputDigits = stripPhonePrefix(cPhone);
-                                const verifiedDigits = stripPhonePrefix(verifiedPhone.current);
-
-                                if (inputDigits !== verifiedDigits) {
-                                    verificationAttempts.current += 1;
-                                    const attemptsLeft = 3 - verificationAttempts.current;
-
-
-                                    bookingPhoneRejected = true;
-
-                                    // Inject system message so AI knows verification failed
-                                    if (attemptsLeft > 0) {
-                                        conversationHistory.current.push({
-                                            role: 'system',
-                                            content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL (percobaan ${verificationAttempts.current}/3). Nomor yang diinput customer TIDAK COCOK dengan data di sistem. Sisa kesempatan: ${attemptsLeft}x. JANGAN tampilkan ringkasan booking. Minta customer memasukkan nomor telepon yang benar sekali lagi.`
-                                        });
-                                    } else {
-                                        conversationHistory.current.push({
-                                            role: 'system',
-                                            content: `[SISTEM] VERIFIKASI NOMOR TELEPON GAGAL 3x BERTURUT-TURUT. Booking DIBATALKAN. JANGAN tampilkan ringkasan booking. Sampaikan mohon maaf booking tidak dapat diproses.`
-                                        });
-                                    }
-
-                                    // Skip saving entirely
-                                    continue;
-                                } else {
-                                    // Phone matched — reset attempts
-                                    verificationAttempts.current = 0;
-                                }
-                            }
-
                             // --- NORMALIZE booking_time to round hour (code-level enforcement) ---
                             if (leadLabel === 'booking' && leadJson.data && leadJson.data.booking_time) {
                                 const validSlots = ['08:00', '09:00', '10:00', '11:00', '13:00'];
@@ -2227,14 +2080,18 @@ const VirtualCS = () => {
                                         return Math.abs(currH - hourNum) < Math.abs(parseInt(prev) - hourNum) ? curr : prev;
                                     });
                                     leadJson.data.booking_time = nearest;
-
                                 }
                             }
 
-                            // For booking leads with verifiedPhone, use the reliable phone source
-                            const savePhone = (leadLabel === 'booking' && verifiedPhone.current)
-                                ? verifiedPhone.current
-                                : normalizePhone(cPhone);
+                            // Determine phone to save (use customer provided phone, or fallback to verified registered phone)
+                            const normalizedLeadPhone = normalizePhone(cPhone);
+                            const savePhone = normalizedLeadPhone || (leadLabel === 'booking' && verifiedPhone.current ? verifiedPhone.current : cPhone);
+
+                            const cleanPhoneDigits = savePhone ? String(savePhone).replace(/\D/g, '') : '';
+                            if (cleanPhoneDigits.length < 8 || cleanPhoneDigits.length > 14) {
+                                console.warn('Invalid phone number length for lead save:', savePhone);
+                                continue;
+                            }
 
                             const normalLeadPayload = {
                                 session_id: sid,
@@ -2256,12 +2113,12 @@ const VirtualCS = () => {
                                                 setLeadSavedAlert({ show: true, label: leadLabel });
                                                 setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
                                             }
-                                        }).catch(() => {});
+                                        }).catch(() => { });
                                     }, 1000);
                                 }
                             }).catch(() => {
                                 setTimeout(() => {
-                                    chatAPI.saveLead(normalLeadPayload).catch(() => {});
+                                    chatAPI.saveLead(normalLeadPayload).catch(() => { });
                                 }, 1000);
                             });
 
@@ -2274,10 +2131,10 @@ const VirtualCS = () => {
                                     kendaraan: leadJson.vehicle_model || '',
                                     nopol: (leadJson.customer_nopol || '').replace(/\s+/g, ''),
                                     nama: cName || '',
-                                    telp: normalizePhone(cPhone) || '',
+                                    telp: savePhone || '',
                                     jenis: `${ld.service_type || ''} ${ld.service_km || ''}`.trim(),
                                     keluhan: ld.keluhan || ''
-                                }).catch(() => {});
+                                }).catch(() => { });
                             }
                         } else {
 
