@@ -1,53 +1,94 @@
 <?php
-// === SmartCS — Dynamic Sitemap Handler ===
-require_once __DIR__ . '/api/chat/config.php';
+/**
+ * SmartCS — Dynamic Canonical Sitemap Handler
+ * Mengikuti standar Bab 3.5 PANDUAN_SEO_AEO_GEO_UNIVERSAL.md:
+ * - Hanya memuat URL HTML kanonis berstatus 200
+ * - Tanpa /llms*.txt, tanpa <priority> & <changefreq> yang diabaikan Google
+ * - Dilengkapi <lastmod> akurat dan file caching + stale fallback
+ */
+
+require_once __DIR__ . '/api/config.php';
 
 header('Content-Type: application/xml; charset=utf-8');
+header('Cache-Control: public, max-age=21600, s-maxage=21600');
+header('Vary: Accept-Encoding');
 
-$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http');
-$host = $_SERVER['HTTP_HOST'];
-$baseUrl = $protocol . "://" . $host;
+$baseUrl = 'https://csdwindo.com';
+$cacheFile = sys_get_temp_dir() . '/smartcs_sitemap_v2.xml';
+$cacheTtl = 21600; // 6 jam
 
-$db = getDB();
+if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTtl) && !isset($_GET['nocache'])) {
+    readfile($cacheFile);
+    exit;
+}
 
-echo '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
+$priceListMtime = file_exists(__DIR__ . '/knowledge/price_list.json')
+    ? date('Y-m-d', filemtime(__DIR__ . '/knowledge/price_list.json'))
+    : date('Y-m-d');
+$aksesorisMtime = file_exists(__DIR__ . '/knowledge/aksesoris.json')
+    ? date('Y-m-d', filemtime(__DIR__ . '/knowledge/aksesoris.json'))
+    : date('Y-m-d');
+$dealerMtime = file_exists(__DIR__ . '/knowledge/lokasi_dealer.json')
+    ? date('Y-m-d', filemtime(__DIR__ . '/knowledge/lokasi_dealer.json'))
+    : date('Y-m-d');
+$today = date('Y-m-d');
 
-// 1. Static Pages
+// 1. Halaman Publik Statis Kanonis (Status 200)
 $staticPages = [
-    '' => '1.0',
-    '/aksesoris' => '0.8',
-    '/artikel' => '0.9',
-    '/dealer' => '0.8',
-    '/pricelist' => '0.9',
-    '/llms.txt' => '0.7',
-    '/llms-products.txt' => '0.7',
-    '/llms-lokasi-dealer.txt' => '0.7',
-    '/llms-artikel.txt' => '0.7',
-    '/llms-full.txt' => '0.7'
+    '/'              => $today,
+    '/price-list'    => $priceListMtime,
+    '/lokasi-dealer' => $dealerMtime,
+    '/aksesoris'     => $aksesorisMtime,
+    '/booking'       => $today,
+    '/artikel'       => $today,
+    '/faq'           => $today,
+    '/kanal-resmi'   => $dealerMtime,
 ];
 
-foreach ($staticPages as $path => $priority) {
-    echo '  <url>' . PHP_EOL;
-    echo '    <loc>' . $baseUrl . $path . '</loc>' . PHP_EOL;
-    echo '    <changefreq>weekly</changefreq>' . PHP_EOL;
-    echo '    <priority>' . $priority . '</priority>' . PHP_EOL;
-    echo '  </url>' . PHP_EOL;
+$xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
+$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
+
+foreach ($staticPages as $path => $lastmod) {
+    $loc = htmlspecialchars($baseUrl . ($path === '/' ? '/' : $path), ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    $xml .= '  <url>' . PHP_EOL;
+    $xml .= '    <loc>' . $loc . '</loc>' . PHP_EOL;
+    $xml .= '    <lastmod>' . $lastmod . '</lastmod>' . PHP_EOL;
+    $xml .= '  </url>' . PHP_EOL;
 }
 
-// 2. Dynamic Articles
+// 2. Artikel Dinamis (Published)
+$db = null;
 try {
-    $stmt = $db->query("SELECT slug, updated_at FROM articles WHERE status = 'published' ORDER BY updated_at DESC");
-    while ($row = $stmt->fetch()) {
-        echo '  <url>' . PHP_EOL;
-        echo '    <loc>' . $baseUrl . '/artikel/' . $row['slug'] . '</loc>' . PHP_EOL;
-        echo '    <lastmod>' . date('Y-m-d', strtotime($row['updated_at'])) . '</lastmod>' . PHP_EOL;
-        echo '    <changefreq>monthly</changefreq>' . PHP_EOL;
-        echo '    <priority>0.7</priority>' . PHP_EOL;
-        echo '  </url>' . PHP_EOL;
-    }
-} catch (Exception $e) {
-    // Fail silently in sitemap or log error
+    $db = getDB();
+} catch (Throwable $e) {
+    $db = null;
 }
 
-echo '</urlset>';
+if ($db) {
+    try {
+        $stmt = $db->query("SELECT slug, updated_at, published_at, created_at FROM articles WHERE status = 'published' AND slug IS NOT NULL AND slug != '' ORDER BY COALESCE(published_at, created_at) DESC LIMIT 5000");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $slug = trim($row['slug']);
+            if ($slug === '') continue;
+            $dateSource = $row['updated_at'] ?: ($row['published_at'] ?: $row['created_at']);
+            $lastmod = $dateSource ? date('Y-m-d', strtotime($dateSource)) : $today;
+            $loc = htmlspecialchars($baseUrl . '/artikel/' . rawurlencode($slug), ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+            $xml .= '  <url>' . PHP_EOL;
+            $xml .= '    <loc>' . $loc . '</loc>' . PHP_EOL;
+            $xml .= '    <lastmod>' . $lastmod . '</lastmod>' . PHP_EOL;
+            $xml .= '  </url>' . PHP_EOL;
+        }
+    } catch (Throwable $e) {
+        // Jika query gagal dan ada stale cache, gunakan stale cache
+        if (file_exists($cacheFile)) {
+            readfile($cacheFile);
+            exit;
+        }
+    }
+}
+
+$xml .= '</urlset>' . PHP_EOL;
+
+@file_put_contents($cacheFile, $xml);
+echo $xml;

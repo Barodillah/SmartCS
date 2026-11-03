@@ -2,14 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Calendar, Clock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import SectionTag from '../ui/SectionTag';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Updates = () => {
     const sectionRef = useRef(null);
-    const navigate = useNavigate();
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -71,17 +70,17 @@ const Updates = () => {
                             Dapatkan informasi terkini seputar berita, kegiatan komunitas, dan tips bermanfaat dari Dwindo Bintaro.
                         </p>
                     </div>
-                    <button onClick={() => navigate('/artikel')} className="mt-6 md:mt-0 flex items-center gap-2 font-display font-bold text-[#E60012] uppercase tracking-wide group hover:text-[#111111] transition-colors">
-                        Lihat Semua 
+                    <Link to="/artikel" className="mt-6 md:mt-0 flex items-center gap-2 font-display font-bold text-[#E60012] uppercase tracking-wide group hover:text-[#111111] transition-colors">
+                        Lihat Semua Artikel
                         <ArrowRight size={20} className="transform group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="articles-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {articles.map((article) => (
-                        <div 
+                        <Link 
                             key={article.id} 
-                            onClick={() => navigate(`/artikel/${article.slug || article.id}`)}
+                            to={`/artikel/${article.slug || article.id}`}
                             className="article-card group drop-shadow-sm hover:drop-shadow-xl transition-all duration-500 cursor-pointer flex flex-col"
                         >
                             <div className="bg-white flex flex-col flex-1 relative overflow-hidden" style={{ clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}>
@@ -89,7 +88,11 @@ const Updates = () => {
                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
                                     <img 
                                         src={article.image} 
-                                        alt={article.title} 
+                                        alt={article.title}
+                                        width="640"
+                                        height="360"
+                                        loading="lazy"
+                                        decoding="async"
                                         className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
                                     />
                                     <div className="absolute top-5 left-5 z-20">
@@ -128,7 +131,7 @@ const Updates = () => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>

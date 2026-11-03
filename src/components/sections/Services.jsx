@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Calendar, Settings, Tag, Phone, Car, Calculator } from 'lucide-react';
 import { ANGULAR_CLIP } from '../../utils/constants';
 import AngularButton from '../ui/AngularButton';
@@ -102,11 +103,26 @@ const Services = () => {
                                             </p>
                                         </div>
                                         <div className="flex-shrink-0 flex flex-col md:flex-row gap-4">
-                                            {service.id === "05" ? (
+                                            {service.id === "01" ? (
                                                 <>
-                                                    <AngularButton variant="primary" className="!px-10 !py-4 !text-[14px]" onClick={() => window.location.href = '/aksesoris'}>
-                                                        Temukan Aksesoris
+                                                    <Link to="/booking">
+                                                        <AngularButton variant="primary" className="!px-10 !py-4 !text-[14px]">
+                                                            {service.cta}
+                                                        </AngularButton>
+                                                    </Link>
+                                                    <AngularButton variant="secondary" className="!px-10 !py-4 !text-[14px] !bg-white/10 !text-white hover:!bg-white/20" onClick={() => {
+                                                        window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Saya ingin booking service` } }));
+                                                    }}>
+                                                        Booking via DINA
                                                     </AngularButton>
+                                                </>
+                                            ) : service.id === "05" ? (
+                                                <>
+                                                    <Link to="/aksesoris">
+                                                        <AngularButton variant="primary" className="!px-10 !py-4 !text-[14px]">
+                                                            Temukan Aksesoris
+                                                        </AngularButton>
+                                                    </Link>
                                                     <AngularButton variant="secondary" className="!px-10 !py-4 !text-[14px] !bg-white/10 !text-white hover:!bg-white/20" onClick={() => {
                                                         window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Tanya seputar Aksesoris` } }));
                                                     }}>

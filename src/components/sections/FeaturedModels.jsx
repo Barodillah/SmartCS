@@ -26,7 +26,11 @@ const FeaturedModels = () => {
                             <div className="relative h-64 bg-gray-50/50 group-hover:bg-gray-100/50 transition-colors duration-500 rounded-t-xl">
                                 <img 
                                     src={model.img} 
-                                    alt={model.name} 
+                                    alt={`Mitsubishi ${model.name} — Harga OTR Mulai ${formatCurrency(model.price)} di Dwindo Bintaro`} 
+                                    width="600"
+                                    height="400"
+                                    loading="lazy"
+                                    decoding="async"
                                     className="relative z-10 w-full h-full object-contain transition-all duration-700 group-hover:scale-[1.15] group-hover:-translate-y-6 group-hover:-rotate-1 group-hover:drop-shadow-2xl" 
                                 />
                                 <div className="absolute top-4 left-4 z-20">

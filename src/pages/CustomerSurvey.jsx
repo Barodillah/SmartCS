@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, CheckCircle2, ChevronRight, MessageCircle, Home } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 
 const API_BASE = 'https://csdwindo.com/api/panel/sales_survey_link.php';
 
@@ -176,6 +177,10 @@ const CustomerSurvey = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 font-body">
+            <SEOHead
+                title="Survey Pelayanan Sales — PT Dwindo Berlian Samjaya"
+                noindex={true}
+            />
             <div className="max-w-2xl mx-auto">
                 
                 <div className="mb-8 text-center">

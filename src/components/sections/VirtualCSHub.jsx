@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquare, Bot, Sparkles, CheckCircle2 } from 'lucide-react';
 import SectionTag from '../ui/SectionTag';
@@ -6,6 +6,23 @@ import AngularButton from '../ui/AngularButton';
 import { ANGULAR_CLIP } from '../../utils/constants';
 
 const VirtualCSHub = () => {
+    const [waktuRespon, setWaktuRespon] = useState('2.6s');
+
+    useEffect(() => {
+        const fetchResponseTime = async () => {
+            try {
+                const res = await fetch('https://csdwindo.com/api/chat/dashboard.php');
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                const json = await res.json();
+                if (json.status && json.data?.waktu_respon) {
+                    setWaktuRespon(json.data.waktu_respon);
+                }
+            } catch (err) {
+                // Fallback tetap ke default
+            }
+        };
+        fetchResponseTime();
+    }, []);
     return (
         <section id="virtual-cs-hub" className="py-24 bg-[#0A0A0A] relative overflow-hidden">
             {/* High-tech Background Elements */}
@@ -144,11 +161,16 @@ const VirtualCSHub = () => {
                     <motion.div
                         animate={{ y: [0, 15, 0] }}
                         transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-                        className="absolute -bottom-6 -right-6 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3 border border-white/5"
+                        className="absolute -bottom-6 -right-2 sm:-right-6 bg-black/75 backdrop-blur-md p-3.5 sm:p-4 flex items-center gap-3.5 border border-white/10 shadow-2xl"
                         style={{ clipPath: ANGULAR_CLIP }}
                     >
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className="text-white text-xs font-mono">24/7 AI ACTIVE</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse flex-shrink-0"></div>
+                        <div className="flex flex-col">
+                            <span className="text-white text-xs font-mono font-bold tracking-wider">24/7 AI ACTIVE</span>
+                            <span className="text-gray-300 text-[11px] font-mono mt-0.5">
+                                Rata-rata Respon: <span className="text-[#E60012] font-semibold">{waktuRespon}</span>
+                            </span>
+                        </div>
                     </motion.div>
                 </motion.div>
 

@@ -1,17 +1,36 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import dealerData from '../../knowledge/lokasi_dealer.json';
-import { MapPin, Phone, ExternalLink } from 'lucide-react';
+import { MapPin, Phone, ExternalLink, Clock } from 'lucide-react';
 import AngularButton from '../components/ui/AngularButton';
 import { ANGULAR_CLIP } from '../utils/constants';
+import SEOHead from '../components/seo/SEOHead';
+import { getAutoDealerGraphNodes, getBreadcrumbNode } from '../utils/seoConfig';
+import { trackConversion } from '../utils/analytics';
 
 const DealerLocation = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
 
+    const breadcrumbs = [
+        { name: 'Beranda', path: '/' },
+        { name: 'Lokasi Dealer', path: '/lokasi-dealer' }
+    ];
+
     return (
         <div className="min-h-screen pt-16 bg-[#F5F5F5] font-body">
+            <SEOHead
+                title="Lokasi Dealer Resmi Mitsubishi Dwindo — Bintaro, Radin Inten & Cakung"
+                description="Alamat lengkap, nomor telepon resmi, jam operasional, dan petunjuk arah Google Maps jaringan dealer 3S PT Dwindo Berlian Samjaya: Dwindo Bintaro (Tangerang Selatan), Dwindo Radin Inten (Jakarta Timur), dan Dwindo Cakung."
+                canonicalPath="/lokasi-dealer"
+                schemaNodes={[
+                    getBreadcrumbNode(breadcrumbs),
+                    ...getAutoDealerGraphNodes()
+                ]}
+            />
+
             {/* Header Section */}
             <div className="bg-[#111111] py-16 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none">
@@ -19,14 +38,14 @@ const DealerLocation = () => {
                 </div>
                 <div className="max-w-[1400px] mx-auto px-6 lg:px-12 relative z-10 text-center">
                     <h1 className="font-display font-black text-4xl md:text-5xl text-white uppercase mb-4 tracking-tight">Lokasi Dealer Kami</h1>
-                    <p className="text-gray-400 text-lg uppercase tracking-widest">{dealerData.dealer}</p>
+                    <p className="text-gray-400 text-lg uppercase tracking-widest">{dealerData.dealer} — Dealer Resmi 3S Mitsubishi Motors &amp; Fuso</p>
                 </div>
             </div>
 
             {/* Content Section */}
             <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16">
                 <div className="flex flex-col gap-16 max-w-5xl mx-auto mb-20">
-                    {dealerData.branches.map((branch, idx) => (
+                    {dealerData.branches.map((branch) => (
                         <motion.div
                             key={branch.slug}
                             initial={{ opacity: 0, y: 30 }}
@@ -37,34 +56,54 @@ const DealerLocation = () => {
                             style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)" }}
                         >
                             <div className="p-8 md:p-12 flex-1 flex flex-col justify-center bg-white z-10">
-                                <h3 className="font-display font-black text-2xl md:text-3xl uppercase text-[#111111] mb-8 flex items-center gap-4">
+                                <h2 className="font-display font-black text-2xl md:text-3xl uppercase text-[#111111] mb-8 flex items-center gap-4">
                                     <div className="w-12 h-12 bg-gradient-to-br from-[#E60012] to-[#ff4d4d] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#E60012]/30" style={{ clipPath: ANGULAR_CLIP }}>
                                         <MapPin size={24} className="text-white" />
                                     </div>
                                     {branch.name}
-                                </h3>
+                                </h2>
 
-                                <div className="space-y-6 mb-10 flex-1">
+                                <div className="space-y-5 mb-10 flex-1">
                                     <div className="flex items-start gap-4">
                                         <div className="mt-1 text-[#E60012] bg-[#E60012]/10 p-2.5 rounded-full"><MapPin size={20} /></div>
-                                        <p className="text-gray-600 text-[15px] leading-relaxed pt-2">{branch.address}</p>
+                                        <p className="text-gray-600 text-[15px] leading-relaxed pt-1">{branch.address}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div className="text-[#E60012] bg-[#E60012]/10 p-2.5 rounded-full"><Phone size={20} /></div>
-                                        <p className="text-gray-800 font-bold text-lg tracking-wide">{branch.phone}</p>
+                                        <a
+                                            href={`tel:${branch.phone.replace(/[^0-9+]/g, '')}`}
+                                            onClick={() => trackConversion('click_branch_phone', { branch: branch.name, phone: branch.phone })}
+                                            className="text-gray-800 hover:text-[#E60012] font-bold text-lg tracking-wide transition-colors"
+                                        >
+                                            {branch.phone}
+                                        </a>
                                     </div>
+                                    {branch.opening_hours && (
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-[#E60012] bg-[#E60012]/10 p-2.5 rounded-full"><Clock size={20} /></div>
+                                            <p className="text-gray-600 text-sm font-medium">{branch.opening_hours}</p>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div>
+                                <div className="flex flex-wrap gap-3">
                                     <a
                                         href={branch.maps_direction}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        onClick={() => trackConversion('click_maps_direction', { branch: branch.name })}
                                         className="inline-flex items-center gap-3 bg-[#111111] text-white px-8 py-4 font-display font-bold uppercase tracking-widest text-[11px] hover:bg-[#E60012] transition-colors whitespace-nowrap"
                                         style={{ clipPath: ANGULAR_CLIP }}
                                     >
                                         Petunjuk Arah
                                     </a>
+                                    <Link
+                                        to="/booking"
+                                        className="inline-flex items-center gap-3 bg-gray-100 text-[#111111] px-6 py-4 font-display font-bold uppercase tracking-widest text-[11px] hover:bg-gray-200 transition-colors whitespace-nowrap"
+                                        style={{ clipPath: ANGULAR_CLIP }}
+                                    >
+                                        Booking Service
+                                    </Link>
                                 </div>
                             </div>
 
@@ -81,18 +120,25 @@ const DealerLocation = () => {
                 </div>
 
                 {/* Footer CTA */}
-                <div className="mt-20 text-center pt-16">
-                    <h3 className="font-display font-black text-2xl uppercase text-[#111111] mb-6">Mencari Dealer di Kota Lain?</h3>
-                    <a
-                        href="https://www.mitsubishi-motors.co.id/cari-dealer"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block"
-                    >
-                        <AngularButton variant="primary" className="!px-8 !py-4 !text-[12px] flex items-center gap-2">
-                            Cari Dealer Lainnya <ExternalLink size={16} />
-                        </AngularButton>
-                    </a>
+                <div className="mt-20 text-center pt-16 border-t border-gray-200">
+                    <h2 className="font-display font-black text-2xl uppercase text-[#111111] mb-6">Mencari Dealer di Kota Lain?</h2>
+                    <div className="flex flex-wrap justify-center gap-4">
+                        <a
+                            href="https://www.mitsubishi-motors.co.id/cari-dealer"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block"
+                        >
+                            <AngularButton variant="primary" className="!px-8 !py-4 !text-[12px] flex items-center gap-2">
+                                Cari Dealer Lainnya <ExternalLink size={16} />
+                            </AngularButton>
+                        </a>
+                        <Link to="/kanal-resmi">
+                            <AngularButton variant="secondary" className="!px-8 !py-4 !text-[12px]">
+                                Verifikasi Kanal Resmi Dwindo
+                            </AngularButton>
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

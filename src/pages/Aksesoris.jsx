@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Settings, Plus, X } from 'lucide-react';
 import aksesorisData from '../../knowledge/aksesoris.json';
 import AngularButton from '../components/ui/AngularButton';
 import { ANGULAR_CLIP } from '../utils/constants';
+import SEOHead from '../components/seo/SEOHead';
+import ContextualFAQ from '../components/sections/ContextualFAQ';
+import { getBreadcrumbNode, getFaqNode, AKSESORIS_FAQS } from '../utils/seoConfig';
 
 const AksesorisCard = ({ item, isBento = false, index, modelName, onClick }) => {
-    // For Bento Grid styling
     const spanClasses = isBento ? (
         index % 3 === 0 ? "md:col-span-2 md:row-span-2" : "md:col-span-1 md:row-span-1"
     ) : "";
@@ -23,7 +26,11 @@ const AksesorisCard = ({ item, isBento = false, index, modelName, onClick }) => 
                 {item.img ? (
                     <img
                         src={item.img}
-                        alt={item.item}
+                        alt={`Aksesoris Resmi Mitsubishi ${modelName} — ${item.item}`}
+                        width="600"
+                        height="400"
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                 ) : (
@@ -46,6 +53,7 @@ const AksesorisCard = ({ item, isBento = false, index, modelName, onClick }) => 
                                 e.stopPropagation();
                                 window.dispatchEvent(new CustomEvent('openDinaChat', { detail: { message: `Saya tertarik memesan ${item.item} untuk model ${modelName}` } }));
                             }}
+                            aria-label={`Pesan ${item.item}`}
                             className="bg-white/10 hover:bg-[#E60012] p-2 rounded-full transition-colors duration-300 backdrop-blur-sm"
                         >
                             <Plus className="w-5 h-5 text-white" />
@@ -66,31 +74,56 @@ const Aksesoris = () => {
     const activeKey = activeTab.replace(/ /g, '_');
     const currentData = data[activeKey];
 
+    const breadcrumbs = [
+        { name: 'Beranda', path: '/' },
+        { name: 'Aksesoris Resmi', path: '/aksesoris' }
+    ];
+
     return (
-        <div className="min-h-screen bg-[#111111] pt-32 pb-24">
-            <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+        <div className="min-h-screen bg-[#111111] pt-32 pb-12">
+            <SEOHead
+                title="Katalog & Harga Aksesoris Resmi Mitsubishi Genuine Accessories — Dwindo Bintaro"
+                description="Katalog lengkap dan daftar harga aksesoris resmi Mitsubishi Genuine Accessories untuk All-New Destinator, Xforce, New Xpander, New Xpander Cross, dan New Pajero Sport di Dealer Resmi Dwindo Bintaro."
+                canonicalPath="/aksesoris"
+                schemaNodes={[
+                    getBreadcrumbNode(breadcrumbs),
+                    getFaqNode(AKSESORIS_FAQS)
+                ]}
+            />
+
+            <div className="max-w-[1400px] mx-auto px-6 md:px-12 pb-20">
                 {/* Header */}
-                <div className="mb-16">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-4 mb-6"
-                    >
-                        <div className="w-12 h-12 bg-[#E60012] flex items-center justify-center" style={{ clipPath: ANGULAR_CLIP }}>
-                            <Settings size={24} className="text-white" />
-                        </div>
-                        <h1 className="text-4xl md:text-6xl font-display font-bold text-white uppercase tracking-tight">
-                            Aksesoris <span className="text-[#E60012]">Resmi</span>
-                        </h1>
-                    </motion.div>
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="text-xl text-white/60 max-w-2xl font-light"
-                    >
-                        Tingkatkan kenyamanan dan tampilan kendaraan Mitsubishi Anda dengan aksesoris resmi yang dirancang khusus untuk durabilitas dan presisi.
-                    </motion.p>
+                <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-4 mb-6"
+                        >
+                            <div className="w-12 h-12 bg-[#E60012] flex items-center justify-center" style={{ clipPath: ANGULAR_CLIP }}>
+                                <Settings size={24} className="text-white" />
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-display font-bold text-white uppercase tracking-tight">
+                                Aksesoris <span className="text-[#E60012]">Resmi</span>
+                            </h1>
+                        </motion.div>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="text-xl text-white/60 max-w-2xl font-light"
+                        >
+                            Tingkatkan kenyamanan dan tampilan kendaraan Mitsubishi Anda dengan aksesoris resmi (Mitsubishi Genuine Accessories) yang dirancang khusus untuk durabilitas dan presisi tanpa menggugurkan garansi pabrik.
+                        </motion.p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        <Link to="/price-list" className="px-5 py-3 bg-white/10 hover:bg-[#E60012] text-white text-xs font-display font-bold uppercase tracking-widest transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                            Cek Harga Mobil OTR
+                        </Link>
+                        <Link to="/booking" className="px-5 py-3 bg-white/10 hover:bg-[#E60012] text-white text-xs font-display font-bold uppercase tracking-widest transition-colors" style={{ clipPath: ANGULAR_CLIP }}>
+                            Booking Pemasangan
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Tabs */}
@@ -129,7 +162,7 @@ const Aksesoris = () => {
                             <section>
                                 <div className="flex items-center justify-between mb-8">
                                     <h2 className="text-3xl font-display font-bold text-white uppercase border-l-4 border-[#E60012] pl-4">
-                                        Paket Aksesoris
+                                        Paket Aksesoris {activeTab}
                                     </h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
@@ -145,7 +178,7 @@ const Aksesoris = () => {
                             <section>
                                 <div className="flex items-center justify-between mb-8">
                                     <h2 className="text-3xl font-display font-bold text-white uppercase border-l-4 border-[#E60012] pl-4">
-                                        Eksterior
+                                        Eksterior {activeTab}
                                     </h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -161,7 +194,7 @@ const Aksesoris = () => {
                             <section>
                                 <div className="flex items-center justify-between mb-8">
                                     <h2 className="text-3xl font-display font-bold text-white uppercase border-l-4 border-[#E60012] pl-4">
-                                        Interior
+                                        Interior {activeTab}
                                     </h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -204,7 +237,6 @@ const Aksesoris = () => {
                                 
                                 <div className="flex flex-col md:flex-row h-full max-h-[85vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                     <div className="w-full md:w-3/5 bg-[#1A1A1A] flex items-center justify-center p-8 md:p-12 relative min-h-[40vh]">
-                                        {/* Background gradient effect */}
                                         <div className="absolute inset-0 bg-gradient-to-br from-[#E60012]/10 to-transparent opacity-50"></div>
                                         
                                         {selectedAksesoris.img ? (
@@ -265,6 +297,13 @@ const Aksesoris = () => {
                     )}
                 </AnimatePresence>
             </div>
+
+            <ContextualFAQ
+                title="Pertanyaan Umum Seputar Aksesoris Resmi Mitsubishi"
+                subtitle="Informasi garansi, pemasangan di bengkel resmi Dwindo, dan rincian paket aksesoris."
+                faqs={AKSESORIS_FAQS}
+                dark={true}
+            />
         </div>
     );
 };

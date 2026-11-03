@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Sparkles, X, Image as ImageIcon, Send, Archive } from 'lucide-react';
+import { ArrowLeft, Save, Sparkles, X, Image as ImageIcon, Send, Archive, Play, Video } from 'lucide-react';
+import { isVideoUrl } from '../../utils/markdownParser';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CATEGORY_LABELS = {
@@ -157,20 +158,43 @@ const ArticleEditor = () => {
 
         setIsGenerating(true);
         try {
-            const systemPrompt = `Kamu adalah content writer profesional untuk dealer Mitsubishi Dwindo Bintaro. Tugasmu adalah membuat artikel berkualitas tinggi.
+            const systemPrompt = `Kamu adalah Content Writer & Editor profesional untuk dealer resmi Mitsubishi Motors Dwindo Bintaro (PT Dwindo Berlian Samjaya).
+Tugasmu adalah ${isEditMode ? 'mengedit, merevisi, memperbarui, atau menambahkan bagian artikel yang sudah ada berdasarkan instruksi pengguna' : 'membuat artikel berkualitas tinggi yang menarik dan SEO/AEO-friendly'}.
 
-Berikan output dalam format JSON yang valid (tanpa markdown code block) dengan struktur berikut:
+ATURAN TATA KELOLA KONTEN & SISIPAN MEDIA:
+1. PENTING - SISIPAN MEDIA OTOMATIS:
+   - Jika pengguna menyertakan atau menyebutkan link/URL media (gambar atau video) dalam instruksi/konteksnya, kamu WAJIB meletakkan dan menyisipkan media tersebut secara otomatis ke dalam isi konten artikel (content) pada bagian paragraf yang paling relevan:
+     * Jika format GAMBAR (.jpg, .jpeg, .png, .webp, .avif, .gif, atau URL gambar): format menjadi [img:link|keterangan gambar]
+     * Jika format VIDEO (.mp4, .webm, .ogg, .mov, URL video, youtube, dll): format menjadi [video:link|keterangan video]
+   - Berikan keterangan (caption) yang informatif dan relevan dengan konteks pembahasan.
+2. FORMAT KONTEN:
+   - Gunakan format Markdown standar untuk 'content': subjudul (##, ###), bold (**), italic (*), list (-, *), blockquote (>), atau tabel Markdown (| Kolom 1 | Kolom 2 |) jika ada data perbandingan.
+   - JANGAN gunakan tag <h1> di dalam content (karena judul artikel utama adalah h1).
+
+Berikan output HANYA dalam format JSON yang valid (tanpa markdown code block) dengan struktur berikut:
 {
   "title": "Judul artikel yang menarik dan SEO-friendly",
-  "subtitle": "Ringkasan singkat 1-2 kalimat",
-  "content": "Isi artikel dalam format Markdown standar. Gunakan heading (#, ##, ###), bold (**), italic (*), list (-, *), blockquote (>). Minimal 3 paragraf dengan heading yang rapi.",
+  "subtitle": "Ringkasan singkat 1-2 kalimat (120-155 karakter)",
+  "content": "Isi artikel lengkap dalam format Markdown beserta sisipan media [img:link|caption] atau [video:link|caption] yang relevan",
   "category": "salah satu dari: berita, kegiatan, insight, promo, tips",
   "tags": ["array", "of", "relevant", "tags"],
   "read_time": "estimasi waktu baca, contoh: 5 min read",
-  "cta_type": "salah satu dari: booking, test_drive, prospect, emergency, sparepart, aksesoris, complaint, none — pilih yang paling sesuai konteks"
-}
+  "cta_type": "salah satu dari: booking, test_drive, prospect, emergency, sparepart, aksesoris, complaint, none"
+}`;
 
-Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Bintaro.`;
+            const userPrompt = isEditMode
+                ? `Berikut adalah draf artikel saat ini yang perlu diedit/disempurnakan:
+Judul: ${formData.title}
+Subtitle: ${formData.subtitle}
+Kategori: ${formData.category}
+Tags: ${(formData.tags || []).join(', ')}
+CTA: ${formData.cta_type}
+Isi Konten Saat Ini:
+${formData.content}
+
+INSTRUKSI EDIT / PERUBAHAN DARI PENGGUNA:
+${aiContext}`
+                : `Buatkan artikel berdasarkan konteks berikut:\n\n${aiContext}`;
 
             const res = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: 'POST',
@@ -181,7 +205,7 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                     model: 'google/gemini-2.5-flash',
                     messages: [
                         { role: 'system', content: systemPrompt },
-                        { role: 'user', content: 'Buatkan artikel berdasarkan konteks berikut:\n\n' + aiContext }
+                        { role: 'user', content: userPrompt }
                     ],
                     temperature: 0.7,
                     max_tokens: 3000
@@ -207,7 +231,7 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                     cta_type: parsed.cta_type || prev.cta_type
                 }));
                 setAiModalOpen(false);
-                showToast('Konten berhasil di-generate oleh AI!');
+                showToast(isEditMode ? 'Artikel berhasil diperbarui oleh AI!' : 'Konten berhasil di-generate oleh AI!');
                 setAiContext('');
             } else {
                 showToast('AI menghasilkan format yang tidak valid. Coba lagi.', 'error');
@@ -286,7 +310,7 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                         onClick={() => setAiModalOpen(true)}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-bold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
                     >
-                        <Sparkles size={16} /> Generate AI
+                        <Sparkles size={16} /> {isEditMode ? 'Edit AI' : 'Generate AI'}
                     </button>
                     <button
                         onClick={handleSubmit}
@@ -330,33 +354,62 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                                 placeholder="Tuliskan isi artikel Anda di sini dengan format Markdown..."
                                 className="w-full px-4 py-3 bg-[#F8F9FA] border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] transition-shadow resize-y font-mono text-sm"
                             ></textarea>
-                            <p className="text-xs text-gray-400 mt-1">Gunakan format Markdown: # Heading 1, ## Heading 2, **bold**, *italic*, - list</p>
+                            <p className="text-xs text-gray-400 mt-1">Gunakan format Markdown: # Heading 1, ## Heading 2, **bold**, *italic*, - list, serta sisipan media: [img:url|caption] atau [video:url|caption]</p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">URL Gambar Utama (Hero Image)</label>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">URL Media Utama (Hero Foto / Video)</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text" name="image"
                                     value={formData.image} onChange={handleChange}
-                                    placeholder="https://..."
+                                    placeholder="https://... (URL foto atau video .mp4)"
                                     className="flex-1 px-4 py-2 bg-[#F8F9FA] border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#E60012] transition-shadow"
                                 />
-                                <div className="w-10 h-10 border border-[#E5E5E5] rounded-lg flex items-center justify-center bg-gray-50 shrink-0 overflow-hidden">
-                                    {formData.image ? <img src={formData.image} alt="Preview" className="w-full h-full object-cover" /> : <ImageIcon size={18} className="text-gray-400" />}
+                                <div className="w-10 h-10 border border-[#E5E5E5] rounded-lg flex items-center justify-center bg-gray-50 shrink-0 overflow-hidden relative">
+                                    {formData.image ? (
+                                        isVideoUrl(formData.image) ? (
+                                            <>
+                                                <video src={formData.image} className="w-full h-full object-cover" muted />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+                                                    <Play size={12} className="fill-white text-white" />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                                        )
+                                    ) : (
+                                        <ImageIcon size={18} className="text-gray-400" />
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">URL Galeri Gambar</label>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">URL Galeri Media (Foto / Video)</label>
                             <div className="space-y-2">
                                 {formData.gallery.map((url, index) => (
-                                    <div key={index} className="flex gap-2">
+                                    <div key={index} className="flex items-center gap-2">
+                                        <div className="w-9 h-9 border border-[#E5E5E5] rounded-lg flex items-center justify-center bg-gray-50 shrink-0 overflow-hidden relative">
+                                            {url ? (
+                                                isVideoUrl(url) ? (
+                                                    <>
+                                                        <video src={url} className="w-full h-full object-cover" muted />
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+                                                            <Play size={10} className="fill-white text-white" />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <img src={url} alt="Galeri" className="w-full h-full object-cover" />
+                                                )
+                                            ) : (
+                                                <ImageIcon size={16} className="text-gray-300" />
+                                            )}
+                                        </div>
                                         <input
                                             type="text"
                                             value={url} onChange={(e) => handleGalleryChange(index, e.target.value)}
-                                            placeholder="https://..."
+                                            placeholder="https://... (URL foto atau video .mp4)"
                                             className="flex-1 px-4 py-2 bg-[#F8F9FA] border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-[#E60012] transition-shadow text-sm"
                                         />
                                         <button
@@ -371,9 +424,9 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                                 <button
                                     type="button"
                                     onClick={handleAddGallery}
-                                    className="text-sm font-bold text-[#E60012] hover:underline"
+                                    className="text-sm font-bold text-[#E60012] hover:underline flex items-center gap-1.5"
                                 >
-                                    + Tambah Gambar
+                                    + Tambah Media (Foto / Video)
                                 </button>
                             </div>
                         </div>
@@ -494,7 +547,9 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                             <div className="px-6 py-4 border-b border-[#E5E5E5] flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50">
                                 <div className="flex items-center gap-2 text-purple-700">
                                     <Sparkles size={20} />
-                                    <h3 className="font-display font-bold text-lg tracking-wide">Generate Artikel AI</h3>
+                                    <h3 className="font-display font-bold text-lg tracking-wide">
+                                        {isEditMode ? 'Edit Artikel AI' : 'Generate Artikel AI'}
+                                    </h3>
                                 </div>
                                 {!isGenerating && (
                                     <button onClick={() => setAiModalOpen(false)} className="text-gray-400 hover:text-purple-600"><X size={24} /></button>
@@ -505,24 +560,36 @@ Pastikan konten relevan dengan dunia otomotif Mitsubishi dan dealer Dwindo Binta
                                 {isGenerating ? (
                                     <div className="flex flex-col items-center justify-center py-10 space-y-4">
                                         <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-                                        <p className="text-purple-700 font-medium animate-pulse">Menghasilkan konten kreatif...</p>
+                                        <p className="text-purple-700 font-medium animate-pulse">
+                                            {isEditMode ? 'Memperbarui konten dengan AI...' : 'Menghasilkan konten kreatif...'}
+                                        </p>
                                     </div>
                                 ) : (
                                     <>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Topik atau Konteks Artikel</label>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                                            {isEditMode ? 'Konteks & Instruksi Bagian yang Ingin Diedit / Ditambahkan' : 'Topik atau Konteks Artikel'}
+                                        </label>
                                         <textarea
                                             value={aiContext} onChange={(e) => setAiContext(e.target.value)}
-                                            placeholder="Contoh: Buatkan artikel tentang pentingnya servis berkala sebelum mudik lebaran, targetkan untuk promo servis..."
+                                            placeholder={isEditMode
+                                                ? "Contoh: Perbaiki gaya bahasa, tambahkan paragraf tips perawatan AC, dan sisipkan video https://.../ac.mp4 dengan caption Perawatan AC di Dwindo..."
+                                                : "Contoh: Buatkan artikel tentang tips mudik aman dengan Mitsubishi Xpander, sisipkan video https://.../video.mp4 dan gambar https://.../foto.jpg..."
+                                            }
                                             className="w-full px-4 py-3 bg-[#F8F9FA] border border-[#E5E5E5] rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-shadow resize-none h-32 mb-4 text-sm"
                                         ></textarea>
-                                        <div className="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg border border-yellow-100 mb-6 flex items-start gap-2">
+                                        <div className="bg-purple-50 text-purple-900 text-xs p-3 rounded-lg border border-purple-100 mb-6 flex items-start gap-2">
                                             <span className="shrink-0 mt-0.5">💡</span>
-                                            <p>AI akan membuat judul, konten, tag, waktu baca, dan memilih tipe CTA secara otomatis berdasarkan input Anda.</p>
+                                            <p>
+                                                {isEditMode
+                                                    ? "AI akan membaca draf artikel saat ini dan merevisi sesuai instruksi Anda. Jika menyertakan link gambar atau video, AI otomatis memformatnya menjadi [img:link|caption] atau [video:link|caption]."
+                                                    : "Tuliskan topik artikel. Jika Anda menyisipkan link foto atau video, AI akan otomatis memasukkannya dengan format [img:link|caption] atau [video:link|caption] di sela artikel."
+                                                }
+                                            </p>
                                         </div>
                                         <div className="flex justify-end gap-3">
                                             <button onClick={() => setAiModalOpen(false)} className="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">Batal</button>
                                             <button onClick={handleGenerateAI} className="px-5 py-2.5 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2">
-                                                <Sparkles size={16} /> Generate Sekarang
+                                                <Sparkles size={16} /> {isEditMode ? 'Edit Sekarang' : 'Generate Sekarang'}
                                             </button>
                                         </div>
                                     </>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEOHead from '../components/seo/SEOHead';
+import { SITE_URL, getBreadcrumbNode } from '../utils/seoConfig';
 
 const ArticleList = () => {
-    const navigate = useNavigate();
     const [articles, setArticles] = useState([]);
     const [featuredArticles, setFeaturedArticles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,9 +19,7 @@ const ArticleList = () => {
                 const json = await res.json();
                 if (json.status && json.data) {
                     setArticles(json.data);
-                    // Filter featured articles
                     const featured = json.data.filter(a => a.is_featured);
-                    // If no featured, use top 3 latest as fallback
                     setFeaturedArticles(featured.length > 0 ? featured : json.data.slice(0, 3));
                 }
             } catch (err) {
@@ -51,9 +50,28 @@ const ArticleList = () => {
         setCurrentSlide(prev => (prev - 1 + featuredArticles.length) % featuredArticles.length);
     };
 
+    const breadcrumbs = [
+        { name: 'Beranda', path: '/' },
+        { name: 'Berita & Promo', path: '/artikel' }
+    ];
+
+    const collectionSchema = {
+        '@type': 'CollectionPage',
+        '@id': `${SITE_URL}/artikel#collection`,
+        name: 'Berita, Promo & Tips Otomotif Mitsubishi — Dwindo Bintaro',
+        url: `${SITE_URL}/artikel`,
+        isPartOf: { '@id': `${SITE_URL}/#website` }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen pt-24 bg-white flex items-center justify-center">
+                <SEOHead
+                    title="Berita, Promo & Tips Otomotif Mitsubishi — Dwindo Bintaro"
+                    description="Kumpulan berita terbaru, promo penjualan kredit Mitsubishi, kegiatan komunitas, dan tips perawatan kendaraan dari Dealer Resmi Mitsubishi Dwindo Bintaro."
+                    canonicalPath="/artikel"
+                    schemaNodes={[getBreadcrumbNode(breadcrumbs), collectionSchema]}
+                />
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E60012] border-t-transparent"></div>
             </div>
         );
@@ -61,6 +79,13 @@ const ArticleList = () => {
 
     return (
         <div className="bg-[#F8F9FA] min-h-screen">
+            <SEOHead
+                title="Berita, Promo & Tips Otomotif Mitsubishi — Dwindo Bintaro"
+                description="Kumpulan berita terbaru, promo penjualan kredit Mitsubishi, kegiatan komunitas, dan tips perawatan kendaraan dari Dealer Resmi Mitsubishi Dwindo Bintaro."
+                canonicalPath="/artikel"
+                schemaNodes={[getBreadcrumbNode(breadcrumbs), collectionSchema]}
+            />
+
             {/* Featured Auto Slider */}
             {featuredArticles.length > 0 && (
                 <div 
@@ -82,6 +107,8 @@ const ArticleList = () => {
                             <img 
                                 src={featuredArticles[currentSlide].image || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1600'} 
                                 alt={featuredArticles[currentSlide].title}
+                                width="1600"
+                                height="900"
                                 className="w-full h-full object-cover"
                             />
                             
@@ -96,18 +123,19 @@ const ArticleList = () => {
                                                 {featuredArticles[currentSlide].category}
                                             </span>
                                         </div>
-                                        <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white mb-3 md:mb-4 leading-snug md:leading-tight line-clamp-3 md:line-clamp-4">
+                                        {/* Use h2 for slider title so page has a single canonical h1 below */}
+                                        <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white mb-3 md:mb-4 leading-snug md:leading-tight line-clamp-3 md:line-clamp-4">
                                             {featuredArticles[currentSlide].title}
-                                        </h1>
+                                        </h2>
                                         <p className="text-gray-200 text-sm sm:text-base md:text-lg lg:text-xl line-clamp-2 md:line-clamp-3 mb-6 md:mb-8 max-w-2xl">
                                             {featuredArticles[currentSlide].subtitle}
                                         </p>
-                                        <button 
-                                            onClick={() => navigate(`/artikel/${featuredArticles[currentSlide].slug || featuredArticles[currentSlide].id}`)}
+                                        <Link 
+                                            to={`/artikel/${featuredArticles[currentSlide].slug || featuredArticles[currentSlide].id}`}
                                             className="px-6 py-3 md:px-8 md:py-4 bg-[#E60012] text-white text-sm md:text-base font-bold rounded hover:bg-red-700 transition-colors flex items-center gap-2 w-fit"
                                         >
                                             Baca Artikel <ArrowRight size={16} className="md:w-5 md:h-5" />
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
@@ -119,12 +147,14 @@ const ArticleList = () => {
                         <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full flex justify-between px-2 md:px-12 z-30 pointer-events-none">
                             <button 
                                 onClick={prevSlide}
+                                aria-label="Slide sebelumnya"
                                 className="pointer-events-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/30 hover:bg-[#E60012] border border-white/20 backdrop-blur text-white flex items-center justify-center transition-all"
                             >
                                 <ChevronLeft size={20} className="md:w-6 md:h-6" />
                             </button>
                             <button 
                                 onClick={nextSlide}
+                                aria-label="Slide berikutnya"
                                 className="pointer-events-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/30 hover:bg-[#E60012] border border-white/20 backdrop-blur text-white flex items-center justify-center transition-all"
                             >
                                 <ChevronRight size={20} className="md:w-6 md:h-6" />
@@ -139,6 +169,7 @@ const ArticleList = () => {
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentSlide(idx)}
+                                    aria-label={`Pilih slide ${idx + 1}`}
                                     className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-6 md:w-8 bg-[#E60012]' : 'w-3 md:w-4 bg-white/50 hover:bg-white/80'}`}
                                 />
                             ))}
@@ -150,11 +181,11 @@ const ArticleList = () => {
             {/* Articles Grid */}
             <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16 lg:py-24">
                 <div className="mb-12">
-                    <h2 className="font-display font-extrabold text-[36px] md:text-[42px] text-[#111111] uppercase leading-tight border-l-4 border-[#E60012] pl-6">
-                        Kabar Terbaru
-                    </h2>
+                    <h1 className="font-display font-extrabold text-[36px] md:text-[42px] text-[#111111] uppercase leading-tight border-l-4 border-[#E60012] pl-6">
+                        Berita, Promo &amp; Info Otomotif Mitsubishi
+                    </h1>
                     <p className="text-gray-600 mt-4 text-lg ml-6 max-w-2xl">
-                        Kumpulan artikel, berita terbaru, dan informasi menarik seputar Mitsubishi dan layanan dari Dwindo Bintaro.
+                        Kumpulan artikel, berita terbaru, dan informasi menarik seputar Mitsubishi dan layanan resmi dari Dwindo Bintaro.
                     </p>
                 </div>
 
@@ -165,9 +196,9 @@ const ArticleList = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {articles.map((article) => (
-                            <div 
+                            <Link 
                                 key={article.id} 
-                                onClick={() => navigate(`/artikel/${article.slug || article.id}`)}
+                                to={`/artikel/${article.slug || article.id}`}
                                 className="article-card group drop-shadow-sm hover:drop-shadow-xl transition-all duration-500 cursor-pointer flex flex-col"
                             >
                                 <div className="bg-white flex flex-col flex-1 relative overflow-hidden" style={{ clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}>
@@ -175,7 +206,11 @@ const ArticleList = () => {
                                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
                                         <img 
                                             src={article.image || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800'} 
-                                            alt={article.title} 
+                                            alt={article.title}
+                                            width="640"
+                                            height="360"
+                                            loading="lazy"
+                                            decoding="async"
                                             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
                                         />
                                         <div className="absolute top-5 left-5 z-20">
@@ -200,9 +235,9 @@ const ArticleList = () => {
                                             </div>
                                         </div>
                                         
-                                        <h3 className="font-display font-bold text-xl lg:text-2xl text-[#111111] leading-snug mb-3 group-hover:text-[#E60012] transition-colors line-clamp-2">
+                                        <h2 className="font-display font-bold text-xl lg:text-2xl text-[#111111] leading-snug mb-3 group-hover:text-[#E60012] transition-colors line-clamp-2">
                                             {article.title}
-                                        </h3>
+                                        </h2>
                                         
                                         <p className="text-gray-600 line-clamp-3 mb-6 flex-1">
                                             {article.subtitle}
@@ -214,7 +249,7 @@ const ArticleList = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}

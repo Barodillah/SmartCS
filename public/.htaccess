@@ -1,17 +1,64 @@
+DirectoryIndex index.php serve.php index.html index.htm default.php default.html
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # ── Social Media Crawler Detection ──
-  # Route crawlers to serve.php for proper OG meta tags
-  RewriteCond %{HTTP_USER_AGENT} facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|Discordbot|Pinterest|Googlebot|bingbot|Applebot|redditbot|Embedly|Quora\ Link\ Preview|vkShare|Google-InspectionTool [NC]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^(.*)$ serve.php [L]
+  # 1. Kanonisasi Domain: Paksa HTTPS (kecuali localhost/127.0.0.1) & non-www
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1) [NC]
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-  # ── Normal SPA Routing ──
-  # Skip rewrite for existing files or index.html
-  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+  # 2. Redirect 301 untuk URL Legacy / Typo Umum (Bab 3.2 & Bab 15 #2)
+  RewriteRule ^pricelist/?$ /price-list [L,R=301]
+  RewriteRule ^dealer/?$ /lokasi-dealer [L,R=301]
+
+  # 3. Endpoint Dinamis Sitemap & Ekosistem GEO (llms*.txt & ai.txt)
+  RewriteRule ^sitemap\.xml$ sitemap.php [L,QSA]
+  RewriteRule ^llms\.txt$ llms.php?type=index [L,QSA]
+  RewriteRule ^llms-full\.txt$ llms.php?type=full [L,QSA]
+  RewriteRule ^llms-products\.txt$ llms.php?type=products [L,QSA]
+  RewriteRule ^llms-lokasi-dealer\.txt$ llms.php?type=lokasi-dealer [L,QSA]
+  RewriteRule ^llms-faq\.txt$ llms.php?type=faq [L,QSA]
+  RewriteRule ^llms-official-channels\.txt$ llms.php?type=official-channels [L,QSA]
+  RewriteRule ^llms-artikel\.txt$ llms.php?type=artikel-index [L,QSA]
+  RewriteRule ^llms-artikel-([^/]+)\.txt$ llms.php?type=artikel-detail&slug=$1 [L,QSA]
+  RewriteRule ^\.well-known/ai\.txt$ .well-known/ai.txt [L]
+
+  # 4. Server-Side Meta, JSON-LD & Content Injection + SPA Routing (Bab 2.3 & 19.4)
+  RewriteRule ^serve\.php$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+  RewriteRule ^(.*)$ serve.php [L,QSA]
+</IfModule>
+
+# 5. Security Headers (Bab 3.7)
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# 6. Caching (Bab 3.8)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/avif "access plus 1 year"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# 7. Kompresi Gzip/Deflate (Bab 3.8)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/markdown application/javascript application/json application/xml image/svg+xml
 </IfModule>

@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare, Wind, HelpCircle, ShieldCheck } from 'lucide-react';
 import CustomDatePicker from '../components/ui/CustomDatePicker';
+import SEOHead from '../components/seo/SEOHead';
+import ContextualFAQ from '../components/sections/ContextualFAQ';
+import { SITE_URL, ORG_ID, getBreadcrumbNode, getFaqNode, BOOKING_FAQS } from '../utils/seoConfig';
+import { trackConversion } from '../utils/analytics';
 
 const steps = [
     { id: 1, title: 'Kendaraan', icon: Car },
@@ -253,9 +257,8 @@ export default function BookingService() {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
-    // Update Title and Favicon
+    // Update Favicon on Booking page (Title & Meta managed by SEOHead)
     useEffect(() => {
-        document.title = "Booking Service Mitsubishi Bintaro";
         let link = document.querySelector("link[rel~='icon']");
         let originalHref = '/logo/logo_dwindo.png';
 
@@ -270,8 +273,6 @@ export default function BookingService() {
         link.href = '/logo/mitsubishi-motors/logo_text_black.png';
 
         return () => {
-            // Restore defaults on unmount
-            document.title = "Mitsubishi Dwindo Bintaro";
             if (link) link.href = originalHref;
         };
     }, []);
@@ -697,6 +698,12 @@ export default function BookingService() {
                     console.error('Failed to sync potensi status:', e);
                 }
 
+                trackConversion('booking_service_submit', {
+                    kendaraan: payload.kendaraan,
+                    jenis: payload.jenis,
+                    tanggal: payload.tanggal,
+                    jam: payload.jam
+                });
                 setCurrentStep(5); // Success step
             } else {
                 setErrorMsg(result.message || 'Gagal menyimpan booking.');
@@ -709,8 +716,40 @@ export default function BookingService() {
         }
     };
 
+    const bookingBreadcrumbs = [
+        { name: 'Beranda', path: '/' },
+        { name: 'Booking Service', path: '/booking' }
+    ];
+
+    const autoRepairSchema = {
+        '@type': 'AutoRepair',
+        '@id': `${SITE_URL}/booking#autorepair`,
+        name: 'Bengkel Resmi 3S Mitsubishi Dwindo Bintaro',
+        url: `${SITE_URL}/booking`,
+        telephone: '+62-21-2912-5000',
+        parentOrganization: { '@id': ORG_ID },
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: 'Jl. MH. Thamrin Blok A-01, Bintaro Jaya Sektor 7 (Jl. HR Rasuna Said), Pd. Jaya, Kec. Pd. Aren',
+            addressLocality: 'Kota Tangerang Selatan',
+            addressRegion: 'Banten',
+            postalCode: '15220',
+            addressCountry: 'ID'
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+            <SEOHead
+                title="Booking Service Online Bengkel Resmi Mitsubishi — Dwindo Bintaro"
+                description="Jadwalkan servis berkala mobil Mitsubishi Anda tanpa antre di Bengkel Resmi 3S Dwindo Bintaro. Cek riwayat servis via Nomor Polisi, pilih paket AC Care, dan Extended SMART Package."
+                canonicalPath="/booking"
+                schemaNodes={[
+                    getBreadcrumbNode(bookingBreadcrumbs),
+                    autoRepairSchema,
+                    getFaqNode(BOOKING_FAQS)
+                ]}
+            />
             {/* Header */}
             <div className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
                 <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -1871,6 +1910,12 @@ export default function BookingService() {
                     </div>
                 )}
             </AnimatePresence>
+
+            <ContextualFAQ
+                title="Pertanyaan Umum Seputar Booking Service & Bengkel Resmi"
+                subtitle="Informasi jadwal operasional bengkel 3S Dwindo Bintaro, AC Care, dan Extended SMART Package."
+                faqs={BOOKING_FAQS}
+            />
 
             <style jsx>{`
                 .hide-scrollbar::-webkit-scrollbar {

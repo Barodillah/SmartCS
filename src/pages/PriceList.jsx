@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import defaultPriceListData from '../../knowledge/price_list.json';
 import { formatCurrency, ANGULAR_CLIP } from '../utils/constants';
 import AngularButton from '../components/ui/AngularButton';
 import { Download, Loader2 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import SEOHead from '../components/seo/SEOHead';
+import ContextualFAQ from '../components/sections/ContextualFAQ';
+import { SITE_URL, ORG_ID, getBreadcrumbNode, getFaqNode, PRICE_LIST_FAQS } from '../utils/seoConfig';
+import { trackConversion } from '../utils/analytics';
 
 const PriceList = () => {
     const [category, setCategory] = useState('passenger_car'); // 'passenger_car' or 'commercial_car'
@@ -35,75 +38,164 @@ const PriceList = () => {
 
     const data = priceListData[category];
 
+    // Build Product + AggregateOffer ItemList Schema for SEO/AEO/GEO
+    const productListNode = useMemo(() => {
+        const items = [];
+        let pos = 1;
+        if (priceListData?.passenger_car) {
+            Object.entries(priceListData.passenger_car).forEach(([modelKey, modelData]) => {
+                const prices = (modelData.items || []).map(i => Number(i.price)).filter(p => p > 0);
+                if (!prices.length) return;
+                const modelName = 'Mitsubishi ' + modelKey.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                items.push({
+                    '@type': 'ListItem',
+                    position: pos++,
+                    item: {
+                        '@type': 'Product',
+                        name: modelName,
+                        image: modelData.image,
+                        description: `Harga OTR Jabodetabek resmi ${modelName} di Mitsubishi Motors Dwindo Bintaro mulai Rp ${Math.min(...prices).toLocaleString('id-ID')}.`,
+                        brand: { '@type': 'Brand', name: 'Mitsubishi Motors' },
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'IDR',
+                            lowPrice: String(Math.min(...prices)),
+                            highPrice: String(Math.max(...prices)),
+                            offerCount: prices.length,
+                            availability: 'https://schema.org/InStock',
+                            seller: { '@id': ORG_ID }
+                        }
+                    }
+                });
+            });
+        }
+        return {
+            '@type': 'ItemList',
+            '@id': `${SITE_URL}/price-list#productlist`,
+            name: `Daftar Harga OTR Mitsubishi Jabodetabek (${priceListData.meta?.periode || '2026'})`,
+            itemListElement: items
+        };
+    }, [priceListData]);
+
     // Helper to render Passenger Cars
     const renderPassengerCars = () => {
-        return Object.entries(data).map(([modelKey, modelData]) => (
-            <div key={modelKey} className="mb-16">
-                <h3 className={`${theme.headingFont} text-3xl uppercase text-[#111111] mb-8 border-l-4 pl-4`} style={{ borderColor: theme.primary }}>
-                    {modelKey.split('_').join(' ')}
-                </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1">
-                        <img src={modelData.image} alt={modelKey} className="w-full h-auto object-cover rounded shadow-lg" />
-                    </div>
-                    <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {modelData.items.map((item, idx) => (
-                                <div key={idx} className="bg-white p-6 shadow-sm hover:shadow-md transition-shadow border-t-2" style={{ borderTopColor: theme.primary }}>
-                                    <h4 className="font-bold text-lg mb-2 text-gray-800">{item.type}</h4>
-                                    <div className={`text-xl font-bold`} style={{ color: theme.primary }}>{formatCurrency(item.price)}</div>
-                                </div>
-                            ))}
+        return Object.entries(data).map(([modelKey, modelData]) => {
+            const readableModel = modelKey.split('_').join(' ');
+            return (
+                <div key={modelKey} className="mb-16">
+                    <h3 className={`${theme.headingFont} text-3xl uppercase text-[#111111] mb-8 border-l-4 pl-4`} style={{ borderColor: theme.primary }}>
+                        Mitsubishi {readableModel}
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1">
+                            <img
+                                src={modelData.image}
+                                alt={`Harga OTR Mitsubishi ${readableModel} Jabodetabek`}
+                                width="600"
+                                height="400"
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-auto object-cover rounded shadow-lg"
+                            />
                         </div>
-
-                        {modelData.additional_cost && (
-                            <div className="bg-white p-4 shadow-sm border-l-4 text-sm text-gray-600" style={{ borderLeftColor: theme.primary }}>
-                                <h5 className="font-bold mb-2 uppercase tracking-wide text-xs">Tambahan Biaya:</h5>
-                                <ul className="space-y-1">
-                                    {Object.entries(modelData.additional_cost).map(([costKey, costValue]) => (
-                                        <li key={costKey} className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
-                                            <span>{costKey.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}: <strong className="text-gray-800">+{formatCurrency(costValue)}</strong></span>
-                                        </li>
-                                    ))}
-                                </ul>
+                        <div className="lg:col-span-2 flex flex-col gap-6">
+                            {/* Semantic HTML Table for AEO/GEO Crawlers & Clear Comparison */}
+                            <div className="bg-white shadow-sm overflow-x-auto border-t-2" style={{ borderTopColor: theme.primary }}>
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-200 text-xs font-display font-bold uppercase tracking-wider text-gray-600">
+                                            <th className="py-3.5 px-5">Tipe / Varian {readableModel.toUpperCase()}</th>
+                                            <th className="py-3.5 px-5 text-right">Harga OTR Jabodetabek</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 text-sm md:text-base">
+                                        {modelData.items.map((item, idx) => (
+                                            <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                                                <td className="py-3.5 px-5 font-bold text-gray-800">{item.type}</td>
+                                                <td className="py-3.5 px-5 text-right font-bold text-lg" style={{ color: theme.primary }}>
+                                                    {formatCurrency(item.price)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                        )}
+
+                            {modelData.additional_cost && (
+                                <div className="bg-white p-4 shadow-sm border-l-4 text-sm text-gray-600" style={{ borderLeftColor: theme.primary }}>
+                                    <h4 className="font-bold mb-2 uppercase tracking-wide text-xs text-gray-800">Tambahan Biaya Warna Khusus:</h4>
+                                    <ul className="space-y-1">
+                                        {Object.entries(modelData.additional_cost).map(([costKey, costValue]) => (
+                                            <li key={costKey} className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                                                <span>{costKey.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}: <strong className="text-gray-800">+{formatCurrency(costValue)}</strong></span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        ));
+            );
+        });
     };
 
     // Helper to render Commercial Cars
     const renderCommercialCars = () => {
-        return Object.entries(data).map(([modelKey, modelData]) => (
-            <div key={modelKey} className="mb-20">
-                <h3 className={`${theme.headingFont} text-4xl uppercase text-[#111111] mb-8 border-l-8 pl-4`} style={{ borderColor: theme.primary }}>
-                    {modelKey.split('_').join(' ')}
-                </h3>
-                <div className="mb-8">
-                    <img src={modelData.image} alt={modelKey} className="w-full max-w-2xl mx-auto h-auto object-cover drop-shadow-xl" />
-                </div>
+        return Object.entries(data).map(([modelKey, modelData]) => {
+            const readableModel = modelKey.split('_').join(' ');
+            return (
+                <div key={modelKey} className="mb-20">
+                    <h3 className={`${theme.headingFont} text-4xl uppercase text-[#111111] mb-8 border-l-8 pl-4`} style={{ borderColor: theme.primary }}>
+                        {readableModel}
+                    </h3>
+                    <div className="mb-8">
+                        <img
+                            src={modelData.image}
+                            alt={`Harga OTR ${readableModel} Jabodetabek`}
+                            width="800"
+                            height="450"
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full max-w-2xl mx-auto h-auto object-cover drop-shadow-xl"
+                        />
+                    </div>
 
-                <div className="space-y-12">
-                    {Object.entries(modelData.categories).map(([catName, catItems]) => (
-                        <div key={catName}>
-                            <h4 className="font-bold text-xl uppercase mb-4 text-gray-600 border-b-2 pb-2" style={{ borderBottomColor: theme.secondary }}>{catName.split('_').join(' ')}</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {catItems.map((item, idx) => (
-                                    <div key={idx} className="bg-white p-6 shadow-sm hover:shadow-md transition-all border-l-4" style={{ borderLeftColor: theme.primary }}>
-                                        <h5 className="font-bold text-lg mb-1">{item.type}</h5>
-                                        <p className="text-sm text-gray-500 mb-3">{item.spec}</p>
-                                        <div className="text-xl font-black" style={{ color: theme.primary }}>{formatCurrency(item.price)}</div>
-                                    </div>
-                                ))}
+                    <div className="space-y-12">
+                        {Object.entries(modelData.categories).map(([catName, catItems]) => (
+                            <div key={catName}>
+                                <h4 className="font-bold text-xl uppercase mb-4 text-gray-600 border-b-2 pb-2" style={{ borderBottomColor: theme.secondary }}>
+                                    {catName.split('_').join(' ')}
+                                </h4>
+                                <div className="bg-white shadow-sm overflow-x-auto border-l-4" style={{ borderLeftColor: theme.primary }}>
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-600">
+                                                <th className="py-3.5 px-5">Tipe Varian</th>
+                                                <th className="py-3.5 px-5">Spesifikasi</th>
+                                                <th className="py-3.5 px-5 text-right">Harga OTR Jabodetabek</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 text-sm md:text-base">
+                                            {catItems.map((item, idx) => (
+                                                <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="py-3.5 px-5 font-bold text-gray-900">{item.type}</td>
+                                                    <td className="py-3.5 px-5 text-gray-600">{item.spec || '-'}</td>
+                                                    <td className="py-3.5 px-5 text-right font-black text-lg" style={{ color: theme.primary }}>
+                                                        {formatCurrency(item.price)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
-        ));
+            );
+        });
     };
 
     useEffect(() => {
@@ -118,7 +210,7 @@ const PriceList = () => {
             const timeout = setTimeout(() => {
                 console.error('Image load timeout:', imageUrl);
                 resolve(null);
-            }, 8000); // 8 second timeout per image
+            }, 8000);
 
             img.onload = () => {
                 clearTimeout(timeout);
@@ -126,7 +218,7 @@ const PriceList = () => {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#FFFFFF'; // White background for transparent PNGs
+                ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/jpeg', 0.8));
@@ -134,7 +226,6 @@ const PriceList = () => {
             
             img.onerror = () => {
                 if (!img.src.includes('allorigins')) {
-                    // Fallback to proxy if direct CORS fails
                     img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
                 } else {
                     clearTimeout(timeout);
@@ -168,13 +259,19 @@ const PriceList = () => {
     const handleDownloadPdf = async () => {
         if (isDownloading) return;
         setIsDownloading(true);
+        trackConversion('download_pricelist_pdf', { category, periode: priceListData.meta?.periode || '' });
 
         try {
+            // Dynamic import of heavy PDF libraries only when user clicks Download
+            const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+                import('jspdf'),
+                import('jspdf-autotable')
+            ]);
+
             const doc = new jsPDF();
             const title = isCommercial ? 'Pricelist Commercial Car - Mitsubishi' : 'Pricelist Passenger Car - Mitsubishi';
             const periode = priceListData.meta?.periode || '';
 
-            // Document Header
             let currentFont = 'helvetica';
             const fontUrlNormal = '/font/MMCOFFICE-Regular.ttf';
             const fontUrlBold = '/font/MMCOFFICE-Bold.ttf';
@@ -216,12 +313,10 @@ const PriceList = () => {
             for (let i = 0; i < models.length; i++) {
                 const [modelKey, modelData] = models[i];
                 
-                // Pick the column with the smaller Y value to balance columns
                 let colIndex = colY[0] <= colY[1] ? 0 : 1;
                 let currentY = colY[colIndex];
                 const startX = colX[colIndex];
 
-                // Check for page break for this specific column
                 if (currentY > 280) {
                     doc.addPage();
                     colY = [15, 15];
@@ -229,7 +324,6 @@ const PriceList = () => {
                     currentY = colY[colIndex];
                 }
 
-                // Add Image
                 if (modelData.image) {
                     const base64Img = await getBase64ImageFromUrl(modelData.image);
                     if (base64Img) {
@@ -237,14 +331,12 @@ const PriceList = () => {
                     }
                 }
 
-                // Model Name
                 const modelName = modelKey.replace(/_/g, ' ').toUpperCase();
                 doc.setFontSize(10);
-                doc.setTextColor(230, 0, 18); // Primary brand color
+                doc.setTextColor(230, 0, 18);
                 const textX = modelData.image ? startX + 31 : startX;
                 doc.text(modelName, textX, currentY + 10);
                 
-                // Move Y below image
                 currentY += 18;
 
                 if (isCommercial) {
@@ -301,7 +393,6 @@ const PriceList = () => {
                 colY[colIndex] = currentY + 4; 
             }
 
-            // Add footer branding
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
@@ -320,12 +411,26 @@ const PriceList = () => {
         }
     };
 
+    const breadcrumbs = [
+        { name: 'Beranda', path: '/' },
+        { name: 'Daftar Harga OTR', path: '/price-list' }
+    ];
+
     return (
         <div className={`min-h-screen pt-16 ${theme.bg} ${theme.fontFamily} transition-colors duration-500`}>
+            <SEOHead
+                title={`Daftar Harga OTR Mitsubishi Jabodetabek (${priceListData.meta?.periode || '2026'}) — Dwindo Bintaro`}
+                description={`Daftar harga OTR Jabodetabek terbaru (${priceListData.meta?.periode || '2026'}) mobil Mitsubishi Motors (Destinator, Xforce, Xpander, Xpander Cross, Pajero Sport, Triton, L300) dan Mitsubishi Fuso Canter & Fighter X di Dealer Resmi Dwindo Bintaro.`}
+                canonicalPath="/price-list"
+                schemaNodes={[
+                    getBreadcrumbNode(breadcrumbs),
+                    productListNode,
+                    getFaqNode(PRICE_LIST_FAQS)
+                ]}
+            />
 
             {/* Header Section */}
             <div className="relative py-24 overflow-hidden group">
-                {/* Background Image with Overlay */}
                 <div 
                     className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 group-hover:scale-105"
                     style={{ 
@@ -340,8 +445,8 @@ const PriceList = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <h1 className={`${theme.headingFont} text-6xl md:text-8xl uppercase mb-4 text-white tracking-tighter leading-none`}>
-                            Daftar Harga
+                        <h1 className={`${theme.headingFont} text-5xl md:text-7xl uppercase mb-4 text-white tracking-tighter leading-none`}>
+                            Daftar Harga OTR Mitsubishi
                         </h1>
                         <p className="text-gray-300 text-lg md:text-xl font-medium tracking-widest uppercase">
                             Periode {priceListData.meta?.periode || ''} <span className="mx-3 text-[#E60012] opacity-50">/</span> OTR Jabodetabek
@@ -375,6 +480,28 @@ const PriceList = () => {
 
             {/* Content Section */}
             <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-16">
+                <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-6">
+                    <div>
+                        <h2 className="font-display font-extrabold text-2xl md:text-3xl uppercase text-[#111111]">
+                            {isCommercial ? 'Harga Kendaraan Niaga Mitsubishi Fuso' : 'Harga Mobil Penumpang Mitsubishi Motors'}
+                        </h2>
+                        <p className="text-gray-600 text-sm mt-1">
+                            Harga On The Road (OTR) wilayah Jakarta, Bogor, Depok, Tangerang, dan Bekasi.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs font-display font-bold uppercase tracking-wider">
+                        <Link to="/aksesoris" className="px-4 py-2.5 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors">
+                            Lihat Aksesoris Resmi
+                        </Link>
+                        <Link to="/booking" className="px-4 py-2.5 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors">
+                            Booking Service
+                        </Link>
+                        <Link to="/lokasi-dealer" className="px-4 py-2.5 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors">
+                            Lokasi Dealer 3S
+                        </Link>
+                    </div>
+                </div>
+
                 <motion.div
                     key={category}
                     initial={{ opacity: 0, y: 20 }}
@@ -400,6 +527,12 @@ const PriceList = () => {
                 </div>
             </div>
 
+            {/* Contextual FAQ for Price List */}
+            <ContextualFAQ
+                title="Pertanyaan Umum Seputar Harga OTR & Pembelian"
+                subtitle="Informasi langsung mengenai cakupan harga OTR Jabodetabek, biaya tambahan warna, dan simulasi kredit."
+                faqs={PRICE_LIST_FAQS}
+            />
         </div>
     );
 };

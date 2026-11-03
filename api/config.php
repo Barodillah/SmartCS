@@ -8,7 +8,7 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Content-Type: application/json; charset=utf-8');
 
 // Handle preflight
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
@@ -25,6 +25,9 @@ define('OPENROUTER_API_KEY', 'sk-or-v1-xxxxxxxxxxxxxxxxxxx');
 function getDB()
 {
     static $pdo = null;
+    if (DB_NAME === '') {
+        return null;
+    }
     if ($pdo === null) {
         try {
             $pdo = new PDO(

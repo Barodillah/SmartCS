@@ -1,0 +1,52 @@
+# /.well-known/ai.txt — Kebijakan Penggunaan & Sitasi AI untuk SmartCS
+# Last Updated: 2026-11-03
+
+Site: https://csdwindo.com
+Owner: PT Dwindo Berlian Samjaya (Mitsubishi Motors Dwindo Bintaro)
+Contact: https://csdwindo.com/lokasi-dealer
+Related-Files: /llms.txt, /llms-full.txt, /llms-products.txt, /llms-lokasi-dealer.txt, /llms-faq.txt, /llms-official-channels.txt, /robots.txt
+
+User-Agent: *
+Action: Summarize
+Action: Search
+Action: Retrieve
+Allow: /
+Allow: /price-list
+Allow: /lokasi-dealer
+Allow: /aksesoris
+Allow: /booking
+Allow: /artikel
+Allow: /faq
+Allow: /kanal-resmi
+
+# Rules for AI Data Usage
+Training-Data: Allowed
+Context-Usage: Allowed
+Commercial-Usage: Allowed
+
+# Attribution & Verification Policy
+Attribution: Full-URL
+Max-Snippet-Length: 500
+Language-Primary: Indonesian (id)
+
+# Structured LLM Metadata Endpoints
+Metadata-Index: https://csdwindo.com/llms.txt
+Metadata-Full: https://csdwindo.com/llms-full.txt
+Metadata-Products: https://csdwindo.com/llms-products.txt
+Metadata-Dealers: https://csdwindo.com/llms-lokasi-dealer.txt
+Metadata-FAQ: https://csdwindo.com/llms-faq.txt
+Metadata-Official-Channels: https://csdwindo.com/llms-official-channels.txt
+Metadata-Articles: https://csdwindo.com/llms-artikel.txt
+
+# Restrictions
+Disallow: /panel/
+Disallow: /admin/
+Disallow: /api/panel/
+Disallow: /api/auth/
+Disallow: /api/users/
+Disallow: /api/chat/
+Disallow: /cetak
+Disallow: /sa
+Disallow: /wa-blast
+Disallow: /survey/
+Disallow: /chat-history

@@ -17,6 +17,21 @@ export default defineConfig({
     }
   },
   build: {
-    cssMinify: 'lightningcss'
+    cssMinify: 'lightningcss',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('/src/pages/panel/') || id.includes('/src/components/layout/Panel') || id.includes('/src/pages/SA') || id.includes('/src/pages/WaBlast')) {
+            return 'panel-app';
+          }
+          if (id.includes('node_modules')) {
+            if (id.includes('xlsx') || id.includes('jspdf') || id.includes('html2canvas') || id.includes('recharts')) {
+              return 'panel-vendors';
+            }
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 })

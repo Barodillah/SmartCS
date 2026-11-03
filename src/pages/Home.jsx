@@ -5,16 +5,38 @@ import FeaturedModels from '../components/sections/FeaturedModels';
 import VirtualCSHub from '../components/sections/VirtualCSHub';
 import Advantage from '../components/sections/Advantage';
 import Updates from '../components/sections/Updates';
+import ContextualFAQ from '../components/sections/ContextualFAQ';
+import SEOHead from '../components/seo/SEOHead';
+import { getAutoDealerGraphNodes, getFaqNode, PRICE_LIST_FAQS, BOOKING_FAQS } from '../utils/seoConfig';
+
+const HOME_FAQS = [
+    ...PRICE_LIST_FAQS.slice(0, 2),
+    ...BOOKING_FAQS.slice(0, 2)
+];
 
 const Home = () => {
     return (
         <main>
+            <SEOHead
+                title="Mitsubishi Motors Dwindo Bintaro — Dealer Resmi 3S, Harga OTR & Booking Service"
+                description="Dealer resmi 3S Mitsubishi Motors & Mitsubishi Fuso PT Dwindo Berlian Samjaya (Dwindo Bintaro, Radin Inten, Cakung). Cek daftar harga OTR Jabodetabek terbaru, simulasi kredit, aksesoris resmi, dan booking service online."
+                canonicalPath="/"
+                schemaNodes={[
+                    ...getAutoDealerGraphNodes(),
+                    getFaqNode(HOME_FAQS)
+                ]}
+            />
             <Hero />
             <Services />
             <FeaturedModels />
             <VirtualCSHub />
             <Advantage />
             <Updates />
+            <ContextualFAQ
+                title="Pertanyaan Populer Seputar Mitsubishi Dwindo"
+                subtitle="Informasi langsung mengenai harga OTR Jabodetabek, promo kredit, dan layanan bengkel resmi 3S."
+                faqs={HOME_FAQS}
+            />
         </main>
     );
 };

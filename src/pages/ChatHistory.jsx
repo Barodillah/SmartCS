@@ -4,6 +4,7 @@ import { MessageSquare, Clock, ArrowLeft, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ANGULAR_CLIP } from '../utils/constants';
 import { parseChatMarkdown } from '../utils/markdownParser';
+import SEOHead from '../components/seo/SEOHead';
 
 const CHAT_API_BASE = 'https://csdwindo.com/api/chat';
 
@@ -133,6 +134,12 @@ const ChatHistory = () => {
 
     return (
         <div className="min-h-screen bg-[#F5F5F5] pt-24 pb-16">
+            <SEOHead
+                title="Riwayat Chat DINA — Mitsubishi Dwindo Bintaro"
+                description="Riwayat percakapan Anda dengan Asisten Virtual DINA."
+                canonicalPath="/chat-history"
+                noindex={true}
+            />
             <div className="max-w-[800px] mx-auto px-6">
                 {/* Header Page */}
                 <div className="mb-8">

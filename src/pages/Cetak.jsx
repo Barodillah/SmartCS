@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Printer, Calendar, Users, FileText, ChevronRight, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
 
 const Cetak = () => {
     const [view, setView] = useState('pin'); // pin, menu, booking_form, absensi_form, booking_print, absensi_print
@@ -247,6 +248,10 @@ const Cetak = () => {
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white font-body overflow-x-hidden">
+            <SEOHead
+                title="Layanan Cetak Internal — Dwindo Bintaro"
+                noindex={true}
+            />
             {/* Background Decorations */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-900/10 rounded-full blur-[120px]"></div>

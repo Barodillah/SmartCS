@@ -6,6 +6,12 @@
  * - parseArticleMarkdown(text) → Full-width article styling (ArticleDetail)
  */
 
+export const isVideoUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    const clean = url.split('?')[0].toLowerCase().trim();
+    return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.ogg') || clean.endsWith('.mov') || clean.endsWith('.m4v');
+};
+
 const escapeHtml = (text) => {
     return text
         .replace(/&/g, '&amp;')
@@ -74,7 +80,7 @@ const parseTables = (html, context = 'chat') => {
     return blocks.join('\n\n');
 };
 
-const applyInlineFormatting = (html) => {
+const applyInlineFormatting = (html, context = 'chat') => {
     // Code blocks (must come before inline code)
     html = html.replace(/```([\s\S]*?)```/g, (_, code) =>
         `<pre class="bg-gray-100 rounded p-2 my-1 text-[11px] overflow-x-auto"><code>${code}</code></pre>`
@@ -82,9 +88,45 @@ const applyInlineFormatting = (html) => {
     // Inline code
     html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 text-[#E60012] px-1 rounded text-[11px]">$1</code>');
 
+    // Sisipan Media Khusus: [img:link|caption], [video:link|caption], [vidio:link|caption]
+    html = html.replace(/\[(img|video|vidio):([^\|\]]+)(?:\|([^\]]*))?\]/gi, (_, tag, url, caption) => {
+        const cleanUrl = (url || '').trim();
+        const cleanCaption = (caption || '').trim();
+        const isVideo = tag.toLowerCase() === 'video' || tag.toLowerCase() === 'vidio' || isVideoUrl(cleanUrl);
+        const altText = cleanCaption || (isVideo ? 'Video Artikel' : 'Gambar Artikel');
+
+        if (isVideo) {
+            if (context === 'article') {
+                return `<figure class="my-8 my-article-figure my-article-video text-center">
+                    <div class="relative w-full max-h-[550px] rounded-xl overflow-hidden shadow-md border border-gray-100 bg-black mx-auto">
+                        <video src="${cleanUrl}" controls playsinline preload="metadata" class="w-full max-h-[550px] rounded-xl object-contain mx-auto bg-black" onerror="this.parentElement.parentElement.style.display='none'"></video>
+                    </div>
+                    ${cleanCaption ? `<figcaption class="mt-2.5 text-center text-sm text-gray-500 italic font-body">${cleanCaption}</figcaption>` : ''}
+                </figure>`;
+            }
+            return `<figure class="my-2 my-article-figure my-article-video text-center">
+                <div class="relative max-w-full max-h-[300px] rounded-lg overflow-hidden shadow-sm border border-gray-200 bg-black mx-auto">
+                    <video src="${cleanUrl}" controls playsinline preload="metadata" class="max-w-full max-h-[300px] rounded-lg object-contain mx-auto bg-black" onerror="this.parentElement.parentElement.style.display='none'"></video>
+                </div>
+                ${cleanCaption ? `<figcaption class="text-[11px] text-gray-500 italic mt-1 font-body">${cleanCaption}</figcaption>` : ''}
+            </figure>`;
+        }
+
+        if (context === 'article') {
+            return `<figure class="my-8 my-article-figure text-center">
+                <img src="${cleanUrl}" alt="${altText}" loading="lazy" decoding="async" class="w-full max-h-[550px] object-cover rounded-xl shadow-md border border-gray-100 mx-auto cursor-zoom-in hover:opacity-95 transition-opacity" onerror="this.parentElement.style.display='none'" />
+                ${cleanCaption ? `<figcaption class="mt-2.5 text-center text-sm text-gray-500 italic font-body">${cleanCaption}</figcaption>` : ''}
+            </figure>`;
+        }
+        return `<figure class="my-2 my-article-figure text-center">
+            <img src="${cleanUrl}" alt="${altText}" loading="lazy" decoding="async" class="max-w-full max-h-[300px] object-contain rounded-lg my-1 shadow-sm border border-gray-200 mx-auto cursor-zoom-in hover:opacity-95 transition-opacity" onerror="this.parentElement.style.display='none'" />
+            ${cleanCaption ? `<figcaption class="text-[11px] text-gray-500 italic mt-1 font-body">${cleanCaption}</figcaption>` : ''}
+        </figure>`;
+    });
+
     // Images (BEFORE bold/italic so underscores in URLs don't get mangled)
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
-        '<img src="$2" alt="$1" class="max-w-full max-h-[300px] object-contain rounded-lg my-2 shadow-sm border border-gray-200 bg-white/5" />'
+        '<img src="$2" alt="$1" loading="lazy" decoding="async" class="max-w-full max-h-[300px] object-contain rounded-lg my-2 shadow-sm border border-gray-200 bg-white/5" />'
     );
 
     // Links (BEFORE bold/italic so underscores in URLs don't get mangled)
@@ -122,7 +164,7 @@ export const parseChatMarkdown = (text) => {
     html = html.replace(/^#### (.+)$/gm, '<h4 class="font-bold text-[13px] mt-3 mb-1">$1</h4>');
     html = html.replace(/^### (.+)$/gm, '<h3 class="font-bold text-[14px] mt-3 mb-1">$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h2 class="font-bold text-[15px] mt-3 mb-1">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 class="font-bold text-[16px] mt-3 mb-1">$1</h1>');
+    html = html.replace(/^# (.+)$/gm, '<h2 class="font-bold text-[16px] mt-3 mb-1">$1</h2>');
 
     // Horizontal rules
     html = html.replace(/^(---|\*\*\*|___)$/gm, '<hr class="my-2 border-t border-gray-300" />');
@@ -140,10 +182,9 @@ export const parseChatMarkdown = (text) => {
     html = html.replace(/((?:<li class="md-li-ol[^>]*>.*<\/li>\n?)+)/g, '<ol class="my-1 space-y-0.5">$1</ol>');
 
     // Inline formatting (after list wrapping so bold/italic renders inside <li>)
-    html = applyInlineFormatting(html);
+    html = applyInlineFormatting(html, 'chat');
 
     // Line breaks (don't break html tags)
-    // We split by < and > to only replace newlines in text nodes
     let inTag = false;
     let newHtml = '';
     for(let i=0; i<html.length; i++) {
@@ -160,17 +201,23 @@ export const parseChatMarkdown = (text) => {
 /**
  * Full-width markdown for article pages.
  * Larger fonts, generous spacing — used in ArticleDetail.
+ * Note: `# Heading` is demoted to <h2> so the page retains a single canonical <h1>.
  */
 export const parseArticleMarkdown = (text) => {
     if (!text) return '';
 
-    let html = escapeHtml(text);
+    // Pastikan heading dan sisipan media [img:...] / [video:...] berada di baris tersendiri agar menjadi blok terpisah yang bersih
+    let preprocessed = text.replace(/\[(img|video|vidio):([^\|\]]+)(?:\|([^\]]*))?\]/gi, '\n\n$&\n\n');
+    preprocessed = preprocessed.replace(/^(#{1,6}\s+.+)$/gm, '\n\n$1\n\n');
+
+    let html = escapeHtml(preprocessed);
     html = parseTables(html, 'article');
 
-    // Headings
+    // Headings (# is rendered as <h2> to preserve single <h1> per page rule)
+    html = html.replace(/^#### (.+)$/gm, '<h4 class="font-display font-bold text-xl md:text-2xl text-[#111111] mt-8 mb-3">$1</h4>');
     html = html.replace(/^### (.+)$/gm, '<h3 class="font-display font-bold text-2xl md:text-3xl text-[#111111] mt-10 mb-4">$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h2 class="font-display font-bold text-3xl md:text-4xl text-[#111111] mt-12 mb-6">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 class="font-display font-bold text-4xl md:text-5xl text-[#111111] mt-14 mb-8">$1</h1>');
+    html = html.replace(/^# (.+)$/gm, '<h2 class="font-display font-bold text-3xl md:text-4xl text-[#111111] mt-12 mb-6">$1</h2>');
 
     // Horizontal rules
     html = html.replace(/^(---|\*\*\*|___)$/gm, '<hr class="my-8 border-t border-gray-300" />');
@@ -187,7 +234,7 @@ export const parseArticleMarkdown = (text) => {
     html = html.replace(/((?:<li class="md-li-ol[^>]*>.*<\/li>\n?)+)/g, '<ol class="my-4 space-y-2">$1</ol>');
 
     // Inline formatting (after list wrapping so bold/italic renders inside <li>)
-    html = applyInlineFormatting(html);
+    html = applyInlineFormatting(html, 'article');
     // Override link style for article context
     html = html.replace(/class="text-\[#E60012\] underline hover:text-\[#B5000F\]"/g,
         'class="text-[#E60012] font-semibold hover:underline"'
@@ -196,8 +243,9 @@ export const parseArticleMarkdown = (text) => {
     // Paragraphs (double newline → <p>)
     const blocks = html.split(/\n\s*\n/);
     html = blocks.map(block => {
-        if (!block.trim() || block.trim().startsWith('<')) return block;
-        return `<p class="text-lg text-gray-700 leading-relaxed mb-6">${block.replace(/\n/g, '<br />')}</p>`;
+        const trimmed = block.trim();
+        if (!trimmed || trimmed.startsWith('<')) return trimmed;
+        return `<p class="text-lg text-gray-700 leading-relaxed mb-6">${trimmed.replace(/\n/g, '<br />')}</p>`;
     }).join('\n\n');
 
     return html;

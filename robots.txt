@@ -1,21 +1,50 @@
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /admin/
-Disallow: /panel/
 
-# AI Crawlers
+# Izinkan aset & API publik untuk rendering halaman (Penting untuk Googlebot & Bot AI)
+Allow: /assets/
+Allow: /media/
+Allow: /logo/
+Allow: /images/
+Allow: /font/
+Allow: /api/artikel/list.php
+Allow: /api/artikel/ai_list.php
+Allow: /api/artikel/comment_list.php
+Allow: /api/pricelist/
+
+# Blokir area privat, admin, & rute utilitas internal
+Disallow: /panel/
+Disallow: /admin/
+Disallow: /api/panel/
+Disallow: /api/auth/
+Disallow: /api/users/
+Disallow: /api/chat/
+Disallow: /cetak
+Disallow: /sa
+Disallow: /wa-blast
+Disallow: /survey/
+Disallow: /chat-history
+
+# Bot AI Pencarian / Retrieval & LLM (Diizinkan agar dikutip di jawaban AI)
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
 User-agent: GPTBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
 Allow: /
 Allow: /llms.txt
 Allow: /llms-*.txt
+Disallow: /panel/
+Disallow: /admin/
+Disallow: /api/panel/
+Disallow: /api/auth/
+Disallow: /api/users/
+Disallow: /api/chat/
 
-User-agent: Google-Extended
-Allow: /
-Allow: /llms.txt
-
-# Sitemap
+# Sitemap Kanonis
 Sitemap: https://csdwindo.com/sitemap.xml
-
-# LLM Metadata Index
-Link: <https://csdwindo.com/llms.txt>; rel="llms-metadata"

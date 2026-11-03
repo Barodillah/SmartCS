@@ -2,15 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     Calendar, Clock, Eye, Heart, Share2, ArrowRight, ChevronLeft, ChevronRight,
-    Link as LinkIcon, MessageCircle, Send, MessageSquare, X
+    Link as LinkIcon, MessageCircle, Send, MessageSquare, X, Play, Video
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-import { parseArticleMarkdown } from '../utils/markdownParser';
-
+import { parseArticleMarkdown, isVideoUrl } from '../utils/markdownParser';
+import SEOHead from '../components/seo/SEOHead';
+import { SITE_URL, ORG_ID, getBreadcrumbNode } from '../utils/seoConfig';
 
 const ArticleDetail = () => {
     const { id } = useParams();
@@ -26,6 +27,7 @@ const ArticleDetail = () => {
     const [commentText, setCommentText] = useState('');
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [inlinePreviewImg, setInlinePreviewImg] = useState(null);
     const [touchStart, setTouchStart] = useState(null);
     const [touchEnd, setTouchEnd] = useState(null);
 
@@ -68,11 +70,15 @@ const ArticleDetail = () => {
                             body: JSON.stringify({ article_id: found.id, action: 'view' })
                         }).catch(e => console.error(e));
 
-                        let related = articles.filter(a => a.id !== found.id && a.category === found.category);
-                        if (related.length === 0) {
-                            related = articles.filter(a => a.id !== found.id);
-                        }
-                        setRelatedArticles(related.slice(0, 3));
+                        // Related articles with views ASC tie-breaker (Bab 7.3 & 7.4) for equitable crawl & user exposure
+                        const others = articles.filter(a => a.id !== found.id);
+                        const sameCategory = others
+                            .filter(a => a.category === found.category)
+                            .sort((a, b) => (Number(a.views_count) || 0) - (Number(b.views_count) || 0));
+                        const diffCategory = others
+                            .filter(a => a.category !== found.category)
+                            .sort((a, b) => (Number(a.views_count) || 0) - (Number(b.views_count) || 0));
+                        setRelatedArticles([...sameCategory, ...diffCategory].slice(0, 3));
                     } else {
                         setArticle(null);
                     }
@@ -86,7 +92,6 @@ const ArticleDetail = () => {
 
         fetchArticle();
 
-        // Scroll Progress
         const handleScroll = () => {
             if (!contentRef.current) return;
             const element = contentRef.current;
@@ -101,7 +106,6 @@ const ArticleDetail = () => {
 
         window.addEventListener('scroll', handleScroll);
 
-        // GSAP Animations
         setTimeout(() => {
             gsap.fromTo('.article-fade-up',
                 { opacity: 0, y: 30 },
@@ -111,6 +115,28 @@ const ArticleDetail = () => {
 
         return () => window.removeEventListener('scroll', handleScroll);
     }, [id]);
+
+    // Handle clicks on inline article images [img:link|caption]
+    useEffect(() => {
+        const el = contentRef.current;
+        if (!el) return;
+
+        const handleInlineImgClick = (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'IMG' && target.closest('.my-article-figure')) {
+                const figure = target.closest('.my-article-figure');
+                const figcaption = figure ? figure.querySelector('figcaption') : null;
+                setInlinePreviewImg({
+                    src: target.currentSrc || target.src,
+                    alt: target.alt || '',
+                    caption: figcaption ? figcaption.textContent : ''
+                });
+            }
+        };
+
+        el.addEventListener('click', handleInlineImgClick);
+        return () => el.removeEventListener('click', handleInlineImgClick);
+    }, [article]);
 
     const handleLike = async () => {
         setIsLiked(!isLiked);
@@ -168,7 +194,7 @@ const ArticleDetail = () => {
                 setCommentText('');
                 setCommentName('');
                 setIsCommentModalOpen(false);
-                fetchComments(article.id); // Refresh comments
+                fetchComments(article.id);
             } else {
                 showToast(data.message || 'Gagal mengirim komentar');
             }
@@ -223,11 +249,72 @@ const ArticleDetail = () => {
         if (distance < -minSwipeDistance) prevImage();
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading artikel...</div>;
-    if (!article) return <div className="min-h-screen flex flex-col items-center justify-center text-gray-500"><h2 className="text-2xl font-bold mb-2">404</h2><p>Artikel tidak ditemukan.</p><button onClick={() => navigate('/')} className="mt-4 px-4 py-2 bg-[#E60012] text-white rounded">Kembali ke Home</button></div>;
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading artikel...</div>;
+    }
+
+    if (!article) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center text-gray-500 px-6 text-center">
+                <SEOHead
+                    title="404 Artikel Tidak Ditemukan — Mitsubishi Dwindo Bintaro"
+                    description="Artikel yang Anda cari tidak ditemukan atau telah dipindahkan."
+                    noindex={true}
+                />
+                <h1 className="text-4xl font-display font-black text-[#111111] mb-2">404 — Artikel Tidak Ditemukan</h1>
+                <p className="mb-6 max-w-md">Artikel yang Anda cari mungkin sudah dihapus atau URL tidak sesuai.</p>
+                <div className="flex flex-wrap gap-3 justify-center">
+                    <Link to="/artikel" className="px-5 py-2.5 bg-[#E60012] text-white font-bold rounded">Lihat Semua Artikel</Link>
+                    <Link to="/price-list" className="px-5 py-2.5 bg-gray-900 text-white font-bold rounded">Daftar Harga OTR</Link>
+                    <Link to="/" className="px-5 py-2.5 border border-gray-300 text-gray-700 font-bold rounded">Kembali ke Beranda</Link>
+                </div>
+            </div>
+        );
+    }
+
+    const articlePath = `/artikel/${article.slug || article.id}`;
+    const articleImage = article.image
+        ? (article.image.startsWith('http') ? article.image : `${SITE_URL}${article.image}`)
+        : `${SITE_URL}/media/hero.webp`;
+    const pubIso = new Date(article.published_at || article.created_at || Date.now()).toISOString();
+    const modIso = new Date(article.updated_at || article.published_at || article.created_at || Date.now()).toISOString();
+
+    const breadcrumbs = [
+        { name: 'Beranda', path: '/' },
+        { name: 'Berita & Promo', path: '/artikel' },
+        { name: article.title, path: articlePath }
+    ];
+
+    const blogPostingSchema = {
+        '@type': 'BlogPosting',
+        '@id': `${SITE_URL}${articlePath}#article`,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}${articlePath}` },
+        headline: article.title,
+        description: article.subtitle || article.title,
+        image: [articleImage],
+        datePublished: pubIso,
+        dateModified: modIso,
+        author: {
+            '@type': 'Organization',
+            name: article.author || 'Dwindo Bintaro',
+            url: SITE_URL
+        },
+        publisher: { '@id': ORG_ID },
+        articleSection: article.category || 'Otomotif',
+        inLanguage: 'id-ID'
+    };
 
     return (
         <div className="bg-white min-h-screen pt-20">
+            <SEOHead
+                title={`${article.title} — Mitsubishi Dwindo Bintaro`}
+                description={article.subtitle || `Baca artikel ${article.title} dari Dealer Resmi Mitsubishi Motors Dwindo Bintaro.`}
+                canonicalPath={articlePath}
+                image={articleImage}
+                ogType="article"
+                schemaNodes={[getBreadcrumbNode(breadcrumbs), blogPostingSchema]}
+            />
+
             {/* Sticky Reading Progress */}
             <div className="fixed top-0 left-0 w-full h-1 bg-gray-200 z-50">
                 <div
@@ -247,7 +334,7 @@ const ArticleDetail = () => {
             <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8">
 
                 {/* Breadcrumb & Back */}
-                <div className="article-fade-up mb-8 flex items-center justify-between">
+                <nav aria-label="breadcrumb" className="article-fade-up mb-8 flex items-center justify-between">
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center text-gray-500 hover:text-[#E60012] transition-colors font-medium text-sm group"
@@ -255,14 +342,14 @@ const ArticleDetail = () => {
                         <ChevronLeft size={18} className="mr-1 transform group-hover:-translate-x-1 transition-transform" />
                         Kembali
                     </button>
-                    <div className="hidden md:flex text-sm text-gray-400 gap-2">
-                        <Link to="/" className="hover:text-gray-700">Home</Link>
-                        <span>/</span>
-                        <Link to="/artikel" className="hover:text-gray-700">Berita</Link>
-                        <span>/</span>
-                        <span className="text-gray-700">{article.category}</span>
-                    </div>
-                </div>
+                    <ol className="hidden md:flex text-sm text-gray-400 gap-2 items-center">
+                        <li><Link to="/" className="hover:text-gray-700">Beranda</Link></li>
+                        <li>/</li>
+                        <li><Link to="/artikel" className="hover:text-gray-700">Berita</Link></li>
+                        <li>/</li>
+                        <li className="text-gray-700 capitalize">{article.category}</li>
+                    </ol>
+                </nav>
 
                 {/* Hero Section */}
                 <header className="article-fade-up max-w-4xl mx-auto text-center mb-10">
@@ -282,6 +369,8 @@ const ArticleDetail = () => {
                                             '/logo/logo_dwindo.png'
                                 }
                                 alt={article.author || 'Author'}
+                                width="24"
+                                height="24"
                                 className={
                                     article.author === 'Mitsubishi Motors Indonesia' || article.author === 'Mitsubishi Fuso Indonesia'
                                         ? "h-5 w-auto object-contain"
@@ -292,7 +381,9 @@ const ArticleDetail = () => {
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Calendar size={16} />
-                            {new Date(article.published_at || article.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            <time dateTime={pubIso}>
+                                {new Date(article.published_at || article.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </time>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Clock size={16} />
@@ -305,17 +396,31 @@ const ArticleDetail = () => {
                     </div>
                 </header>
 
-                {/* Featured Image */}
-                <div className="article-fade-up w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] relative rounded-2xl overflow-hidden mb-12 shadow-lg">
-                    <img
-                        src={article.image}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                            // Fallback if image not found
-                            e.target.src = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=2000&auto=format&fit=crop';
-                        }}
-                    />
+                {/* Featured Media (Image or Video) */}
+                <div className="article-fade-up w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] relative rounded-2xl overflow-hidden mb-12 shadow-lg bg-black">
+                    {isVideoUrl(article.image) ? (
+                        <video
+                            src={article.image}
+                            controls
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <img
+                            src={article.image}
+                            alt={article.title}
+                            width="1200"
+                            height="675"
+                            fetchPriority="high"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.src = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=2000&auto=format&fit=crop';
+                            }}
+                        />
+                    )}
                 </div>
 
                 {/* Content Layout */}
@@ -329,15 +434,15 @@ const ArticleDetail = () => {
                             </span>
                             <div className="w-[1px] h-12 bg-gray-200"></div>
 
-                            <button onClick={scrollToComments} className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#E60012] hover:text-white transition-colors tooltip group relative">
+                            <button onClick={scrollToComments} aria-label="Lihat Komentar" className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#E60012] hover:text-white transition-colors tooltip group relative">
                                 <MessageSquare size={18} />
                                 <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Komentar</span>
                             </button>
-                            <button onClick={() => setIsShareModalOpen(true)} className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#1877F2] hover:text-white transition-colors group relative">
+                            <button onClick={() => setIsShareModalOpen(true)} aria-label="Bagikan Artikel" className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#1877F2] hover:text-white transition-colors group relative">
                                 <Share2 size={18} />
                                 <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Bagikan</span>
                             </button>
-                            <button onClick={() => handleShare('copy')} className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-white transition-colors group relative">
+                            <button onClick={() => handleShare('copy')} aria-label="Salin Tautan" className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-white transition-colors group relative">
                                 <LinkIcon size={18} />
                                 <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">Copy Link</span>
                             </button>
@@ -346,12 +451,12 @@ const ArticleDetail = () => {
 
                     {/* Main Article Content */}
                     <article className="article-fade-up lg:w-[calc(100%-80px)] max-w-3xl font-body">
-                        {/* Mobile Share (Visible only on small screens) */}
+                        {/* Mobile Share */}
                         <div className="sticky top-[50px] z-40 bg-white/90 backdrop-blur-md flex items-center gap-4 mb-8 lg:hidden border-b border-gray-100 py-4 -mx-6 px-6 shadow-sm">
                             <span className="text-sm font-bold text-gray-500 uppercase">Share:</span>
-                            <button onClick={scrollToComments} className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#E60012] hover:text-white transition-colors"><MessageSquare size={18} /></button>
-                            <button onClick={() => setIsShareModalOpen(true)} className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#1877F2] hover:text-white transition-colors"><Share2 size={18} /></button>
-                            <button onClick={() => handleShare('copy')} className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-white transition-colors"><LinkIcon size={18} /></button>
+                            <button onClick={scrollToComments} aria-label="Komentar" className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#E60012] hover:text-white transition-colors"><MessageSquare size={18} /></button>
+                            <button onClick={() => setIsShareModalOpen(true)} aria-label="Bagikan" className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-[#1877F2] hover:text-white transition-colors"><Share2 size={18} /></button>
+                            <button onClick={() => handleShare('copy')} aria-label="Salin Link" className="w-10 h-10 rounded-full bg-[#F8F9FA] flex items-center justify-center text-gray-500 hover:bg-gray-800 hover:text-white transition-colors"><LinkIcon size={18} /></button>
                         </div>
 
                         {/* Render Markdown content */}
@@ -360,12 +465,13 @@ const ArticleDetail = () => {
                             dangerouslySetInnerHTML={{ __html: parseArticleMarkdown(article.content) }}
                         />
 
-                        {/* Gallery Bento Grid */}
+                        {/* Gallery Bento Grid (Photos & Videos) */}
                         {article.gallery && article.gallery.length > 0 && (
                             <div className="mb-12 article-fade-up">
-                                <h3 className="font-display font-bold text-2xl md:text-3xl text-[#111111] mb-6">Galeri Dokumentasi</h3>
+                                <h2 className="font-display font-bold text-2xl md:text-3xl text-[#111111] mb-6">Galeri & Media Dokumentasi</h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 auto-rows-[250px]">
-                                    {article.gallery.map((img, idx) => {
+                                    {article.gallery.map((mediaUrl, idx) => {
+                                        const isVideo = isVideoUrl(mediaUrl);
                                         let colSpan = "";
                                         let rowSpan = "";
                                         if (article.gallery.length === 3 && idx === 0) {
@@ -378,14 +484,43 @@ const ArticleDetail = () => {
                                             <div
                                                 key={idx}
                                                 onClick={() => openLightbox(idx)}
-                                                className={`relative rounded-xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg transition-all duration-300 ${colSpan} ${rowSpan}`}
+                                                className={`relative rounded-xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg transition-all duration-300 bg-black ${colSpan} ${rowSpan}`}
                                             >
-                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10 flex items-center justify-center">
-                                                    <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-75 group-hover:scale-100">
-                                                        <Eye size={24} className="text-white" />
-                                                    </div>
+                                                <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition-colors duration-500 z-10 flex items-center justify-center">
+                                                    {isVideo ? (
+                                                        <div className="bg-[#E60012]/90 text-white p-4 rounded-full shadow-xl backdrop-blur-sm group-hover:scale-110 group-hover:bg-[#E60012] transition-all flex items-center justify-center">
+                                                            <Play size={26} className="fill-white translate-x-0.5" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-75 group-hover:scale-100">
+                                                            <Eye size={24} className="text-white" />
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
+
+                                                {isVideo && (
+                                                    <span className="absolute top-3 right-3 bg-black/75 text-white text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full z-20 flex items-center gap-1.5 backdrop-blur-sm border border-white/20">
+                                                        <Play size={10} className="fill-white" /> Video
+                                                    </span>
+                                                )}
+
+                                                {isVideo ? (
+                                                    <video
+                                                        src={mediaUrl}
+                                                        muted
+                                                        playsInline
+                                                        preload="metadata"
+                                                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={mediaUrl}
+                                                        alt={`${article.title} — Galeri ${idx + 1}`}
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                                                    />
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -393,12 +528,32 @@ const ArticleDetail = () => {
                             </div>
                         )}
 
+                        {/* Contextual Internal Links (Hub & Spoke SEO - Bab 7.2) */}
+                        <div className="bg-[#F8F9FA] border border-gray-200 rounded-xl p-6 mb-10">
+                            <h2 className="font-display font-bold text-sm uppercase tracking-wider text-gray-800 mb-3">
+                                Layanan Terkait Mitsubishi Dwindo Bintaro:
+                            </h2>
+                            <div className="flex flex-wrap gap-3 text-xs font-display font-bold uppercase tracking-wider">
+                                <Link to="/price-list" className="px-4 py-2 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors rounded">
+                                    Daftar Harga OTR Terbaru
+                                </Link>
+                                <Link to="/booking" className="px-4 py-2 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors rounded">
+                                    Booking Service Online
+                                </Link>
+                                <Link to="/aksesoris" className="px-4 py-2 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors rounded">
+                                    Katalog Aksesoris Resmi
+                                </Link>
+                                <Link to="/lokasi-dealer" className="px-4 py-2 bg-white border border-gray-200 hover:border-[#E60012] text-[#111111] transition-colors rounded">
+                                    Lokasi Cabang 3S
+                                </Link>
+                            </div>
+                        </div>
+
                         {/* Article Footer Actions */}
                         <div className="border-t border-b border-gray-100 py-8 my-10 flex flex-col gap-8">
-                            {/* Tags */}
                             {article.tags && article.tags.length > 0 && (
                                 <div className="w-full text-left">
-                                    <h4 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide">Tags</h4>
+                                    <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide">Tags</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {article.tags.map((tag, idx) => (
                                             <span key={idx} className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600 capitalize">
@@ -409,7 +564,6 @@ const ArticleDetail = () => {
                                 </div>
                             )}
 
-                            {/* Like Button */}
                             <div className="flex justify-center w-full">
                                 <button
                                     onClick={handleLike}
@@ -423,10 +577,10 @@ const ArticleDetail = () => {
 
                         {/* Comment Section */}
                         <div className="mb-16" id="comments-section">
-                            <h3 className="font-display font-bold text-2xl mb-6 flex items-center gap-2">
+                            <h2 className="font-display font-bold text-2xl mb-6 flex items-center gap-2">
                                 <MessageSquare size={24} className="text-[#E60012]" />
                                 Komentar ({comments.length})
-                            </h3>
+                            </h2>
 
                             <div className="flex gap-4 mb-10">
                                 <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center text-gray-500 font-bold">You</div>
@@ -440,6 +594,7 @@ const ArticleDetail = () => {
                                     ></textarea>
                                     <button
                                         onClick={() => { if (commentText.trim()) setIsCommentModalOpen(true); else showToast('Komentar tidak boleh kosong'); }}
+                                        aria-label="Kirim Komentar"
                                         className="absolute bottom-4 right-4 text-gray-400 hover:text-[#E60012] transition-colors"
                                     >
                                         <Send size={20} />
@@ -528,7 +683,7 @@ const ArticleDetail = () => {
             {/* Related Articles */}
             <div className="bg-[#F8F9FA] py-16">
                 <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-                    <h3 className="font-display font-bold text-2xl mb-8 border-l-4 border-[#E60012] pl-4">Artikel Terkait</h3>
+                    <h2 className="font-display font-bold text-2xl mb-8 border-l-4 border-[#E60012] pl-4">Artikel Terkait</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {relatedArticles.map((item, idx) => (
                             <Link
@@ -542,6 +697,10 @@ const ArticleDetail = () => {
                                         <img
                                             src={item.image || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800'}
                                             alt={item.title}
+                                            width="640"
+                                            height="360"
+                                            loading="lazy"
+                                            decoding="async"
                                             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
                                         />
                                         <div className="absolute top-5 left-5 z-20">
@@ -585,6 +744,7 @@ const ArticleDetail = () => {
                     </div>
                 </div>
             </div>
+
             {/* Share Modal */}
             {isShareModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
@@ -690,15 +850,55 @@ const ArticleDetail = () => {
                         onTouchMove={onTouchMove}
                         onTouchEnd={onTouchEnd}
                     >
-                        <img
-                            src={article.gallery[currentImageIndex]}
-                            alt={`Gallery full ${currentImageIndex}`}
-                            className="max-w-full max-h-full object-contain rounded-md shadow-2xl transition-opacity duration-300 pointer-events-none"
-                        />
+                        {isVideoUrl(article.gallery[currentImageIndex]) ? (
+                            <video
+                                key={article.gallery[currentImageIndex]}
+                                src={article.gallery[currentImageIndex]}
+                                controls
+                                autoPlay
+                                playsInline
+                                className="max-w-full max-h-full object-contain rounded-md shadow-2xl"
+                            />
+                        ) : (
+                            <img
+                                src={article.gallery[currentImageIndex]}
+                                alt={`Gallery full ${currentImageIndex}`}
+                                className="max-w-full max-h-full object-contain rounded-md shadow-2xl transition-opacity duration-300 pointer-events-none"
+                            />
+                        )}
                     </div>
 
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 font-display text-sm tracking-widest z-50 bg-black/50 px-4 py-1 rounded-full">
                         {currentImageIndex + 1} / {article.gallery.length}
+                    </div>
+                </div>
+            )}
+
+            {/* Inline Article Image Lightbox Modal */}
+            {inlinePreviewImg && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 md:p-12 animate-fade-in"
+                    onClick={() => setInlinePreviewImg(null)}
+                >
+                    <button
+                        aria-label="Tutup Pratinjau Gambar"
+                        className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors p-2 z-50 cursor-pointer"
+                        onClick={() => setInlinePreviewImg(null)}
+                    >
+                        <X size={32} />
+                    </button>
+
+                    <div className="flex flex-col items-center max-w-5xl max-h-full" onClick={(e) => e.stopPropagation()}>
+                        <img
+                            src={inlinePreviewImg.src}
+                            alt={inlinePreviewImg.alt}
+                            className="max-w-full max-h-[82vh] object-contain rounded-lg shadow-2xl"
+                        />
+                        {inlinePreviewImg.caption && (
+                            <p className="mt-4 text-white/90 text-sm md:text-base text-center italic font-body max-w-2xl px-5 py-2 bg-black/50 rounded-full border border-white/10">
+                                {inlinePreviewImg.caption}
+                            </p>
+                        )}
                     </div>
                 </div>
             )}

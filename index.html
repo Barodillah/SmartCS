@@ -4,40 +4,45 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/logo/logo_dwindo.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- SEO Meta Tags -->
-  <title>Mitsubishi Motors Dwindo Bintaro | Dealer Resmi & Layanan Cerdas</title>
+  <title>Mitsubishi Motors Dwindo Bintaro | Dealer Resmi & Bengkel 3S</title>
   <meta name="description"
-    content="Dealer Resmi Mitsubishi Motors Dwindo Bintaro. Dapatkan promo terbaik, booking service mudah, dan lini kendaraan Mitsubishi terbaru seperti Xpander, Pajero Sport, dan Xforce." />
-  <meta name="keywords"
-    content="Mitsubishi, Dwindo Bintaro, Mitsubishi Bintaro, Dealer Mitsubishi, Xpander, Pajero Sport, Xforce, Booking Service Mitsubishi, DINA Mitsubishi" />
+    content="Dealer Resmi 3S Mitsubishi Motors & Fuso PT Dwindo Berlian Samjaya di Bintaro, Radin Inten, dan Cakung. Cek harga OTR terbaru, promo kredit, booking service online, & asisten AI DINA 24/7." />
   <meta name="author" content="PT Dwindo Berlian Samjaya" />
-  <meta name="robots" content="index, follow" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="https://csdwindo.com/" />
+  <link rel="alternate" type="text/markdown" href="https://csdwindo.com/llms.txt" title="LLM Metadata" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Mitsubishi Motors Dwindo Bintaro" />
+  <meta property="og:locale" content="id_ID" />
   <meta property="og:url" content="https://csdwindo.com/" />
-  <meta property="og:title" content="Mitsubishi Motors Dwindo Bintaro - Dealer Resmi & Layanan Cerdas" />
+  <meta property="og:title" content="Mitsubishi Motors Dwindo Bintaro | Dealer Resmi & Bengkel 3S" />
   <meta property="og:description"
-    content="Dealer Resmi Mitsubishi Motors Dwindo Bintaro. Solusi mobilitas masa depan dengan layanan asisten AI DINA." />
-  <meta property="og:image" content="/dina.png" />
+    content="Dealer Resmi 3S Mitsubishi Motors & Fuso PT Dwindo Berlian Samjaya di Bintaro, Radin Inten, dan Cakung. Cek harga OTR terbaru, promo kredit, booking service online, & asisten AI DINA 24/7." />
+  <meta property="og:image" content="https://csdwindo.com/dina.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
   <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://csdwindo.com/" />
-  <meta property="twitter:title" content="Mitsubishi Motors Dwindo Bintaro - Dealer Resmi & Layanan Cerdas" />
-  <meta property="twitter:description"
-    content="Dealer Resmi Mitsubishi Motors Dwindo Bintaro. Solusi mobilitas masa depan dengan layanan asisten AI DINA." />
-  <meta property="twitter:image" content="/dina.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://csdwindo.com/" />
+  <meta name="twitter:title" content="Mitsubishi Motors Dwindo Bintaro | Dealer Resmi & Bengkel 3S" />
+  <meta name="twitter:description"
+    content="Dealer Resmi 3S Mitsubishi Motors & Fuso PT Dwindo Berlian Samjaya di Bintaro, Radin Inten, dan Cakung. Cek harga OTR terbaru, promo kredit, booking service online, & asisten AI DINA 24/7." />
+  <meta name="twitter:image" content="https://csdwindo.com/dina.png" />
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Performance & Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="image" href="/media/hero.webp" fetchpriority="high" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
-    rel="stylesheet">
+    rel="stylesheet" />
 
-  <!-- PWA Setup -->
+  <!-- PWA Setup (Non-blocking DOM injection instead of document.write) -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <script>
@@ -52,28 +57,38 @@
       if (hostname === 'panel.csdwindo.com' || pathname.startsWith('/panel')) {
         manifestHref = '/panel-manifest.json';
         appTitle = 'CSDwindo Panel';
-        themeColor = '#111111';
-        iconHref = '/apps.png';
       } else if (pathname.startsWith('/sa')) {
         manifestHref = '/sa-manifest.json';
         appTitle = 'Dwindo SA';
-        themeColor = '#111111';
-        iconHref = '/apps.png';
       }
 
-      document.write('<link rel="manifest" href="' + manifestHref + '" />');
-      document.write('<meta name="theme-color" content="' + themeColor + '" />');
-      document.write('<meta name="apple-mobile-web-app-title" content="' + appTitle + '" />');
-      document.write('<link rel="apple-touch-icon" href="' + iconHref + '" />');
+      var head = document.head;
+      var manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = manifestHref;
+      head.appendChild(manifestLink);
+
+      var themeMeta = document.createElement('meta');
+      themeMeta.name = 'theme-color';
+      themeMeta.content = themeColor;
+      head.appendChild(themeMeta);
+
+      var titleMeta = document.createElement('meta');
+      titleMeta.name = 'apple-mobile-web-app-title';
+      titleMeta.content = appTitle;
+      head.appendChild(titleMeta);
+
+      var touchIcon = document.createElement('link');
+      touchIcon.rel = 'apple-touch-icon';
+      touchIcon.href = iconHref;
+      head.appendChild(touchIcon);
     })();
   </script>
 
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW registered'))
-          .catch(err => console.log('SW error', err));
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
       });
     }
   </script>
