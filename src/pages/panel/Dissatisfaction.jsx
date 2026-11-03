@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Search, AlertOctagon, ShieldAlert, X, Phone, Car, FileText, CheckCircle2, User, Clock, Check, Plus, BrainCircuit, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Search, AlertOctagon, ShieldAlert, X, Phone, Car, FileText, CheckCircle2, User, Clock, Check, Plus, BrainCircuit, Loader2, RefreshCw, Download } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import * as XLSX from 'xlsx';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
 import { CustomSelect } from '../../components/panel/booking/LegacyBookingModals';
@@ -658,6 +659,53 @@ const Dissatisfaction = () => {
         return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
     };
 
+    const handleExportExcel = () => {
+        if (!data || data.length === 0) {
+            showToast('Tidak ada data untuk diexport', 'error');
+            return;
+        }
+
+        try {
+            const dataToExport = data.map((item, index) => ({
+                'No': index + 1,
+                'DNET': item.dnet || '',
+                'Criteria': getCriteriaBadge(item.criteria).label,
+                'Tgl Service': item.tgl_svc || '',
+                'Tgl Survey': item.tgl_srvy || '',
+                'SA': item.sa || '',
+                'Nama': item.nama || '',
+                'Telepon': item.telp || '',
+                'Nopol': item.nopol || '',
+                'Rangka': item.rangka || '',
+                'Atribut': item.atribut || '',
+                'Keluhan': item.keluhan || '',
+                'Status': item.status || 'NEW',
+                'Call 1': item.call1 || '',
+                'Hasil 1': item.hasil1 || '',
+                'Call 2': item.call2 || '',
+                'Hasil 2': item.hasil2 || '',
+                'Call 3': item.call3 || '',
+                'Hasil 3': item.hasil3 || '',
+                'Penanganan': item.penanganan || '',
+                'Tgl Selesai': item.tgl_selesai || ''
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Dissatisfaction');
+
+            let suffix = month || 'All';
+            if (filterNew) suffix = 'Belum_Selesai';
+            else if (searchQuery) suffix = `Search_${searchQuery.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
+            XLSX.writeFile(workbook, `Data_Dissatisfaction_${suffix}.xlsx`);
+            showToast('Excel berhasil didownload');
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal mendownload Excel', 'error');
+        }
+    };
+
     return (
         <div className="animate-in fade-in duration-300 flex flex-col h-[calc(100vh-8rem)] text-[#111111]">
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
@@ -738,6 +786,15 @@ const Dissatisfaction = () => {
                             <ChevronRight size={16} />
                         </button>
                     </div>
+
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={isLoading || data.length === 0}
+                        className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-1.5 rounded text-sm font-bold hover:bg-green-700 transition-colors h-[38px] disabled:opacity-50"
+                    >
+                        <Download size={16} />
+                        Export Excel
+                    </button>
 
                     <button
                         onClick={() => setIsAddModalOpen(true)}

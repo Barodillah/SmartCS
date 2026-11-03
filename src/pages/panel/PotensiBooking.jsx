@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car, ChevronLeft, ShieldAlert, Loader2 } from 'lucide-react';
+import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car, ChevronLeft, ShieldAlert, Loader2, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { ANGULAR_CLIP } from '../../utils/constants';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
 import CustomMonthPicker from '../../components/ui/CustomMonthPicker';
@@ -745,6 +746,67 @@ const PotensiBooking = () => {
     const totalCleanPages = Math.ceil(currentData.length / cleanRowsPerPage);
     const paginatedData = mainFilter === 'clean' ? currentData.slice((cleanCurrentPage - 1) * cleanRowsPerPage, cleanCurrentPage * cleanRowsPerPage) : currentData;
 
+    const handleExportExcel = () => {
+        const isCleanOrReport = mainFilter === 'clean' || mainFilter === 'report';
+        const exportSource = isCleanOrReport ? cleanData : currentData;
+
+        if (!exportSource || exportSource.length === 0) {
+            showToast('Tidak ada data untuk diexport', 'error');
+            return;
+        }
+
+        try {
+            const dataToExport = isCleanOrReport
+                ? exportSource.map((item, index) => ({
+                    'No': index + 1,
+                    'Waktu Input': item.time || '',
+                    'Nama': item.nama || item.name || '',
+                    'Telepon': item.telp || item.phone || '',
+                    'Nopol': item.nopol || item.plate || '',
+                    'No. Rangka': item.rangka || '',
+                    'Kendaraan': item.kendaraan || item.model || '',
+                    'Service Terakhir': item.service_terakhir || item.last_service || '',
+                    'Potensi Service': item.potensi_service || item.potential || '',
+                    'Expected Date': item.expected_date || '',
+                    'Source': item.source || '',
+                    'SA': item.sa || '',
+                    'Status': item.status || '',
+                    'Catatan': item.note || ''
+                }))
+                : exportSource.map((item, index) => ({
+                    'No': index + 1,
+                    'Nama': item.name || item.nama || '',
+                    'Telepon': item.phone || item.telp || '',
+                    'Nopol': item.plate || item.nopol || '',
+                    'No. Rangka': item.rangka || '',
+                    'Kendaraan': item.model || item.kendaraan || '',
+                    'Service Terakhir / Warranty Date': item.last_service || item.warranty_date || '',
+                    'Potensi Service': item.potential || item.potensi_service || ''
+                }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            const sheetName = isCleanOrReport ? 'Clean_Data' : `Potensi_${mainFilter.toUpperCase()}`;
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+            let fileName = `Data_Potensi_${mainFilter.toUpperCase()}`;
+            if (isCleanOrReport) {
+                fileName += `_${cleanMonthFilter || 'All'}`;
+                if (cleanFilterSA) fileName += `_${cleanFilterSA}`;
+                if (cleanFilterStatus) fileName += `_${cleanFilterStatus}`;
+            } else if (activeTab) {
+                fileName += `_${activeTab}`;
+            }
+            fileName += '.xlsx';
+
+            XLSX.writeFile(workbook, fileName);
+            showToast('Excel berhasil didownload');
+        } catch (err) {
+            console.error(err);
+            showToast('Gagal mendownload Excel', 'error');
+        }
+    };
+
     const handleAddManualSubmit = async (formData) => {
         try {
             const postData = {
@@ -985,6 +1047,14 @@ const PotensiBooking = () => {
                 </div>
 
                 <div className="flex gap-2 relative z-20">
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={(mainFilter === 'clean' || mainFilter === 'report') ? (isLoadingClean || cleanData.length === 0) : currentData.length === 0}
+                        className="bg-green-600 text-white border border-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm disabled:opacity-50"
+                    >
+                        <Download size={16} />
+                        <span className="text-sm font-bold">Export Excel</span>
+                    </button>
                     <button
                         onClick={() => setShowAddManual(true)}
                         className="bg-[#E60012] text-white border border-[#E60012] hover:bg-red-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm"
