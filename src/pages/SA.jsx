@@ -276,11 +276,14 @@ const SA = () => {
 
   // Stats for Potensi
   const potensiStats = useMemo(() => {
+    const belum = potensiData.filter(p => p.statusFollowUp === 'NEW').length;
+    const sudah = potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').length;
+    const success = potensiData.filter(p => p.statusFollowUp === 'BOOKING').length;
     return {
-      total: potensiData.length,
-      belum: potensiData.filter(p => p.statusFollowUp === 'NEW').length,
-      sudah: potensiData.filter(p => p.statusFollowUp === 'FOLLOW_UP').length,
-      success: potensiData.filter(p => p.statusFollowUp === 'BOOKING').length,
+      total: belum + sudah + success,
+      belum,
+      sudah,
+      success,
     };
   }, [potensiData]);
 

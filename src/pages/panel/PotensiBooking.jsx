@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car, ChevronLeft, ShieldAlert, Loader2, Download } from 'lucide-react';
+import { TrendingUp, Search, Calendar, Wrench, MessageSquare, Filter, ChevronRight, User, Phone, Store, X, Copy, Check, Hash, Info, Car, ChevronLeft, ShieldAlert, Loader2, Download, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ANGULAR_CLIP } from '../../utils/constants';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
@@ -14,13 +14,45 @@ const LEGACY_VEHICLES = [
     "MITSUBISHI L300", "FUSO COLT DIESEL", "FUSO CANTER", "MITSUBISHI COLT T120SS"
 ];
 
-const AddManualModal = ({ isOpen, onClose, onAdd }) => {
+const formatTimestampPlus7 = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr.replace(' ', 'T') + 'Z');
+    if (isNaN(d.getTime())) return dateStr;
+    const plus7 = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    return plus7.toISOString().replace('T', ' ').slice(0, 19);
+};
+
+const AddManualModal = ({ isOpen, onClose, onAdd, onDelete, initialData = null }) => {
+    const isEdit = !!initialData;
     const [formData, setFormData] = useState({
         nopol: '', rangka: '', nama: '', telp: '', kendaraan: '', service_terakhir: '', expected_date: '', potensi_service: ''
     });
     const [isFetchingNopol, setIsFetchingNopol] = useState(false);
     const [showDatePicker1, setShowDatePicker1] = useState(false);
     const [showDatePicker2, setShowDatePicker2] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setShowDeleteConfirm(false);
+            if (initialData) {
+                setFormData({
+                    nopol: initialData.nopol || initialData.plate || '',
+                    rangka: initialData.rangka || '',
+                    nama: initialData.nama || initialData.name || '',
+                    telp: initialData.telp || initialData.phone || '',
+                    kendaraan: initialData.kendaraan || initialData.model || '',
+                    service_terakhir: initialData.service_terakhir || initialData.last_service || '',
+                    expected_date: initialData.expected_date || '',
+                    potensi_service: initialData.potensi_service || initialData.potential || ''
+                });
+            } else {
+                setFormData({
+                    nopol: '', rangka: '', nama: '', telp: '', kendaraan: '', service_terakhir: '', expected_date: '', potensi_service: ''
+                });
+            }
+        }
+    }, [isOpen, initialData]);
 
     const serviceOptions = [
         { value: '1.000 KM', label: '1.000 KM' },
@@ -34,6 +66,7 @@ const AddManualModal = ({ isOpen, onClose, onAdd }) => {
 
     useEffect(() => {
         if (!formData.nopol || formData.nopol.length < 3) return;
+        if (isEdit && formData.nopol === (initialData?.nopol || initialData?.plate || '')) return;
         const delayDebounceFn = setTimeout(async () => {
             setIsFetchingNopol(true);
             try {
@@ -53,7 +86,7 @@ const AddManualModal = ({ isOpen, onClose, onAdd }) => {
             }
         }, 800);
         return () => clearTimeout(delayDebounceFn);
-    }, [formData.nopol]);
+    }, [formData.nopol, isEdit, initialData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -94,7 +127,7 @@ const AddManualModal = ({ isOpen, onClose, onAdd }) => {
                 className="bg-white rounded-xl w-full max-w-2xl shadow-2xl overflow-visible flex flex-col"
             >
                 <div className="p-4 border-b border-[#E5E5E5] flex items-center justify-between bg-gray-50 rounded-t-xl">
-                    <h3 className="text-lg font-bold text-[#111111] font-display">Add Manual Potensi Service</h3>
+                    <h3 className="text-lg font-bold text-[#111111] font-display">{isEdit ? 'Edit Data Potensi Service' : 'Add Manual Potensi Service'}</h3>
                     <button type="button" onClick={onClose} className="text-gray-400 hover:text-[#E60012] transition-colors"><X size={20} /></button>
                 </div>
                 <div className="p-6 overflow-visible">
@@ -108,7 +141,7 @@ const AddManualModal = ({ isOpen, onClose, onAdd }) => {
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1">No. Rangka</label>
-                            <input type="text" name="rangka" value={formData.rangka} onChange={handleChange} maxLength={17} required placeholder="MK2..." className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-[#111111] font-mono text-sm focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none transition-all" />
+                            <input type="text" name="rangka" value={formData.rangka} onChange={handleChange} maxLength={17} required={!isEdit} placeholder="MK2..." className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-[#111111] font-mono text-sm focus:border-[#E60012] focus:ring-1 focus:ring-[#E60012] outline-none transition-all" />
                             <p className="text-[10px] mt-1 text-gray-400">{formData.rangka.length}/17 karakter</p>
                         </div>
                         <div>
@@ -139,44 +172,98 @@ const AddManualModal = ({ isOpen, onClose, onAdd }) => {
                                 allowCustom={true}
                             />
                         </div>
-                        <div className="relative z-[40]">
+                        <div className={`relative ${showDatePicker1 ? 'z-[70]' : 'z-[40]'}`}>
                             <label className="block text-xs font-bold text-gray-500 mb-1">Last Service</label>
-                            <div onClick={() => setShowDatePicker1(!showDatePicker1)} className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-left text-sm flex items-center justify-between cursor-pointer">
+                            <div onClick={() => { setShowDatePicker1(!showDatePicker1); setShowDatePicker2(false); }} className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-left text-sm flex items-center justify-between cursor-pointer">
                                 <span>{formData.service_terakhir || 'Pilih Tanggal'}</span>
                                 <Calendar size={16} className="text-[#E60012]" />
                             </div>
                             <AnimatePresence>
                                 {showDatePicker1 && (
-                                    <CustomDatePicker currentDate={formData.service_terakhir} onSelect={handleServiceTerakhirChange} onClose={() => setShowDatePicker1(false)} />
+                                    <CustomDatePicker currentDate={formData.service_terakhir} onSelect={handleServiceTerakhirChange} onClose={() => setShowDatePicker1(false)} position="top" />
                                 )}
                             </AnimatePresence>
                         </div>
-                        <div className="relative z-[30]">
+                        <div className={`relative ${showDatePicker2 ? 'z-[70]' : 'z-[30]'}`}>
                             <label className="block text-xs font-bold text-gray-500 mb-1">Expected Date</label>
-                            <div onClick={() => setShowDatePicker2(!showDatePicker2)} className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-left text-sm flex items-center justify-between cursor-pointer">
+                            <div onClick={() => { setShowDatePicker2(!showDatePicker2); setShowDatePicker1(false); }} className="w-full bg-white border border-[#E5E5E5] rounded p-2.5 text-left text-sm flex items-center justify-between cursor-pointer">
                                 <span>{formData.expected_date || 'Pilih Tanggal'}</span>
                                 <Calendar size={16} className="text-[#E60012]" />
                             </div>
                             <AnimatePresence>
                                 {showDatePicker2 && (
-                                    <CustomDatePicker currentDate={formData.expected_date} onSelect={(date) => { setFormData(prev => ({ ...prev, expected_date: date })); setShowDatePicker2(false); }} onClose={() => setShowDatePicker2(false)} />
+                                    <CustomDatePicker currentDate={formData.expected_date} onSelect={(date) => { setFormData(prev => ({ ...prev, expected_date: date })); setShowDatePicker2(false); }} onClose={() => setShowDatePicker2(false)} position="top" />
                                 )}
                             </AnimatePresence>
                         </div>
                     </form>
                 </div>
-                <div className="p-4 border-t border-[#E5E5E5] bg-gray-50 flex justify-end gap-2 rounded-b-xl">
-                    <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-[#111111]">Batal</button>
-                    <button type="submit" form="add-manual-form" className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors shadow-md flex items-center gap-2">
-                        <Check size={16} /> Add Potential
-                    </button>
+                <div className="p-4 border-t border-[#E5E5E5] bg-gray-50 flex justify-between items-center gap-2 rounded-b-xl">
+                    <div>
+                        {isEdit && onDelete && (
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors flex items-center gap-2"
+                            >
+                                <Trash2 size={16} /> Hapus Data
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-[#111111]">Batal</button>
+                        <button type="submit" form="add-manual-form" className="px-6 py-2 text-sm font-bold text-white bg-[#E60012] hover:bg-red-700 rounded transition-colors shadow-md flex items-center gap-2">
+                            <Check size={16} /> {isEdit ? 'Simpan Perubahan' : 'Add Potential'}
+                        </button>
+                    </div>
                 </div>
             </motion.div>
+
+            <AnimatePresence>
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)}>
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden border border-[#E5E5E5] p-6 text-center"
+                        >
+                            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Trash2 size={32} />
+                            </div>
+                            <h4 className="text-base font-bold text-[#111111] mb-2 uppercase">Konfirmasi Hapus Data</h4>
+                            <p className="text-xs text-gray-500 leading-relaxed mb-6">
+                                Apakah Anda yakin ingin menghapus data <b>{formData.nama || initialData?.nama || initialData?.name}</b> ({formData.nopol || initialData?.nopol || initialData?.plate})? Tindakan ini tidak dapat dibatalkan.
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowDeleteConfirm(false);
+                                        onDelete(initialData);
+                                    }}
+                                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors shadow-sm"
+                                >
+                                    Ya, Hapus!
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
-const DetailModal = ({ isOpen, onClose, item, onProcess, onNext, mainFilter, onWhatsapp, onBooking }) => {
+const DetailModal = ({ isOpen, onClose, item, onProcess, onNext, mainFilter, onWhatsapp, onBooking, onEdit }) => {
     const [copiedField, setCopiedField] = useState(null);
     const [fetchedRangka, setFetchedRangka] = useState(null);
 
@@ -285,10 +372,10 @@ const DetailModal = ({ isOpen, onClose, item, onProcess, onNext, mainFilter, onW
                     </div>
                     <div className="mt-8 flex gap-2">
                         <button
-                            onClick={onClose}
+                            onClick={() => onEdit && onEdit({ ...item, rangka: rangkaValue || item.rangka || '' })}
                             className="flex-1 py-3 bg-[#F5F5F5] text-[#111111] text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all border border-[#E5E5E5]"
                         >
-                            Tutup
+                            Edit
                         </button>
                         {mainFilter === 'clean' ? (
                             <>
@@ -631,6 +718,7 @@ const PotensiBooking = () => {
     });
     const [showCleanMonthPicker, setShowCleanMonthPicker] = useState(false);
     const [showAddManual, setShowAddManual] = useState(false);
+    const [editingPotensiItem, setEditingPotensiItem] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const [cleanCurrentPage, setCleanCurrentPage] = useState(1);
@@ -759,7 +847,7 @@ const PotensiBooking = () => {
             const dataToExport = isCleanOrReport
                 ? exportSource.map((item, index) => ({
                     'No': index + 1,
-                    'Waktu Input': item.time || '',
+                    'Waktu Input': formatTimestampPlus7(item.time),
                     'Nama': item.nama || item.name || '',
                     'Telepon': item.telp || item.phone || '',
                     'Nopol': item.nopol || item.plate || '',
@@ -835,6 +923,153 @@ const PotensiBooking = () => {
             } else {
                 showToast(json.message || 'Gagal menyimpan data', 'error');
             }
+        } catch (err) {
+            console.error(err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        }
+    };
+
+    const handleEditPotensiSubmit = async (formData) => {
+        if (!editingPotensiItem) return;
+        try {
+            if (mainFilter === 'clean' || editingPotensiItem.id) {
+                const res = await fetch('https://csdwindo.com/api/potensi_service.php', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: editingPotensiItem.id,
+                        nopol: formData.nopol,
+                        nama: formData.nama,
+                        telp: formData.telp,
+                        kendaraan: formData.kendaraan,
+                        rangka: formData.rangka,
+                        service_terakhir: formData.service_terakhir,
+                        potensi_service: formData.potensi_service,
+                        expected_date: formData.expected_date,
+                    })
+                });
+                const json = await res.json();
+                if (!json.status) {
+                    showToast(json.message || 'Gagal memperbarui data', 'error');
+                    return;
+                }
+                setCleanData(prev => prev.map(item =>
+                    item.id === editingPotensiItem.id
+                        ? {
+                            ...item,
+                            nopol: formData.nopol,
+                            plate: formData.nopol,
+                            nama: formData.nama,
+                            name: formData.nama,
+                            telp: formData.telp,
+                            phone: formData.telp,
+                            kendaraan: formData.kendaraan,
+                            model: formData.kendaraan,
+                            rangka: formData.rangka,
+                            service_terakhir: formData.service_terakhir,
+                            last_service: formData.service_terakhir,
+                            potensi_service: formData.potensi_service,
+                            potential: formData.potensi_service,
+                            expected_date: formData.expected_date,
+                        }
+                        : item
+                ));
+            }
+
+            if (mainFilter === 'booking' || mainFilter === 'pkt') {
+                const targetKey = editingPotensiItem.id || editingPotensiItem.plate || editingPotensiItem.nopol;
+                setData(prev => ({
+                    ...prev,
+                    [mainFilter]: {
+                        ...prev[mainFilter],
+                        [activeTab]: (prev[mainFilter]?.[activeTab] || []).map(item =>
+                            (item.id || item.plate || item.nopol) === targetKey
+                                ? {
+                                    ...item,
+                                    plate: formData.nopol,
+                                    nopol: formData.nopol,
+                                    name: formData.nama,
+                                    nama: formData.nama,
+                                    phone: formData.telp,
+                                    telp: formData.telp,
+                                    model: formData.kendaraan,
+                                    kendaraan: formData.kendaraan,
+                                    rangka: formData.rangka,
+                                    last_service: formData.service_terakhir,
+                                    service_terakhir: formData.service_terakhir,
+                                    potential: formData.potensi_service,
+                                    potensi_service: formData.potensi_service,
+                                    expected_date: formData.expected_date,
+                                }
+                                : item
+                        )
+                    }
+                }));
+            }
+
+            setSelectedItem(prev => prev ? {
+                ...prev,
+                nopol: formData.nopol,
+                plate: formData.nopol,
+                nama: formData.nama,
+                name: formData.nama,
+                telp: formData.telp,
+                phone: formData.telp,
+                kendaraan: formData.kendaraan,
+                model: formData.kendaraan,
+                rangka: formData.rangka,
+                service_terakhir: formData.service_terakhir,
+                last_service: formData.service_terakhir,
+                potensi_service: formData.potensi_service,
+                potential: formData.potensi_service,
+                expected_date: formData.expected_date,
+            } : prev);
+
+            showToast('Data berhasil diperbarui', 'success');
+            setEditingPotensiItem(null);
+        } catch (err) {
+            console.error(err);
+            showToast('Terjadi kesalahan jaringan', 'error');
+        }
+    };
+
+    const handleDeletePotensi = async (itemToDelete) => {
+        if (!itemToDelete) return;
+        try {
+            if (mainFilter === 'clean' || itemToDelete.id) {
+                const res = await fetch(`https://csdwindo.com/api/potensi_service.php?id=${encodeURIComponent(itemToDelete.id)}`, {
+                    method: 'DELETE'
+                });
+                const json = await res.json();
+                if (!json.status) {
+                    showToast(json.message || 'Gagal menghapus data', 'error');
+                    return;
+                }
+                setCleanData(prev => prev.filter(item => item.id !== itemToDelete.id));
+                const cleanPlate = (itemToDelete.plate || itemToDelete.nopol || '').replace(/\s/g, '').toUpperCase();
+                setAllCleanNopols(prev => {
+                    const next = new Set(prev);
+                    next.delete(cleanPlate);
+                    return next;
+                });
+            }
+
+            if (mainFilter === 'booking' || mainFilter === 'pkt') {
+                const targetKey = itemToDelete.id || itemToDelete.plate || itemToDelete.nopol;
+                setData(prev => ({
+                    ...prev,
+                    [mainFilter]: {
+                        ...prev[mainFilter],
+                        [activeTab]: (prev[mainFilter]?.[activeTab] || []).filter(
+                            item => (item.id || item.plate || item.nopol) !== targetKey
+                        )
+                    }
+                }));
+            }
+
+            setSelectedItem(null);
+            setEditingPotensiItem(null);
+            showToast('Data berhasil dihapus', 'success');
         } catch (err) {
             console.error(err);
             showToast('Terjadi kesalahan jaringan', 'error');
@@ -1046,7 +1281,7 @@ const PotensiBooking = () => {
                     </button>
                 </div>
 
-                <div className="flex gap-2 relative z-20">
+                <div className="flex gap-2">
                     <button
                         onClick={handleExportExcel}
                         disabled={(mainFilter === 'clean' || mainFilter === 'report') ? (isLoadingClean || cleanData.length === 0) : currentData.length === 0}
@@ -1188,11 +1423,34 @@ const PotensiBooking = () => {
                                                 return (
                                                     <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative">
                                                         <div className="w-full max-w-[24px] sm:max-w-[40px] flex flex-col justify-end h-full group-hover:opacity-80 transition-opacity mx-auto">
-                                                            {data.INVALID > 0 && <div className="w-full bg-red-500 rounded-t-sm mb-px" style={{ height: invalidHeight }}></div>}
-                                                            {data.NEW > 0 && <div className="w-full bg-amber-400 rounded-t-sm mb-px" style={{ height: newHeight }}></div>}
-                                                            {data.FOLLOW_UP > 0 && <div className="w-full bg-blue-500 rounded-t-sm mb-px" style={{ height: followUpHeight }}></div>}
-                                                            {data.BOOKING > 0 && <div className="w-full bg-green-500 rounded-t-sm mb-px" style={{ height: bookingHeight }}></div>}
-                                                            {data.DATANG > 0 && <div className="w-full bg-purple-500 rounded-t-sm" style={{ height: datangHeight }}></div>}
+                                                            <span className="text-xs font-black text-gray-700 font-mono mb-1 text-center leading-none">
+                                                                {data.total}
+                                                            </span>
+                                                            {data.INVALID > 0 && (
+                                                                <div className="w-full bg-red-500 rounded-t-sm mb-px relative flex items-center" style={{ height: invalidHeight }}>
+                                                                    <span className="absolute left-full ml-1.5 text-xs font-extrabold text-red-500 font-mono leading-none whitespace-nowrap">{data.INVALID}</span>
+                                                                </div>
+                                                            )}
+                                                            {data.NEW > 0 && (
+                                                                <div className="w-full bg-amber-400 rounded-t-sm mb-px relative flex items-center" style={{ height: newHeight }}>
+                                                                    <span className="absolute left-full ml-1.5 text-xs font-extrabold text-amber-500 font-mono leading-none whitespace-nowrap">{data.NEW}</span>
+                                                                </div>
+                                                            )}
+                                                            {data.FOLLOW_UP > 0 && (
+                                                                <div className="w-full bg-blue-500 rounded-t-sm mb-px relative flex items-center" style={{ height: followUpHeight }}>
+                                                                    <span className="absolute left-full ml-1.5 text-xs font-extrabold text-blue-500 font-mono leading-none whitespace-nowrap">{data.FOLLOW_UP}</span>
+                                                                </div>
+                                                            )}
+                                                            {data.BOOKING > 0 && (
+                                                                <div className="w-full bg-green-500 rounded-t-sm mb-px relative flex items-center" style={{ height: bookingHeight }}>
+                                                                    <span className="absolute left-full ml-1.5 text-xs font-extrabold text-green-600 font-mono leading-none whitespace-nowrap">{data.BOOKING}</span>
+                                                                </div>
+                                                            )}
+                                                            {data.DATANG > 0 && (
+                                                                <div className="w-full bg-purple-500 rounded-t-sm relative flex items-center" style={{ height: datangHeight }}>
+                                                                    <span className="absolute left-full ml-1.5 text-xs font-extrabold text-purple-600 font-mono leading-none whitespace-nowrap">{data.DATANG}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <span className="text-[10px] text-gray-500 font-bold mt-2 text-center truncate w-full px-1">{sa}</span>
 
@@ -1443,7 +1701,7 @@ const PotensiBooking = () => {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <div className="text-[11px] text-gray-500">{item.time}</div>
+                                                        <div className="text-[11px] text-gray-500">{formatTimestampPlus7(item.time)}</div>
                                                         {item.note && <div className="text-[10px] text-red-500 mt-1 truncate max-w-[120px] ml-auto">{item.note}</div>}
                                                     </td>
                                                 </>
@@ -1551,6 +1809,10 @@ const PotensiBooking = () => {
                         onClose={() => setShowDetailModal(false)}
                         item={selectedItem}
                         mainFilter={mainFilter}
+                        onEdit={(itemWithRangka) => {
+                            setShowDetailModal(false);
+                            setEditingPotensiItem(itemWithRangka);
+                        }}
                         onProcess={() => {
                             setShowDetailModal(false);
                             setShowModal(true);
@@ -1630,6 +1892,15 @@ const PotensiBooking = () => {
                         isOpen={showAddManual}
                         onClose={() => setShowAddManual(false)}
                         onAdd={handleAddManualSubmit}
+                    />
+                )}
+                {editingPotensiItem && (
+                    <AddManualModal
+                        isOpen={!!editingPotensiItem}
+                        onClose={() => setEditingPotensiItem(null)}
+                        initialData={editingPotensiItem}
+                        onAdd={handleEditPotensiSubmit}
+                        onDelete={handleDeletePotensi}
                     />
                 )}
             </AnimatePresence>

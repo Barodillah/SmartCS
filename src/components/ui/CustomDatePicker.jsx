@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const CustomDatePicker = ({ currentDate, onSelect, onClose }) => {
+const CustomDatePicker = ({ currentDate, onSelect, onClose, position = 'bottom' }) => {
     const [viewDate, setViewDate] = useState(new Date(currentDate || new Date()));
     const [viewMode, setViewMode] = useState('days'); // 'days', 'months', 'years'
     
@@ -47,10 +47,10 @@ const CustomDatePicker = ({ currentDate, onSelect, onClose }) => {
     
     return (
         <motion.div 
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: position === 'top' ? -10 : 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white border border-[#E5E5E5] rounded-xl shadow-2xl p-4 z-50 w-72"
+            exit={{ opacity: 0, y: position === 'top' ? -10 : 10 }}
+            className={`absolute ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2 bg-white border border-[#E5E5E5] rounded-xl shadow-2xl p-4 z-50 w-72`}
             onClick={(e) => e.stopPropagation()}
         >
             {/* Header */}

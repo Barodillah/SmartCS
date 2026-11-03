@@ -122,7 +122,7 @@ elseif ($method === 'PUT') {
     $fields = [];
     $params = [];
 
-    $allowedFields = ['status', 'sa', 'note', 'potensi_service', 'expected_date'];
+    $allowedFields = ['status', 'sa', 'note', 'potensi_service', 'expected_date', 'nopol', 'nama', 'telp', 'kendaraan', 'rangka', 'service_terakhir'];
     foreach ($allowedFields as $field) {
         if (isset($body[$field])) {
             $fields[] = "$field = ?";
