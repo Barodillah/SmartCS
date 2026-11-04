@@ -215,6 +215,7 @@ const LeadManager = ({ label, title, desc, icon }) => {
                 text += `Jarak Tempuh (KM): ${d.service_km || '-'}\n`;
                 text += `Jadwal: ${d.booking_date || '-'} jam ${d.booking_time || '-'}\n`;
                 text += `Keluhan: ${d.keluhan || '-'}\n`;
+                if (d.location) text += `Lokasi Cabang: ${d.location}\n`;
                 break;
             case 'test_drive':
                 text += `Jadwal: ${d.preferred_date || '-'} jam ${d.preferred_time || '-'}\n`;
@@ -416,7 +417,7 @@ Buatkan draft balasan pesannya sekarang:`;
                                     </div>
                                     <div className="col-span-2 text-[11px] text-gray-400 line-clamp-2 pr-2">
                                         {/* Brief preview based on label */}
-                                        {label === 'booking' && lead.data?.booking_date}
+                                        {label === 'booking' && (lead.data?.location ? `${lead.data?.booking_date || '-'} • ${lead.data.location}` : lead.data?.booking_date)}
                                         {label === 'emergency' && lead.data?.keluhan}
                                         {label === 'complaint' && lead.data?.complaint_category}
                                         {label === 'question' && lead.data?.question}

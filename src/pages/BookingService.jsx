@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare, Wind, HelpCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare, Wind, HelpCircle, ShieldCheck, MapPin } from 'lucide-react';
 import CustomDatePicker from '../components/ui/CustomDatePicker';
 import SEOHead from '../components/seo/SEOHead';
 import ContextualFAQ from '../components/sections/ContextualFAQ';
@@ -14,6 +14,67 @@ const steps = [
     { id: 3, title: 'Jadwal', icon: Calendar },
     { id: 4, title: 'Selesai', icon: CheckCircle },
 ];
+
+const BRANCH_OPTIONS = [
+    'Dwindo Bintaro',
+    'Dwindo Radin Inten',
+    'Dwindo Cakung'
+];
+
+const CHAT_API_BASE = 'https://csdwindo.com/api/chat';
+
+const getDeviceInfo = () => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    let deviceType = 'desktop';
+    if (/Mobi|Android/i.test(ua)) deviceType = 'mobile';
+    else if (/Tablet|iPad/i.test(ua)) deviceType = 'tablet';
+
+    let browser = 'Unknown';
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('SamsungBrowser')) browser = 'Samsung Browser';
+    else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
+    else if (ua.includes('Edg')) browser = 'Edge';
+    else if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+
+    let os = 'Unknown';
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Mac OS')) os = 'macOS';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+    else if (ua.includes('Linux')) os = 'Linux';
+
+    return {
+        user_agent: ua,
+        device_type: deviceType,
+        browser,
+        os
+    };
+};
+
+const createNewChatSession = async () => {
+    try {
+        const res = await fetch(`${CHAT_API_BASE}/session.php?action=create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(getDeviceInfo())
+        });
+        const data = await res.json();
+        if (data?.status && data.data?.session_id) {
+            localStorage.setItem('dina_active_session', data.data.session_id);
+            return data.data.session_id;
+        }
+    } catch (e) {
+        console.error('Failed to create chat session for lead:', e);
+    }
+    return null;
+};
+
+const ensureChatSessionId = async () => {
+    const existing = localStorage.getItem('dina_active_session');
+    if (existing) return existing;
+    return await createNewChatSession();
+};
 
 const LEGACY_VEHICLES = [
     "MITSUBISHI PAJERO", "MITSUBISHI XPANDER", "MITSUBISHI DESTINATOR", "MITSUBISHI XFORCE",
@@ -254,6 +315,8 @@ export default function BookingService() {
     const initialState = location.state || {};
 
     const [currentStep, setCurrentStep] = useState(initialState.step || 1);
+    const [selectedBranch, setSelectedBranch] = useState(initialState.branch || 'Dwindo Bintaro');
+    const [showBranchDropdown, setShowBranchDropdown] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -473,7 +536,12 @@ export default function BookingService() {
         setCurrentStep(3);
     };
 
-    const checkDuplicateNopol = async (tanggal) => {
+    const checkDuplicateNopol = async (tanggal, branchOverride = null) => {
+        const activeBranch = branchOverride || selectedBranch;
+        if (activeBranch !== 'Dwindo Bintaro') {
+            setDuplicateNopol(null);
+            return;
+        }
         if (!formData.nopol || !tanggal) return;
         try {
             const res = await fetch(`https://csdwindo.com/api/panel/data_booking.php?date=${tanggal}`);
@@ -536,7 +604,7 @@ export default function BookingService() {
 
             // Map and calculate remaining
             const processedSlots = baseSlots.map(jam => {
-                const totalBooking = jamData[jam] !== undefined ? parseInt(jamData[jam]) : 0;
+                const totalBooking = (selectedBranch === 'Dwindo Bintaro' && jamData[jam] !== undefined) ? parseInt(jamData[jam]) : 0;
                 // Sunday: max 3 for all slots. Jam 13:00: max 3. Others: max 6.
                 const max = isSunday ? 3 : (jam === '13:00' ? 3 : 6);
                 const remaining = max - totalBooking;
@@ -649,6 +717,10 @@ export default function BookingService() {
         }
 
         // Prepare payload for legacy booking API
+        const serviceType = ((parseInt(formData.km) / 10000) % 2 !== 0) ? 'Service Kecil' : 'Service Besar';
+        const isKelipatan20k = parseInt(formData.km) > 0 && parseInt(formData.km) % 20000 === 0;
+        const estimasiWaktu = serviceType === 'Service Kecil' && !isKelipatan20k ? 'Sekitar 2 jam' : 'Lebih dari 2 jam';
+
         const payload = {
             tanggal: formData.tanggal,
             jam: formData.jam,
@@ -656,12 +728,73 @@ export default function BookingService() {
             nopol: formData.nopol.toUpperCase().replace(/\s+/g, ''),
             nama: formData.nama,
             telp: finalTelp,
-            jenis: `${((parseInt(formData.km) / 10000) % 2 !== 0) ? 'Service Kecil' : 'Service Besar'} ${formData.km} KM`,
+            jenis: `${serviceType} ${formData.km} KM`,
             keluhan: (formData.keluhan || '') + additionalServiceNote + smartPackageNote,
             user: 'CUSTOMER'
         };
 
         try {
+            // Jika cabang selain Dwindo Bintaro, simpan di data leads saja (type: booking)
+            if (selectedBranch !== 'Dwindo Bintaro') {
+                let sid = await ensureChatSessionId();
+                if (!sid) {
+                    throw new Error('Gagal membuat sesi penyimpanan data.');
+                }
+
+                const buildLeadPayload = (sessionId) => ({
+                    session_id: sessionId,
+                    label: 'booking',
+                    customer_name: payload.nama,
+                    customer_phone: payload.telp,
+                    customer_nopol: payload.nopol,
+                    vehicle_model: payload.kendaraan,
+                    data: {
+                        service_km: `${parseInt(formData.km).toLocaleString('id-ID')} KM`,
+                        service_type: serviceType,
+                        keluhan: payload.keluhan || '-',
+                        booking_date: payload.tanggal,
+                        booking_time: payload.jam,
+                        location: selectedBranch,
+                        estimasi_waktu: estimasiWaktu
+                    }
+                });
+
+                let leadRes = await fetch(`${CHAT_API_BASE}/lead.php?action=create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(buildLeadPayload(sid))
+                });
+                let leadResult = await leadRes.json();
+
+                // Jika session_id lama sudah tidak ditemukan di DB, buat session baru lalu kirim ulang
+                if (!leadResult?.status && String(leadResult?.message || '').toLowerCase().includes('session')) {
+                    const newSid = await createNewChatSession();
+                    if (newSid) {
+                        sid = newSid;
+                        leadRes = await fetch(`${CHAT_API_BASE}/lead.php?action=create`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(buildLeadPayload(sid))
+                        });
+                        leadResult = await leadRes.json();
+                    }
+                }
+
+                if (leadResult?.status) {
+                    trackConversion('booking_service_submit', {
+                        kendaraan: payload.kendaraan,
+                        jenis: payload.jenis,
+                        tanggal: payload.tanggal,
+                        jam: payload.jam,
+                        cabang: selectedBranch
+                    });
+                    setCurrentStep(5);
+                } else {
+                    setErrorMsg(leadResult?.message || 'Gagal menyimpan permohonan booking.');
+                }
+                return;
+            }
+
             const res = await fetch(`https://csdwindo.com/api/chat/booking_legacy.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -764,8 +897,67 @@ export default function BookingService() {
                         )}
                         <h1 className="text-lg font-bold text-gray-900">Booking Service</h1>
                     </div>
-                    <div className="text-xs font-semibold px-2 py-1 bg-red-50 text-red-600 rounded-md">
-                        Dwindo Bintaro
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setShowBranchDropdown(prev => !prev)}
+                            className="text-xs font-semibold px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg flex items-center gap-1.5 transition-colors border border-red-100"
+                        >
+                            <MapPin className="w-3.5 h-3.5 shrink-0" />
+                            <span>{selectedBranch}</span>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showBranchDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        <AnimatePresence>
+                            {showBranchDropdown && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setShowBranchDropdown(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 overflow-hidden"
+                                    >
+                                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-50">
+                                            Pilih Cabang Bengkel
+                                        </div>
+                                        {BRANCH_OPTIONS.map((branch) => {
+                                            const isSelected = selectedBranch === branch;
+                                            return (
+                                                <button
+                                                    key={branch}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedBranch(branch);
+                                                        setShowBranchDropdown(false);
+                                                        if (branch !== 'Dwindo Bintaro') {
+                                                            setDuplicateNopol(null);
+                                                        } else if (formData.tanggal) {
+                                                            checkDuplicateNopol(formData.tanggal, branch);
+                                                        }
+                                                    }}
+                                                    className={`w-full px-3 py-2.5 text-left text-xs flex items-center justify-between transition-colors ${
+                                                        isSelected
+                                                            ? 'bg-red-50/80 text-red-600 font-bold'
+                                                            : 'text-gray-700 hover:bg-gray-50 font-medium'
+                                                    }`}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <MapPin className={`w-3.5 h-3.5 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
+                                                        {branch}
+                                                    </span>
+                                                    {isSelected && <Check className="w-3.5 h-3.5 text-red-600" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -860,7 +1052,7 @@ export default function BookingService() {
                                 </div>
                                 <div className="text-sm text-gray-600">
                                     <span className="font-semibold text-gray-900 block mb-0.5">Booking Service Resmi</span>
-                                    Layanan ini khusus untuk pelayanan service di bengkel resmi Mitsubishi Dwindo Bintaro.
+                                    Layanan ini khusus untuk pelayanan service di bengkel resmi Mitsubishi {selectedBranch}.
                                 </div>
                             </div>
                         </motion.div>
@@ -1497,6 +1689,12 @@ export default function BookingService() {
                                             <span className="text-gray-500 text-sm">{formData.jam} WIB</span>
                                         </div>
                                     </div>
+                                    <div className="flex justify-between items-start">
+                                        <div className="text-gray-500 text-sm">Cabang</div>
+                                        <div className="text-right font-medium text-gray-900">
+                                            {selectedBranch}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1647,7 +1845,7 @@ export default function BookingService() {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-500">Lokasi</span>
-                                    <span className="font-semibold text-gray-900">Dwindo Bintaro</span>
+                                    <span className="font-semibold text-gray-900">{selectedBranch}</span>
                                 </div>
                             </div>
 
