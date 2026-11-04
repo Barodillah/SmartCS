@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, Users, ChevronLeft, ChevronRight, RefreshCw, Car, X, Save, Calendar, Star, Copy, Check, UploadCloud, FileSpreadsheet, Download, Trash2, CheckCircle2, AlertCircle, History, Clock, ChevronDown, ChevronUp, ExternalLink, Globe, UserMinus, BarChart, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, Users, ChevronLeft, ChevronRight, RefreshCw, Car, X, Save, Calendar, Star, Copy, Check, UploadCloud, FileSpreadsheet, Download, Trash2, CheckCircle2, AlertCircle, History, Clock, ChevronDown, ChevronUp, ExternalLink, Globe, UserMinus, BarChart, AlertTriangle, Contact } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CustomDatePicker from '../../components/ui/CustomDatePicker';
 import * as XLSX from 'xlsx';
@@ -29,6 +29,8 @@ const KonsumenBooking = () => {
     const [uploadPreview, setUploadPreview] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showPajakDropdown, setShowPajakDropdown] = useState(false);
+    const [showAksiDropdown, setShowAksiDropdown] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Alert Modal state
     const [showAlert, setShowAlert] = useState(false);
@@ -45,13 +47,13 @@ const KonsumenBooking = () => {
         const now = new Date();
         const diffTime = Math.abs(now - date);
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays === 0) return 'Hari ini';
         if (diffDays < 30) return `${diffDays} hari yang lalu`;
-        
+
         const diffMonths = Math.floor(diffDays / 30);
         if (diffMonths < 12) return `${diffMonths} bulan yang lalu`;
-        
+
         const diffYears = Math.floor(diffMonths / 12);
         return `${diffYears} tahun yang lalu`;
     };
@@ -205,7 +207,7 @@ const KonsumenBooking = () => {
             const result = await res.json();
             if (result.status) {
                 setHistoryData(result);
-                
+
                 // Auto promote to Loyal if bookings >= 4
                 if (result.summary?.total_booking >= 4) {
                     setFormData(prev => {
@@ -226,7 +228,7 @@ const KonsumenBooking = () => {
     const handleSave = async () => {
         if (!selectedKonsumen) return;
         setIsSaving(true);
-        
+
         try {
             const res = await fetch('https://csdwindo.com/api/panel/data_konsumen.php', {
                 method: 'POST',
@@ -239,7 +241,7 @@ const KonsumenBooking = () => {
                 })
             });
             const result = await res.json();
-            
+
             if (result.status) {
                 setShowModal(false);
                 fetchData(); // Refresh data to show updates
@@ -254,6 +256,122 @@ const KonsumenBooking = () => {
         }
     };
 
+    const fetchExportData = async () => {
+        // Ambil SEMUA data (tanpa limit pagination 20 baris) sesuai filter & search yang sedang aktif
+        const limitParam = pagination.total > 0 ? Math.max(pagination.total, 50000) : 50000;
+        const url = `https://csdwindo.com/api/panel/data_konsumen.php?page=1&limit=${limitParam}&all=true&search=${encodeURIComponent(debouncedSearch)}&filter=${filter}`;
+        const res = await fetch(url);
+        const result = await res.json();
+        if (result.status && Array.isArray(result.data) && result.data.length > 0) {
+            return result.data;
+        }
+        return data; // Fallback jika respon kosong
+    };
+
+    const handleExportExcel = async () => {
+        setShowAksiDropdown(false);
+        setIsExporting(true);
+        try {
+            const rawData = await fetchExportData();
+            if (!rawData || rawData.length === 0) {
+                alert('Tidak ada data konsumen untuk diexport.');
+                return;
+            }
+
+            // Export raw data excel tanpa kolom ID
+            const dataToExport = rawData.map(item => {
+                const { id, ID, Id, ...rest } = item;
+                return {
+                    'Nomor Polisi': rest.nopol || '',
+                    'Nama Konsumen': rest.nama || '',
+                    'Nomor Telepon': rest.telp || '',
+                    'Kendaraan': rest.kendaraan || '',
+                    'Pajak 1 Tahun': rest.one_year || '',
+                    'Pajak 5 Tahun': rest.five_year || '',
+                    'Prioritas': rest.prioritas == 2 ? 'Prioritas' : rest.prioritas == 1 ? 'Loyal' : 'Biasa'
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Konsumen');
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Data_Konsumen_${today}.xlsx`);
+        } catch (err) {
+            console.error('Export Excel failed:', err);
+            alert('Gagal mengekspor data Excel.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleExportVCard = async () => {
+        setShowAksiDropdown(false);
+        setIsExporting(true);
+        try {
+            const rawData = await fetchExportData();
+            if (!rawData || rawData.length === 0) {
+                alert('Tidak ada data konsumen untuk diexport.');
+                return;
+            }
+
+            // Bangun format vCard (.vcf)
+            let vcardContent = '';
+            rawData.forEach(item => {
+                const nama = (item.nama || 'Konsumen Mitsubishi').trim();
+                const nopol = (item.nopol || '').trim();
+                const kendaraan = (item.kendaraan || '').trim();
+                const rawTelp = (item.telp || '').trim();
+
+                // Bersihkan nomor telepon
+                let cleanPhone = rawTelp.replace(/[^0-9+]/g, '');
+                if (cleanPhone.startsWith('62')) {
+                    cleanPhone = '+' + cleanPhone;
+                } else if (cleanPhone.startsWith('0')) {
+                    cleanPhone = '+62' + cleanPhone.substring(1);
+                }
+
+                if (!cleanPhone) return;
+
+                // Nama kontak menyertakan nopol/kendaraan untuk memudahkan identifikasi di HP
+                const formattedName = nopol ? `${nama} - ${nopol}` : nama;
+
+                vcardContent += 'BEGIN:VCARD\r\n';
+                vcardContent += 'VERSION:3.0\r\n';
+                vcardContent += `FN:${formattedName}\r\n`;
+                vcardContent += `N:${nama};;;;\r\n`;
+                vcardContent += `TEL;TYPE=CELL:${cleanPhone}\r\n`;
+                if (kendaraan) {
+                    vcardContent += `ORG:Mitsubishi Dwindo\r\n`;
+                    vcardContent += `NOTE:Kendaraan: ${kendaraan} | Nopol: ${nopol}\r\n`;
+                }
+                vcardContent += 'END:VCARD\r\n';
+            });
+
+            if (!vcardContent) {
+                alert('Tidak ada kontak dengan nomor telepon valid.');
+                return;
+            }
+
+            const blob = new Blob([vcardContent], { type: 'text/vcard;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const today = new Date().toISOString().split('T')[0];
+            link.setAttribute('download', `Kontak_Konsumen_${today}.vcf`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Export vCard failed:', err);
+            alert('Gagal mengekspor kontak vCard.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -265,7 +383,7 @@ const KonsumenBooking = () => {
             const wsname = wb.SheetNames[0];
             const ws = wb.Sheets[wsname];
             const data = XLSX.utils.sheet_to_json(ws);
-            
+
             // Map keys to lowercase to be safe (rangka, stnk)
             const normalizedData = data.map(row => {
                 const normalizedRow = {};
@@ -296,8 +414,8 @@ const KonsumenBooking = () => {
                 setShowUploadModal(false);
                 setUploadPreview([]);
                 displayAlert(
-                    'success', 
-                    'Upload Berhasil!', 
+                    'success',
+                    'Upload Berhasil!',
                     'Data STNK telah berhasil diproses ke sistem.',
                     result.results
                 );
@@ -337,7 +455,7 @@ const KonsumenBooking = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <button 
+                        <button
                             onClick={() => setShowPajakDropdown(!showPajakDropdown)}
                             className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-none font-bold hover:bg-gray-50 transition-all shadow-sm active:scale-95"
                         >
@@ -350,7 +468,7 @@ const KonsumenBooking = () => {
                             {showPajakDropdown && (
                                 <>
                                     <div className="fixed inset-0 z-40" onClick={() => setShowPajakDropdown(false)}></div>
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -359,10 +477,10 @@ const KonsumenBooking = () => {
                                         <div className="p-2 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                             {kodePajak.samsat_urls.map((item, idx) => (
                                                 <React.Fragment key={idx}>
-                                                    <a 
-                                                        href={item.url} 
-                                                        target="_blank" 
-                                                        rel="noopener noreferrer" 
+                                                    <a
+                                                        href={item.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
                                                         className="flex items-center justify-between px-4 py-3 hover:bg-red-50 text-gray-700 hover:text-[#E60012] rounded-none transition-colors group"
                                                     >
                                                         <span className="text-sm font-medium">Samsat {item.provinsi}</span>
@@ -378,15 +496,80 @@ const KonsumenBooking = () => {
                         </AnimatePresence>
                     </div>
 
-                    {user?.role === 'admin' && (
-                        <button 
-                            onClick={() => setShowUploadModal(true)}
-                            className="flex items-center gap-2 px-6 py-3 bg-[#E60012] text-white rounded-none font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                    {/* Dropdown Aksi */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowAksiDropdown(!showAksiDropdown)}
+                            disabled={isExporting}
+                            className="flex items-center gap-2 px-6 py-3 bg-[#E60012] text-white rounded-none font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 active:scale-95 disabled:opacity-60"
                         >
-                            <UploadCloud size={20} />
-                            Upload STNK
+                            {isExporting ? <Loader2 size={18} className="animate-spin" /> : <ChevronDown size={18} className={`transition-transform duration-200 ${showAksiDropdown ? 'rotate-180' : ''}`} />}
+                            <span>Aksi</span>
                         </button>
-                    )}
+
+                        <AnimatePresence>
+                            {showAksiDropdown && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowAksiDropdown(false)}></div>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute right-0 mt-2 w-64 bg-white rounded-none shadow-xl border border-gray-100 z-50 overflow-hidden divide-y divide-gray-100"
+                                    >
+                                        <div className="p-1">
+                                            {/* 1. Upload STNK */}
+                                            {user?.role === 'admin' ? (
+                                                <button
+                                                    onClick={() => {
+                                                        setShowAksiDropdown(false);
+                                                        setShowUploadModal(true);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-gray-700 hover:text-[#E60012] text-left transition-colors group"
+                                                >
+                                                    <div className="p-2 bg-red-50 text-[#E60012] rounded group-hover:bg-red-100 transition-colors">
+                                                        <UploadCloud size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold">Upload STNK</div>
+                                                        <div className="text-[11px] text-gray-400">Import file data pajak STNK</div>
+                                                    </div>
+                                                </button>
+                                            ) : null}
+
+                                            {/* 2. Export Excel */}
+                                            <button
+                                                onClick={handleExportExcel}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-emerald-50 text-gray-700 hover:text-emerald-700 text-left transition-colors group"
+                                            >
+                                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded group-hover:bg-emerald-100 transition-colors">
+                                                    <FileSpreadsheet size={16} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold">Export Excel</div>
+                                                    <div className="text-[11px] text-gray-400">Download raw data tanpa ID</div>
+                                                </div>
+                                            </button>
+
+                                            {/* 3. Export vCard */}
+                                            <button
+                                                onClick={handleExportVCard}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-gray-700 hover:text-blue-700 text-left transition-colors group"
+                                            >
+                                                <div className="p-2 bg-blue-50 text-blue-600 rounded group-hover:bg-blue-100 transition-colors">
+                                                    <Contact size={16} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold">Export vCard</div>
+                                                    <div className="text-[11px] text-gray-400">Simpan kontak ke ponsel</div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
 
@@ -394,22 +577,20 @@ const KonsumenBooking = () => {
             {(user?.role === 'admin' || user?.role === 'staff') && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                     {/* Card 1: Data Pajak Kosong */}
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         onClick={() => {
                             setFilter(filter === 'empty_pajak' ? 'all' : 'empty_pajak');
                             setPage(1);
                         }}
-                        className={`p-5 rounded-none border transition-all cursor-pointer flex items-center gap-4 ${
-                            filter === 'empty_pajak' 
-                            ? 'bg-[#E60012] border-[#E60012] text-white shadow-lg shadow-red-500/30' 
-                            : 'bg-white border-gray-100 shadow-sm hover:border-red-200 group'
-                        }`}
+                        className={`p-5 rounded-none border transition-all cursor-pointer flex items-center gap-4 ${filter === 'empty_pajak'
+                                ? 'bg-[#E60012] border-[#E60012] text-white shadow-lg shadow-red-500/30'
+                                : 'bg-white border-gray-100 shadow-sm hover:border-red-200 group'
+                            }`}
                     >
-                        <div className={`w-12 h-12 rounded-none flex items-center justify-center shrink-0 transition-colors ${
-                            filter === 'empty_pajak' ? 'bg-white/20 text-white' : 'bg-red-50 text-[#E60012] group-hover:bg-red-100'
-                        }`}>
+                        <div className={`w-12 h-12 rounded-none flex items-center justify-center shrink-0 transition-colors ${filter === 'empty_pajak' ? 'bg-white/20 text-white' : 'bg-red-50 text-[#E60012] group-hover:bg-red-100'
+                            }`}>
                             <AlertTriangle size={24} />
                         </div>
                         <div>
@@ -430,7 +611,7 @@ const KonsumenBooking = () => {
                         const total = Object.values(stats.priority).reduce((a, b) => a + b, 0);
                         const percent = total > 0 ? (stats.priority[item.key] / total) * 100 : 0;
                         return (
-                            <motion.div 
+                            <motion.div
                                 key={item.key}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -468,7 +649,7 @@ const KonsumenBooking = () => {
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                         {filter !== 'all' && (
-                            <button 
+                            <button
                                 onClick={() => {
                                     setFilter('all');
                                     setPage(1);
@@ -603,8 +784,8 @@ const KonsumenBooking = () => {
                                             key={pageNum}
                                             onClick={() => handlePageChange(pageNum)}
                                             className={`w-8 h-8 flex items-center justify-center rounded-none text-sm font-medium transition-colors ${pagination.page === pageNum
-                                                    ? 'bg-[#E60012] text-white'
-                                                    : 'text-gray-600 hover:bg-gray-100'
+                                                ? 'bg-[#E60012] text-white'
+                                                : 'text-gray-600 hover:bg-gray-100'
                                                 }`}
                                         >
                                             {pageNum}
@@ -646,7 +827,7 @@ const KonsumenBooking = () => {
                             <div className="p-4 overflow-y-auto flex-1 space-y-5 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                                 {/* Info Data Diri */}
                                 <div className="bg-gray-50 rounded-none p-3 border border-gray-100 grid grid-cols-2 gap-3 text-sm">
-                                    <div 
+                                    <div
                                         onClick={() => handleCopy(selectedKonsumen.nama, 'nama')}
                                         className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
@@ -656,7 +837,7 @@ const KonsumenBooking = () => {
                                         </div>
                                         {copiedField === 'nama' ? <Check size={14} className="text-green-500" /> : <Copy size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />}
                                     </div>
-                                    <div 
+                                    <div
                                         onClick={() => handleCopy(selectedKonsumen.telp, 'telp')}
                                         className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
@@ -666,7 +847,7 @@ const KonsumenBooking = () => {
                                         </div>
                                         {copiedField === 'telp' ? <Check size={14} className="text-green-500" /> : <Copy size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />}
                                     </div>
-                                    <div 
+                                    <div
                                         onClick={() => handleCopy(selectedKonsumen.kendaraan, 'kendaraan')}
                                         className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
@@ -676,7 +857,7 @@ const KonsumenBooking = () => {
                                         </div>
                                         {copiedField === 'kendaraan' ? <Check size={14} className="text-green-500" /> : <Copy size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />}
                                     </div>
-                                    <div 
+                                    <div
                                         onClick={() => handleCopy(selectedKonsumen.nopol, 'nopol')}
                                         className="group cursor-pointer p-1.5 -m-1.5 rounded-none hover:bg-gray-200/50 transition-colors flex items-center justify-between"
                                     >
@@ -700,8 +881,8 @@ const KonsumenBooking = () => {
                                     <div className="flex items-center justify-between gap-4 relative z-20">
                                         <label className="text-sm font-bold text-gray-700">Pajak STNK (1 Tahun)</label>
                                         <div className="relative w-44">
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={() => {
                                                     setShowOneYearPicker(!showOneYearPicker);
                                                     setShowFiveYearPicker(false);
@@ -734,8 +915,8 @@ const KonsumenBooking = () => {
                                     <div className="flex items-center justify-between gap-4 relative z-10">
                                         <label className="text-sm font-bold text-gray-700">Pajak TNKB (5 Tahun)</label>
                                         <div className="relative w-44">
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={() => {
                                                     setShowFiveYearPicker(!showFiveYearPicker);
                                                     setShowOneYearPicker(false);
@@ -772,9 +953,8 @@ const KonsumenBooking = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, prioritas: 1 }))}
-                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
-                                                    formData.prioritas === 1 ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                                                }`}
+                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${formData.prioritas === 1 ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                                                    }`}
                                             >
                                                 <Star size={16} className={formData.prioritas === 1 ? 'fill-blue-500 text-blue-500' : ''} />
                                                 Biasa
@@ -782,9 +962,8 @@ const KonsumenBooking = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, prioritas: 2 }))}
-                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
-                                                    formData.prioritas === 2 ? 'bg-orange-50 border-orange-500 text-orange-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                                                }`}
+                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${formData.prioritas === 2 ? 'bg-orange-50 border-orange-500 text-orange-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                                                    }`}
                                             >
                                                 <Star size={16} className={formData.prioritas === 2 ? 'fill-orange-500 text-orange-500' : ''} />
                                                 Loyal
@@ -792,9 +971,8 @@ const KonsumenBooking = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, prioritas: 3 }))}
-                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${
-                                                    formData.prioritas === 3 ? 'bg-red-50 border-red-500 text-red-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                                                }`}
+                                                className={`py-2 px-3 rounded-none text-sm font-medium border-2 flex flex-col items-center gap-1 transition-colors ${formData.prioritas === 3 ? 'bg-red-50 border-red-500 text-red-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                                                    }`}
                                             >
                                                 <Star size={16} className={formData.prioritas === 3 ? 'fill-red-500 text-red-500' : ''} />
                                                 Prioritas
@@ -816,13 +994,12 @@ const KonsumenBooking = () => {
                                         </div>
                                     ) : historyData?.summary ? (
                                         <div className="space-y-3">
-                                            <div 
+                                            <div
                                                 onClick={() => historyData.summary.total_booking > 0 && setIsHistoryExpanded(!isHistoryExpanded)}
-                                                className={`p-3 rounded-none border transition-all flex items-center justify-between ${
-                                                    historyData.summary.total_booking > 0 
-                                                    ? 'bg-gray-50 border-gray-100 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30' 
-                                                    : 'bg-gray-50/50 border-gray-100 opacity-60'
-                                                }`}
+                                                className={`p-3 rounded-none border transition-all flex items-center justify-between ${historyData.summary.total_booking > 0
+                                                        ? 'bg-gray-50 border-gray-100 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30'
+                                                        : 'bg-gray-50/50 border-gray-100 opacity-60'
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <div className="text-center">
@@ -952,7 +1129,7 @@ const KonsumenBooking = () => {
                                             <p className="text-xs text-blue-700 mt-0.5">Gunakan format Excel yang sesuai agar data terbaca dengan benar.</p>
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={downloadTemplate}
                                         className="px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-none text-xs font-bold hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
                                     >
@@ -963,9 +1140,9 @@ const KonsumenBooking = () => {
                                 {/* File Dropzone */}
                                 {uploadPreview.length === 0 ? (
                                     <div className="relative border-2 border-dashed border-gray-200 rounded-none p-12 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 hover:border-blue-400 transition-all group">
-                                        <input 
-                                            type="file" 
-                                            accept=".xlsx, .xls, .csv" 
+                                        <input
+                                            type="file"
+                                            accept=".xlsx, .xls, .csv"
                                             onChange={handleFileUpload}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         />
@@ -979,7 +1156,7 @@ const KonsumenBooking = () => {
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <h4 className="text-sm font-bold text-gray-900">Preview Data ({uploadPreview.length} baris)</h4>
-                                            <button 
+                                            <button
                                                 onClick={() => setUploadPreview([])}
                                                 className="text-xs text-red-600 font-bold hover:underline flex items-center gap-1"
                                             >
@@ -1046,12 +1223,11 @@ const KonsumenBooking = () => {
                             className="bg-white rounded-none shadow-2xl w-full max-w-sm overflow-hidden"
                         >
                             <div className="p-8 flex flex-col items-center text-center">
-                                <div className={`w-20 h-20 rounded-none flex items-center justify-center mb-6 ${
-                                    alertConfig.type === 'success' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'
-                                }`}>
+                                <div className={`w-20 h-20 rounded-none flex items-center justify-center mb-6 ${alertConfig.type === 'success' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'
+                                    }`}>
                                     {alertConfig.type === 'success' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <AlertCircle size={48} strokeWidth={1.5} />}
                                 </div>
-                                
+
                                 <h3 className="text-2xl font-bold text-gray-900 mb-2">{alertConfig.title}</h3>
                                 <p className="text-gray-500 text-sm leading-relaxed mb-6">{alertConfig.message}</p>
 
@@ -1074,9 +1250,8 @@ const KonsumenBooking = () => {
 
                                 <button
                                     onClick={() => setShowAlert(false)}
-                                    className={`w-full py-4 rounded-none font-bold text-white transition-all shadow-lg active:scale-95 ${
-                                        alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
-                                    }`}
+                                    className={`w-full py-4 rounded-none font-bold text-white transition-all shadow-lg active:scale-95 ${alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20' : 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
+                                        }`}
                                 >
                                     Selesai
                                 </button>

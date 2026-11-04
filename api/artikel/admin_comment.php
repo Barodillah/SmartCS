@@ -30,6 +30,15 @@ try {
         $stmt = $pdo->prepare($query);
         $stmt->execute([$article_id]);
         $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch Recent Views List
+        $stmtViews = $pdo->prepare("SELECT id, ip_address, user_agent, viewed_at 
+                                     FROM article_views 
+                                     WHERE article_id = ? 
+                                     ORDER BY viewed_at DESC 
+                                     LIMIT 100");
+        $stmtViews->execute([$article_id]);
+        $viewsList = $stmtViews->fetchAll(PDO::FETCH_ASSOC);
         
         // Fetch Stats
         $stats = [
@@ -53,6 +62,7 @@ try {
         echo json_encode([
             "status" => true, 
             "data" => $comments,
+            "views" => $viewsList,
             "stats" => $stats
         ]);
     } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {

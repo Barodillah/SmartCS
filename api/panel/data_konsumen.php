@@ -44,8 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $totalRows = (int)$countData['total'];
     }
     
-    // Get data
-    $query = "SELECT * FROM konsumen $whereClause ORDER BY id DESC LIMIT $limit OFFSET $offset";
+    $isAll = isset($_GET['all']) && $_GET['all'] === 'true';
+    if ($isAll) {
+        $query = "SELECT * FROM konsumen $whereClause ORDER BY id DESC";
+    } else {
+        $query = "SELECT * FROM konsumen $whereClause ORDER BY id DESC LIMIT $limit OFFSET $offset";
+    }
     $result = mysqli_query($conn, $query);
     
     $data = [];

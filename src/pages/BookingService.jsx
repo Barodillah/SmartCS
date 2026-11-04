@@ -739,7 +739,7 @@ export default function BookingService() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-gray-50 flex flex-col font-body">
             <SEOHead
                 title="Booking Service Online Bengkel Resmi Mitsubishi — Dwindo Bintaro"
                 description="Jadwalkan servis berkala mobil Mitsubishi Anda tanpa antre di Bengkel Resmi 3S Dwindo Bintaro. Cek riwayat servis via Nomor Polisi, pilih paket AC Care, dan Extended SMART Package."
