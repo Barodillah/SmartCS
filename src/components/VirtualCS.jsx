@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check, Calendar, AlertTriangle } from 'lucide-react';
+import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check, Calendar, AlertTriangle, Globe } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
 import { parseChatMarkdown } from '../utils/markdownParser';
 let priceListData = defaultPriceListData;
@@ -108,6 +108,209 @@ const getDeviceInfo = () => {
     return { user_agent: ua, device_type: deviceType, browser, os };
 };
 
+// --- Multi-Language Configuration & Intelligence ---
+const SUPPORTED_LANGS = {
+    id: { code: 'id', name: 'Bahasa Indonesia', flag: '/flag/indonesia.png', label: 'Indonesia' },
+    en: { code: 'en', name: 'English', flag: '/flag/united-kingdom.png', label: 'English' },
+    ja: { code: 'ja', name: 'Japanese (日本語)', flag: '/flag/japan.png', label: '日本語' },
+    zh: { code: 'zh', name: 'Chinese (中文)', flag: '/flag/china.png', label: '中文' },
+    ko: { code: 'ko', name: 'Korean (한국어)', flag: '/flag/south-korea.png', label: '한국어' },
+    ar: { code: 'ar', name: 'Arabic (العربية)', flag: '/flag/saudi-arabia.png', label: 'العربية' },
+    jv: { code: 'jv', name: 'Basa Jawa (Javanese)', flag: '/flag/indonesia.png', label: 'Jawa' },
+    su: { code: 'su', name: 'Basa Sunda (Sundanese)', flag: '/flag/indonesia.png', label: 'Sunda' }
+};
+
+const UI_TRANSLATIONS = {
+    id: {
+        placeholder: 'Ketik pesan Anda...',
+        typingStatus: [
+            'DINA sedang mengetik...',
+            'Sedang membaca database...',
+            'Mencari data akurat...',
+            'Memproses informasi...',
+            'Menyiapkan jawaban terbaik...',
+            'Mengecek data terbaru...',
+            'Sedang menganalisis...',
+            'Memverifikasi informasi...'
+        ],
+        contactCS: 'Hubungi CS Kami',
+        bookingService: 'Booking Service',
+        emergencyLocation: 'Kirim Lokasi Saya',
+        creditSim: 'Mulai Simulasi Kredit',
+        quickQuestions: ['Info Harga Kendaraan', 'Booking Service', 'Lokasi Dealer'],
+        phoneMismatch: (attemptsLeft) => `Mohon maaf, **verifikasi nomor telepon belum sesuai** \u{1F512}\n\nNomor telepon yang Anda masukkan tidak cocok dengan data yang terdaftar untuk kendaraan ini.\n\nSilakan coba masukkan kembali nomor telepon Anda yang benar. *(Kesempatan tersisa: ${attemptsLeft}x)*`,
+        phoneFailed: `Mohon maaf, verifikasi nomor telepon telah **gagal 3 kali** \u{1F512}\n\nDemi keamanan, booking service tidak dapat diproses saat ini. Pastikan Anda adalah pemilik kendaraan yang terdaftar.\n\nTerima kasih atas pengertiannya. \u{1F64F}`,
+        phoneRequest: `Terima kasih atas data booking-nya! \u{1F64F}\n\nSebelum kami proses, untuk **keamanan dan verifikasi**, mohon Bapak/Ibu bisa mengirimkan **nomor telepon lengkap** yang terdaftar untuk kendaraan ini ya \u{1F512}\n\nIni untuk memastikan bahwa booking service dilakukan oleh pemilik kendaraan yang sah.`,
+        tryAgain: 'Coba lagi',
+        rebook: 'Booking ulang',
+        otherInfo: 'Info lainnya',
+        techError: 'Mohon maaf, DINA sedang mengalami gangguan teknis. Silakan hubungi kami langsung melalui WhatsApp atau kunjungi **Dwindo Bintaro**.'
+    },
+    en: {
+        placeholder: 'Type your message...',
+        typingStatus: [
+            'DINA is typing...',
+            'Reading database...',
+            'Searching accurate data...',
+            'Processing information...',
+            'Preparing best response...',
+            'Checking latest updates...',
+            'Analyzing request...',
+            'Verifying information...'
+        ],
+        contactCS: 'Contact Our CS',
+        bookingService: 'Book Service',
+        emergencyLocation: 'Share My Location',
+        creditSim: 'Open Credit Calculator',
+        quickQuestions: ['Car Price Info', 'Book a Service', 'Dealer Locations'],
+        phoneMismatch: (attemptsLeft) => `We apologize, **phone number verification does not match** \u{1F512}\n\nThe phone number you entered does not match our records for this vehicle.\n\nPlease try entering your registered phone number again. *(Attempts remaining: ${attemptsLeft}x)*`,
+        phoneFailed: `We apologize, phone number verification has **failed 3 times** \u{1F512}\n\nFor security reasons, this booking cannot be processed at this time. Please ensure you are the registered vehicle owner.\n\nThank you for your understanding. \u{1F64F}`,
+        phoneRequest: `Thank you for the booking details! \u{1F64F}\n\nBefore we proceed, for **security and verification**, please send the **complete phone number** registered for this vehicle \u{1F512}\n\nThis ensures that the service booking is made by the authorized vehicle owner.`,
+        tryAgain: 'Try again',
+        rebook: 'Re-book',
+        otherInfo: 'Other info',
+        techError: 'We apologize, DINA is currently experiencing technical difficulties. Please contact us directly via WhatsApp or visit **Dwindo Bintaro**.'
+    },
+    ja: {
+        placeholder: 'メッセージを入力...',
+        typingStatus: ['DINAが入力中...', 'データベースを参照中...', '回答を準備中...'],
+        contactCS: 'カスタマーサポートに連絡',
+        bookingService: '整備予約',
+        emergencyLocation: '緊急位置情報を送信',
+        creditSim: 'ローンシミュレーター',
+        quickQuestions: ['車両価格情報', '整備予約', '店舗所在地'],
+        phoneMismatch: (attemptsLeft) => `電話番号の確認が一致しませんでした。\n\nもう一度正しい電話番号を入力してください。（残り回数: ${attemptsLeft}回）`,
+        phoneFailed: `電話番号の確認が3回失敗しました。セキュリティのため処理を中止しました。`,
+        phoneRequest: `ご予約情報ありがとうございます。確認のため、ご登録の電話番号をお送りください。`,
+        tryAgain: '再試行',
+        rebook: '再予約',
+        otherInfo: 'その他の情報',
+        techError: '申し訳ありません。システム障害が発生しています。WhatsAppまたは直接店舗にお問い合わせください。'
+    },
+    zh: {
+        placeholder: '输入您的消息...',
+        typingStatus: ['DINA 正在输入...', '正在读取数据库...', '正在准备最佳回复...'],
+        contactCS: '联系在线客服',
+        bookingService: '预约维修保养',
+        emergencyLocation: '发送紧急位置',
+        creditSim: '打开信贷计算器',
+        quickQuestions: ['车型价格信息', '预约维修保养', '门店位置'],
+        phoneMismatch: (attemptsLeft) => `抱歉，电话号码验证不匹配。\n\n请重新输入正确的注册电话号码。（剩余尝试次数：${attemptsLeft}次）`,
+        phoneFailed: `电话号码验证已失败 3 次。出于安全原因，无法继续处理预约。`,
+        phoneRequest: `感谢您提供预约信息！为确保安全与验证，请输入该车辆绑定的完整电话号码。`,
+        tryAgain: '重试',
+        rebook: '重新预约',
+        otherInfo: '其他信息',
+        techError: '抱歉，系统暂时出现技术故障。请直接通过 WhatsApp 联系我们或前往门店。'
+    },
+    ar: {
+        placeholder: 'اكتب رسالتك هنا...',
+        typingStatus: ['...DINA تكتب', '...جاري فحص البيانات', '...جاري إعداد الرد'],
+        contactCS: 'اتصل بخدمة العملاء',
+        bookingService: 'حجز صيانة',
+        emergencyLocation: 'مشاركة موقع الطوارئ',
+        creditSim: 'حاسبة التمويل',
+        quickQuestions: ['أسعار السيارات', 'حجز صيانة', 'مواقع الفروع'],
+        phoneMismatch: (attemptsLeft) => `عذراً، لم يتطابق رقم الهاتف مع البيانات المسجلة لهذه المركبة.\n\nالمحاولات المتبقية: ${attemptsLeft}`,
+        phoneFailed: `فشل التحقق من رقم الهاتف 3 مرات. للحفاظ على الأمان، تم إيقاف العملية.`,
+        phoneRequest: `شكراً لك! لتأكيد الحجز وضمان الأمان، يرجى كتابة رقم الهاتف الكامل المسجل للمركبة.`,
+        tryAgain: 'إعادة المحاولة',
+        rebook: 'إعادة الحجز',
+        otherInfo: 'معلومات أخرى',
+        techError: 'نعتذر، تواجه DINA عطلاً فنياً مؤقتاً. يُرجى التواصل معنا عبر واتساب.'
+    }
+};
+
+// Automatic language detector based on user message
+const detectLanguage = (text, prevLang = 'id') => {
+    if (!text || typeof text !== 'string') return prevLang;
+    const trimmed = text.trim();
+    if (!trimmed) return prevLang;
+
+    // 1. Check non-Latin scripts (High confidence)
+    if (/[\u3040-\u309f\u30a0-\u30ff]/.test(trimmed)) return 'ja'; // Japanese Hiragana/Katakana
+    if (/[\uac00-\ud7af\u1100-\u11ff]/.test(trimmed)) return 'ko'; // Korean Hangul
+    if (/[\u0600-\u06ff]/.test(trimmed)) return 'ar'; // Arabic
+    if (/[\u4e00-\u9fff]/.test(trimmed)) return 'zh'; // Chinese Hanzi
+    if (/[\u0400-\u04ff]/.test(trimmed)) return 'ru'; // Cyrillic / Russian
+
+    // 2. Tokenize Latin words
+    const cleaned = trimmed.toLowerCase().replace(/[^\p{L}\s]/gu, ' ').trim();
+    const words = cleaned.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return prevLang;
+
+    // Neutral vehicle/dealer words that should retain previous language
+    const neutralWords = new Set([
+        'xpander', 'pajero', 'sport', 'destinator', 'xforce', 'triton', 'canter', 'fighter', 'fuso', 'l300',
+        'cross', 'ultimate', 'exceed', 'glx', 'gls', 'hev', 'ice', 'km', 'bintaro', 'cakung', 'radin', 'inten', 'dwindo', 'mitsubishi', 'ok', 'oke'
+    ]);
+    const informativeWords = words.filter(w => !neutralWords.has(w));
+    if (informativeWords.length === 0) return prevLang;
+
+    // Regional languages
+    const javaneseWords = new Set([
+        'piye', 'piro', 'mangga', 'nggih', 'sugeng', 'matur', 'nuwun', 'arep', 'nopo', 'kulo', 'sampeyan', 'meniko', 'dolan', 'tindak', 'sinten', 'pripun', 'ingkang', 'mboten', 'nyuwun', 'enjang', 'siang', 'sonten', 'dalu'
+    ]);
+    const sundaneseWords = new Set([
+        'kumaha', 'nuhun', 'sabaraha', 'punten', 'tos', 'abdi', 'anjeun', 'sae', 'atuh', 'euy', 'damang', 'naha', 'timana', 'iraha', 'teu', 'aya', 'pisan', 'sawangsulna'
+    ]);
+
+    const englishWords = new Set([
+        'hello', 'hi', 'hey', 'good', 'morning', 'afternoon', 'evening', 'night', 'please', 'thanks', 'thank', 'you',
+        'how', 'what', 'where', 'when', 'who', 'why', 'which', 'whose', 'can', 'could', 'would', 'will', 'should',
+        'is', 'are', 'am', 'was', 'were', 'be', 'been', 'being', 'do', 'does', 'did', 'have', 'has', 'had',
+        'i', 'me', 'my', 'mine', 'we', 'our', 'your', 'he', 'she', 'it', 'they', 'them', 'their',
+        'car', 'cars', 'vehicle', 'price', 'pricing', 'cost', 'expensive', 'cheap', 'discount', 'promo', 'promotion',
+        'service', 'servicing', 'maintenance', 'repair', 'book', 'booking', 'schedule', 'appointment',
+        'oil', 'change', 'brake', 'battery', 'tire', 'engine', 'transmission', 'ac', 'aircon',
+        'warranty', 'package', 'smart', 'test', 'drive', 'location', 'dealer', 'dealership', 'branch', 'showroom',
+        'contact', 'phone', 'number', 'address', 'detail', 'details', 'information', 'info', 'help', 'assist', 'need', 'want',
+        'tell', 'show', 'give', 'about', 'with', 'from', 'for', 'to', 'in', 'on', 'at', 'by', 'the', 'this', 'that', 'these', 'those',
+        'emergency', 'towing', 'breakdown', 'accident', 'flat', 'complaint', 'problem', 'issue', 'trouble', 'broken', 'available', 'check'
+    ]);
+
+    const indonesianWords = new Set([
+        'halo', 'hai', 'selamat', 'pagi', 'siang', 'sore', 'malam', 'tolong', 'bantu', 'terima', 'kasih', 'makasih',
+        'bagaimana', 'apa', 'dimana', 'kapan', 'siapa', 'mengapa', 'kenapa', 'berapa', 'yang', 'mana',
+        'bisa', 'boleh', 'apakah', 'ada', 'mau', 'ingin', 'tanya', 'info', 'informasi',
+        'saya', 'aku', 'kami', 'kita', 'anda', 'kamu', 'beliau', 'mereka', 'nya',
+        'mobil', 'kendaraan', 'harga', 'biaya', 'ongkos', 'diskon', 'potongan', 'promo', 'program',
+        'servis', 'service', 'perawatan', 'bengkel', 'jadwal', 'booking', 'janji', 'daftar',
+        'oli', 'rem', 'aki', 'ban', 'mesin', 'transmisi', 'garansi', 'paket', 'lokasi', 'alamat', 'cabang',
+        'kontak', 'nomor', 'nopol', 'plat', 'keluhan', 'masalah', 'kendala', 'mogok', 'darurat',
+        'ini', 'itu', 'dari', 'untuk', 'dengan', 'pada', 'ke', 'di', 'dan', 'atau', 'sudah', 'belum', 'sedang', 'lagi'
+    ]);
+
+    let enCount = 0;
+    let idCount = 0;
+    let jvCount = 0;
+    let suCount = 0;
+
+    for (const w of words) {
+        if (englishWords.has(w)) enCount++;
+        if (indonesianWords.has(w)) idCount++;
+        if (javaneseWords.has(w)) jvCount++;
+        if (sundaneseWords.has(w)) suCount++;
+    }
+
+    if (jvCount > 0 && jvCount >= idCount && jvCount >= enCount) return 'jv';
+    if (suCount > 0 && suCount >= idCount && suCount >= enCount) return 'su';
+
+    if (enCount > idCount) return 'en';
+    if (idCount > enCount) return 'id';
+
+    // Regex check for common phrases
+    const lower = text.toLowerCase();
+    if (/\b(how much|test drive|oil change|price list|book a service|booking service|contact cs|customer service|thank you|what is|can i|i want|i need|tell me)\b/i.test(lower)) {
+        return 'en';
+    }
+    if (/\b(berapa harga|servis berkala|ganti oli|daftar servis|booking servis|terima kasih|bisa bantu|mau tanya)\b/i.test(lower)) {
+        return 'id';
+    }
+
+    return prevLang;
+};
+
 // --- Jakarta Time Helpers ---
 const getCurrentJakartaTime = () => {
     const now = new Date();
@@ -189,7 +392,10 @@ const fetchAiArticles = async (keyword = '') => {
 const generateKeyword = (text) => {
     if (!text) return '';
 
-    const stopWords = ['saya', 'mau', 'ingin', 'tanya', 'ada', 'apa', 'bagaimana', 'kenapa', 'dimana', 'kapan', 'siapa', 'berapa', 'yang', 'dengan', 'untuk', 'dari', 'pada', 'adalah', 'itu', 'ini', 'bisa', 'tolong', 'bantu', 'kasih', 'terima', 'mohon', 'info', 'dong', 'ya', 'kah', 'lebih', 'paling', 'sangat', 'sekali'];
+    const stopWords = [
+        'saya', 'mau', 'ingin', 'tanya', 'ada', 'apa', 'bagaimana', 'kenapa', 'dimana', 'kapan', 'siapa', 'berapa', 'yang', 'dengan', 'untuk', 'dari', 'pada', 'adalah', 'itu', 'ini', 'bisa', 'tolong', 'bantu', 'kasih', 'terima', 'mohon', 'info', 'dong', 'ya', 'kah', 'lebih', 'paling', 'sangat', 'sekali',
+        'hello', 'hi', 'hey', 'want', 'ask', 'tell', 'show', 'please', 'help', 'about', 'what', 'where', 'when', 'which', 'who', 'how', 'much', 'many', 'cost', 'price', 'with', 'from', 'this', 'that', 'have', 'does', 'could', 'would', 'should'
+    ];
 
     const clean = text.toLowerCase().replace(/[^\w\s]/gi, ' ').trim();
     const words = clean.split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
@@ -204,7 +410,10 @@ const generateKeyword = (text) => {
     if (foundModel) selectedKeywords.push(foundModel);
 
     // 2. Categories/Services (Max 1-2)
-    const categories = ['promo', 'harga', 'service', 'servis', 'bengkel', 'lokasi', 'alamat', 'kredit', 'cicilan', 'dp', 'test drive', 'emergency', 'darurat', 'sparepart', 'onderdil', 'aksesoris', 'oli', 'ban', 'mesin', 'aki', 'rem', 'bunga', 'tenor', 'asuransi'];
+    const categories = [
+        'promo', 'harga', 'service', 'servis', 'bengkel', 'lokasi', 'alamat', 'kredit', 'cicilan', 'dp', 'test drive', 'emergency', 'darurat', 'sparepart', 'onderdil', 'aksesoris', 'oli', 'ban', 'mesin', 'aki', 'rem', 'bunga', 'tenor', 'asuransi',
+        'pricing', 'discount', 'maintenance', 'repair', 'dealer', 'dealership', 'location', 'oil', 'battery', 'brake'
+    ];
     const foundCategories = words.filter(w => categories.includes(w) && !selectedKeywords.includes(w));
 
     // Add up to 2 categories
@@ -340,7 +549,7 @@ const fetchPromoDataDynamic = async () => {
 };
 
 // --- Build System Prompt with Data Context ---
-const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext = '') => {
+const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext = '', detectedLang = 'id') => {
     // Build price list context
     const buildPassengerPriceContext = () => {
         const cars = priceListData.passenger_car;
@@ -528,8 +737,8 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
 
     const buildExtraPromoContext = () => {
         if (!extraPromoData || Object.keys(extraPromoData).length === 0) return '';
-        let text = `\n### DAFTAR PROMO TAMBAHAN & SPESIAL DWYNDO (AKTIF):\n`;
-        text += `*(PENTING: Data berikut adalah promo resmi yang sedang berlangsung. Jika customer menanyakan promo, promo service, promo akhir tahun, natal & tahun baru, diskon sparepart/jasa, atau promo khusus lainnya, kamu WAJIB menyampaikan detail promo ini!)*\n\n`;
+        let text = `\n### DAFTAR PROMO TAMBAHAN & SPESIAL DWINDO (AKTIF):\n`;
+        text += `*(PENTING: Data berikut adalah promo resmi yang sedang berlangsung. Jika customer menanyakan promo, promo service, diskon sparepart/jasa, atau promo khusus lainnya, kamu WAJIB menyampaikan detail promo ini!)*\n\n`;
 
         for (const [key, val] of Object.entries(extraPromoData)) {
             if (!val) continue;
@@ -538,7 +747,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
             if (val.periode) text += `- **Periode Berlaku**: ${val.periode}\n`;
             if (val.description) text += `- **Deskripsi Promo**: ${val.description}\n`;
 
-            // Format items array (seperti pada Promo Service Natal dan Tahun Baru)
+            // Format items array
             if (Array.isArray(val.items) && val.items.length > 0) {
                 text += `- **Detail & Penawaran Diskon**:\n`;
                 val.items.forEach((item, idx) => {
@@ -594,7 +803,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
             if (Object.keys(remaining).length > 0) {
                 try {
                     text += `- **Keterangan Lain**: ${JSON.stringify(remaining)}\n`;
-                } catch (e) {}
+                } catch (e) { }
             }
             text += `\n`;
         }
@@ -875,6 +1084,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
     const jakartaTime = getCurrentJakartaTime();
     const bookingDates = getBookingDates();
     const bookingDatesText = bookingDates.map((d, i) => `${i + 1}. ${d.formatted} (${d.iso})`).join('\n');
+    const activeLangInfo = SUPPORTED_LANGS[detectedLang] || SUPPORTED_LANGS.id;
 
     return `Kamu adalah **DINA** — **Dwindo Intelligent Assistant**, asisten Customer Satisfaction resmi **PT Dwindo Berlian Samjaya**, dealer resmi **Mitsubishi Motors** di area Jabodetabek.
 
@@ -884,22 +1094,42 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
 - Jam: **${jakartaTime.timeFormatted}**
 - Zona Waktu: **WIB (Asia/Jakarta)**
 
+## KEMAMPUAN MULTI-BAHASA OTOMATIS (SANGAT PENTING — WAJIB DIPATUHI)
+- DINA adalah asisten virtual multi-bahasa yang sangat cerdas dan fasih dalam berbagai bahasa dunia dan bahasa daerah di Indonesia.
+- **TRIGGER BAHASA KONSUMEN / USER (ATURAN MUTLAK):**
+  * Kamu WAJIB mendeteksi bahasa yang digunakan konsumen pada pesan terakhirnya dan **SELALU menjawab menggunakan bahasa yang sama persis** dengan bahasa yang digunakan konsumen tersebut.
+  * Jika konsumen menyapa atau bertanya dalam **Bahasa Inggris (English)** (misalnya: "Hello", "How much is Xpander?", "Can I book a service?"), kamu WAJIB menjawab sepenuhnya dalam **Bahasa Inggris** yang natural, sopan, dan profesional.
+  * Jika konsumen menggunakan **Bahasa Jepang (日本語)**, jawab sepenuhnya dalam **Bahasa Jepang**.
+  * Jika konsumen menggunakan **Bahasa Mandarin (中文)**, jawab dalam **Bahasa Mandarin**.
+  * Jika konsumen menggunakan **Bahasa Korea (한국어)**, jawab dalam **Bahasa Korea**.
+  * Jika konsumen menggunakan **Bahasa Arab (العربية)**, jawab dalam **Bahasa Arab**.
+  * Jika konsumen menggunakan bahasa daerah seperti **Bahasa Jawa** atau **Bahasa Sunda**, tanggapi dengan ramah dan sopan dalam bahasa tersebut atau bahasa yang mudah dipahami.
+  * Jika konsumen menggunakan **Bahasa Indonesia** (atau default), jawab dalam **Bahasa Indonesia** yang sopan dan ramah.
+- **Pergantian Bahasa Dinamis:** Jika konsumen berganti bahasa di tengah obrolan (misalnya awalnya Bahasa Indonesia lalu berganti ke Bahasa Inggris atau sebaliknya), kamu HARUS seketika berganti bahasa mengikuti pesan terbaru konsumen.
+- **Quick Reply (💬):** 3 opsi quick reply di baris paling akhir pesan WAJIB kamu terjemahkan dan sesuaikan ke dalam bahasa yang digunakan oleh konsumen (contoh jika merespons dalam Bahasa Inggris: \`💬 Car Price Info\`, \`💬 Book Service\`, \`💬 Dealer Locations\`, BUKAN Bahasa Indonesia).
+- **Data & Ketentuan Dealer:** Istilah resmi (nama unit kendaraan seperti Xpander, Pajero Sport, Destinator; nama dealer "Mitsubishi Dwindo Bintaro / Radin Inten / Cakung"; serta mata uang Rupiah/Rp) tetap dipertahankan dengan akurat.
+- **Tag Teknis (JANGAN DITERJEMAHKAN):** Tag internal sistem seperti \`[WHATSAPP]\`, \`[EMERGENCY]\`, \`[SIMULASI_KREDIT]\`, \`[ARTICLE:slug]\`, dan \`[SAVE_LEAD:...]\` adalah instruksi kode sistem frontend/backend, JANGAN PERNAH diubah atau diterjemahkan ke bahasa apa pun. Key dalam JSON \`[SAVE_LEAD:...]\` (seperti \`customer_name\`, \`customer_phone\`, \`customer_nopol\`, dsb.) juga tetap gunakan key asli yang ditentukan di bawah.
+
 ## Identitas & Gaya Komunikasi
 - Nama kamu: **DINA** (Dwindo Intelligent Assistant)
-- Berbicara dalam **Bahasa Indonesia** yang sopan, ramah, dan profesional.
-- Gunakan sapaan hangat.
+- Gunakan sapaan hangat yang sesuai dengan budaya bahasa yang digunakan.
 - Selalu empati, sabar, dan memberikan solusi terbaik.
 - JANGAN pernah mengakui bahwa kamu adalah AI/bot. Kamu adalah CS resmi bernama DINA.
 - Jawaban harus **medium** — tidak terlalu singkat & tidak terlalu panjang. Fokus, informatif, terstruktur. JANGAN memotong jawaban di tengah.
+
+${detectedLang && detectedLang !== 'id' ? `### 🌐 INSTRUKSI BAHASA AKTIF (PRIORITAS TERTINGGI):
+Bahasa yang terdeteksi dari pesan konsumen saat ini adalah: **${activeLangInfo.name}**.
+Kamu WAJIB membalas pesan ini sepenuhnya dalam **${activeLangInfo.name}** secara fasih, ramah, dan profesional, termasuk seluruh 3 quick reply (💬)!
+` : ''}
 
 ## Strategi Jawaban — PENTING
 - **Fokuskan tujuan user terlebih dahulu.** Jangan langsung dump semua informasi.
 - Jika user bertanya soal **harga/info unit**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail harga lengkap untuk unit tersebut saja.
 - Jika user bertanya soal **promo**:
-  * **Jika menanyakan "promo service" / "promo servis" / "promo bengkel" / "diskon ganti oli" / "servis hemat" / promo musiman / promo akhir tahun / natal / tahun baru:**
+  * **Jika menanyakan "promo service" / "promo servis" / "promo bengkel" / "diskon ganti oli" / "servis hemat" / promo musiman / promo tambahan:**
     WAJIB sampaikan seluruh promo service yang sedang aktif di Dwindo, mencakup:
-    1. **Promo Tambahan & Musiman yang Sedang Aktif** (WAJIB periksa bagian "DAFTAR PROMO TAMBAHAN & SPESIAL DWYNDO"):
-       - Jika ada promo musiman/khusus (seperti **Promo Service Natal dan Tahun Baru**: Diskon 25% Sparepart & 25% Jasa Service untuk semua varian Mitsubishi dengan booking service berkala, atau promo kustom lainnya), WAJIB sampaikan ini sebagai poin utama/terdepan!
+    1. **Promo Tambahan & Musiman yang Sedang Aktif** (WAJIB periksa bagian "DAFTAR PROMO TAMBAHAN & SPESIAL DWINDO"):
+       - Jika terdapat program promo tambahan di data referensi (promo musiman, diskon sparepart, diskon jasa, paket khusus, dll), WAJIB sampaikan ini sebagai poin utama/terdepan!
     2. **Paket Servis Hemat & Ganti Oli (Diskon 10%):**
        - Paket Xpander & Xforce: Rp 1.089.900 (normal Rp 1.211.000, hemat 10%). Sudah termasuk jasa servis inspeksi berkala, Oli Mesin Mitsubishi Genuine Oil, filter oli asli, dan gasket drain plug.
        - Paket Pajero Sport: Rp 1.806.300 (normal Rp 2.007.000, hemat 10%). Sudah termasuk jasa servis inspeksi berkala, Oli Mesin Diesel Mitsubishi Genuine Oil, filter oli asli, dan gasket drain plug.
@@ -910,7 +1140,7 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
     7. **Ajakan Aksi:** Sampaikan bahwa promo berlaku di seluruh bengkel resmi Dwindo (Bintaro, Radin Inten, Cakung), lalu tawarkan apakah ingin booking via website di menu Booking Service (/booking) atau langsung dibantu booking oleh DINA.
   * **Jika user hanya bertanya umum "ada promo apa? / promo apa saja?" tanpa spesifik unit atau service:**
     Sampaikan dengan ramah pilihan promo yang ada di Dwindo:
-    - **Promo Service & Perawatan Bengkel** (termasuk promo aktif seperti Promo Natal & Tahun Baru diskon 25% sparepart & jasa, serta paket hemat ganti oli diskon 10%, free cek AC, free fogging).
+    - **Promo Service & Perawatan Bengkel** (termasuk promo tambahan/musiman yang sedang aktif di data referensi, serta paket hemat ganti oli diskon 10%, free cek AC, free fogging).
     - **Promo Pembelian Kendaraan Baru** (diskon bunga 0%, DP ringan, cashback unit baru).
     Tanyakan dengan ramah mana yang ingin diketahui lebih lanjut!
   * **Jika user mencari promo pembelian unit kendaraan:** Tanyakan unit/model apa yang diminati, baru setelah tahu berikan detail promo unit tersebut dari data referensi promo penjualan.
@@ -1226,7 +1456,7 @@ ${buildPromoContext()}
 ### Program Promo Service Bengkel Resmi Dwindo (Periode ${promoServiceData.periode || 'November 2026'})
 ${buildPromoServiceContext()}
 
-### DAFTAR PROMO TAMBAHAN & SPESIAL DWYNDO (BERLAKU SAAT INI)
+### DAFTAR PROMO TAMBAHAN & SPESIAL DWINDO (BERLAKU SAAT INI)
 ${buildExtraPromoContext()}
 
 ### Program Referral
@@ -1289,7 +1519,7 @@ Data perawatan berkala memiliki **2 varian Pajero Sport** yang BERBEDA:
   8. Saat menampilkan estimasi, gunakan format yang rapi dan mudah dibaca (list/tabel). Sampaikan bahwa biaya adalah **estimasi** dan bisa berbeda tergantung kondisi aktual kendaraan.
   9. **Follow-up:** Setelah menjawab pertanyaan service berkala, tawarkan customer untuk **booking service** langsung. Contoh: "Apakah Bapak/Ibu ingin langsung booking service di bengkel resmi Mitsubishi Dwindo (Bintaro, Radin Inten, atau Cakung)? 😊"
   10. **PENTING — Promo Service, Promo Tambahan, & Perpanjangan Smart Paket Service:**
-      - Jika customer **menanyakan promo service / diskon service / servis hemat / promo bengkel / promo natal / promo tahun baru / promo musiman**: WAJIB jelaskan promo tambahan yang ada di data (seperti **Promo Service Natal dan Tahun Baru**: diskon 25% sparepart & jasa service untuk semua varian Mitsubishi dengan booking periodical maintenance, serta promo tambahan lainnya yang tercantum) dan juga jelaskan **Promo Servis Hebat Dwindo** (Paket ganti oli diskon 10%: Xpander & Xforce Rp 1.089.900, Pajero Sport Rp 1.806.300; GRATIS 7 pengecekan AC; GRATIS fogging sterilisasi kabin; serta Recall L300 gratis).
+      - Jika customer **menanyakan promo service / diskon service / servis hemat / promo bengkel / promo musiman / promo tambahan**: WAJIB jelaskan program promo tambahan yang aktif di data referensi (diskon sparepart, diskon jasa service, atau paket promo kustom lainnya yang tercantum pada DAFTAR PROMO TAMBAHAN & SPESIAL DWINDO) serta jelaskan **Promo Servis Hebat Dwindo** (Paket ganti oli diskon 10%: Xpander & Xforce Rp 1.089.900, Pajero Sport Rp 1.806.300; GRATIS 7 pengecekan AC; GRATIS fogging sterilisasi kabin; serta Recall L300 gratis).
       - Jika customer menanyakan biaya service di **KM di atas 50.000 km** (di luar masa free service) atau menanyakan paket hemat perawatan jangka panjang: WAJIB tawarkan program **Perpanjangan Smart Paket Service (Extended SMART Package)** (hemat s/d 27%, gratis suku cadang & jasa, perpanjangan garansi 1 th/20.000 km, diskon ban 30% & aki 10%, 24HES). Sebutkan pilihan paket (2XPM, 4XPM, 6XPM) beserta harganya sesuai model kendaraan dari data **Perpanjangan Smart Paket Service** di atas.
   11. **SOFT SELLING AC (HALUS):** Setelah memberikan estimasi service berkala, sisipkan tawaran perawatan AC dengan sangat halus. Contoh: "Oh ya, sambil service berkala nanti, apakah AC kendaraannya juga masih nyaman? Kalau mau sekalian perawatan AC, kami punya paket **AC Clean** mulai dari Rp 338.000 😊". Cukup 1 kalimat saja, jangan memaksa. Jika customer tidak merespons tentang AC, lanjutkan tanpa mengulangi.
 
@@ -1412,8 +1642,14 @@ Setiap kali kamu sudah berhasil mengumpulkan data LENGKAP customer, WAJIB sertak
 - **FORMAT customer_nopol:** Tanpa spasi, huruf kapital (contoh: "B1234WST").`;
 };
 
-const getInitialMessages = () => {
+const getInitialMessages = (lang = 'id') => {
     const now = Date.now();
+    if (lang === 'en') {
+        return [
+            { id: now, type: 'bot', text: 'Hello! 👋 I am **DINA** — *Dwindo Intelligent Assistant*.' },
+            { id: now + 1, type: 'bot', text: 'How can DINA assist you today? 😊' }
+        ];
+    }
     return [
         { id: now, type: 'bot', text: 'Halo! 👋 Saya **DINA** — *Dwindo Intelligent Assistant*.' },
         { id: now + 1, type: 'bot', text: 'Ada yang bisa DINA bantu hari ini? 😊' }
@@ -1423,15 +1659,15 @@ const getInitialMessages = () => {
 const VirtualCS = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [messages, setMessages] = useState(getInitialMessages());
+    const [currentLang, setCurrentLang] = useState('id');
+    const currentLangRef = useRef('id');
+    const [showLangMenu, setShowLangMenu] = useState(false);
+    const activeTranslations = UI_TRANSLATIONS[currentLang] || UI_TRANSLATIONS.id;
+    const [messages, setMessages] = useState(getInitialMessages('id'));
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('DINA sedang mengetik...');
-    const [quickQuestions, setQuickQuestions] = useState([
-        'Info Harga Kendaraan',
-        'Booking Service',
-        'Lokasi Dealer'
-    ]);
+    const [quickQuestions, setQuickQuestions] = useState(UI_TRANSLATIONS.id.quickQuestions);
     const [isSimulasiOpen, setIsSimulasiOpen] = useState(false);
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
     const [questionFormData, setQuestionFormData] = useState({ name: '', phone: '', question: '' });
@@ -1592,6 +1828,13 @@ const VirtualCS = () => {
                         if (lastBotQuestions) {
                             setQuickQuestions(lastBotQuestions);
                         }
+                        // Restore language from the latest user message
+                        const lastUser = loadedMessages.slice().reverse().find(m => m.type === 'user');
+                        if (lastUser?.text) {
+                            const detected = detectLanguage(lastUser.text, 'id');
+                            currentLangRef.current = detected;
+                            setCurrentLang(detected);
+                        }
                     }
                 }
             } catch (err) {
@@ -1656,8 +1899,11 @@ const VirtualCS = () => {
         }
 
         // Reset state — no new session yet
-        setMessages(getInitialMessages());
-        setQuickQuestions(['Info Harga Kendaraan', 'Booking Service', 'Lokasi Dealer']);
+        currentLangRef.current = 'id';
+        setCurrentLang('id');
+        setShowLangMenu(false);
+        setMessages(getInitialMessages('id'));
+        setQuickQuestions(UI_TRANSLATIONS.id.quickQuestions);
         conversationHistory.current = [];
         nopolContext.current = '';
         slotContext.current = '';
@@ -1672,31 +1918,21 @@ const VirtualCS = () => {
         sessionIdRef.current = null;
     };
 
-    // Rotating loading status messages
-    const loadingMessages = [
-        'DINA sedang mengetik...',
-        'Sedang membaca database...',
-        'Mencari data akurat...',
-        'Memproses informasi...',
-        'Menyiapkan jawaban terbaik...',
-        'Mengecek data terbaru...',
-        'Sedang menganalisis...',
-        'Memverifikasi informasi...'
-    ];
-
+    // Rotating loading status messages adapted to active language
     useEffect(() => {
+        const msgs = activeTranslations.typingStatus || UI_TRANSLATIONS.id.typingStatus;
         if (!isLoading) {
-            setLoadingStatus('DINA sedang mengetik...');
+            setLoadingStatus(msgs[0] || 'DINA sedang mengetik...');
             return;
         }
         let index = 0;
-        setLoadingStatus(loadingMessages[0]);
+        setLoadingStatus(msgs[0] || 'DINA sedang mengetik...');
         const interval = setInterval(() => {
-            index = (index + 1) % loadingMessages.length;
-            setLoadingStatus(loadingMessages[index]);
+            index = (index + 1) % msgs.length;
+            setLoadingStatus(msgs[index]);
         }, 2000);
         return () => clearInterval(interval);
-    }, [isLoading]);
+    }, [isLoading, currentLang]);
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1949,7 +2185,10 @@ INSTRUKSI WAJIB UNTUK DINA:
     // Check if conversation is in booking service context
     const isBookingContext = () => {
         const allMessages = conversationHistory.current.slice(-8);
-        const keywords = ['booking', 'service', 'servis', 'nopol', 'nomor polisi', 'plat nomor', 'plat', 'kendaraan', 'mobil', 'polisi'];
+        const keywords = [
+            'booking', 'service', 'servis', 'nopol', 'nomor polisi', 'plat nomor', 'plat', 'kendaraan', 'mobil', 'polisi',
+            'book', 'appointment', 'maintenance', 'license plate', 'plate number'
+        ];
         return allMessages.some(m =>
             keywords.some(kw => m.content.toLowerCase().includes(kw))
         );
@@ -1963,7 +2202,8 @@ INSTRUKSI WAJIB UNTUK DINA:
             'sudah terdaftar', 'terdaftar belum', 'apakah booking', 'cek pendaftaran',
             'cek service saya', 'cek jadwal service', 'apakah sudah terdaftar',
             'booking sudah', 'sudah di booking', 'sudah dibooking', 'udah terdaftar',
-            'udah ke daftar', 'udah kedaftar', 'udah di daftar'
+            'udah ke daftar', 'udah kedaftar', 'udah di daftar',
+            'check booking', 'booking status', 'check status', 'my booking', 'is my booking'
         ];
         return allMessages.some(m =>
             keywords.some(kw => m.content.toLowerCase().includes(kw))
@@ -2102,8 +2342,8 @@ INSTRUKSI WAJIB UNTUK DINA:
             }
         }
 
-        // Check for arbitrary "tanggal X" or "tgl X" beyond the 3 suggested dates
-        const tanggalMatch = clean.match(/(?:tanggal|tgl)\s+(\d{1,2})/);
+        // Check for arbitrary "tanggal X" or "tgl X" or "date X" beyond the 3 suggested dates
+        const tanggalMatch = clean.match(/(?:tanggal|tgl|date|on)\s+(\d{1,2})/);
         if (tanggalMatch && isBookingContext()) {
             const dayNum = parseInt(tanggalMatch[1]);
             const jakarta = getCurrentJakartaTime();
@@ -2117,17 +2357,17 @@ INSTRUKSI WAJIB UNTUK DINA:
             return `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         }
 
-        // Check for "besok"/"besuk" → tomorrow
-        if (clean.includes('besok') || clean.includes('besuk')) {
+        // Check for "besok"/"besuk"/"tomorrow" → tomorrow
+        if (clean.includes('besok') || clean.includes('besuk') || clean.includes('tomorrow')) {
             return bookingDates[0]?.iso || null;
         }
-        // Check for "lusa" → day after tomorrow
-        if (clean.includes('lusa')) {
+        // Check for "lusa"/"day after tomorrow" → day after tomorrow
+        if (clean.includes('lusa') || clean.includes('day after tomorrow')) {
             return bookingDates[1]?.iso || null;
         }
 
         // Check for option number "1", "2", "3" or "pilihan 1" etc
-        const optMatch = clean.match(/(?:pilihan|opsi|nomor|no\.?)?\s*([1-3])/);
+        const optMatch = clean.match(/(?:pilihan|opsi|nomor|no\.?|option)?\s*([1-3])/);
         if (optMatch && isBookingContext()) {
             const idx = parseInt(optMatch[1]) - 1;
             if (bookingDates[idx]) return bookingDates[idx].iso;
@@ -2191,6 +2431,13 @@ INSTRUKSI WAJIB UNTUK DINA:
 
     const handleSend = async (text = inputValue) => {
         if (!text.trim() || isLoading) return;
+
+        // Auto-detect language from user input
+        const detected = detectLanguage(text, currentLangRef.current);
+        if (detected && detected !== currentLangRef.current) {
+            currentLangRef.current = detected;
+            setCurrentLang(detected);
+        }
 
         // Ensure we have a session (create lazily on first message)
         if (!sessionIdRef.current && !localStorage.getItem('dina_active_session')) {
@@ -2347,10 +2594,10 @@ INSTRUKSI WAJIB UNTUK DINA:
 
         // Ensure dynamic promo data is fresh and up-to-date
         try {
-            if (Object.keys(extraPromoData).length === 0 || /promo|servis|service|diskon|natal|tahun baru|akhir tahun/i.test(text)) {
+            if (Object.keys(extraPromoData).length === 0 || /promo|servis|service|diskon|hemat|program/i.test(text)) {
                 await fetchPromoDataDynamic();
             }
-        } catch (e) {}
+        } catch (e) { }
 
         try {
             const response = await fetch('https://csdwindo.com/api/proxy_ai.php', {
@@ -2361,7 +2608,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                 body: JSON.stringify({
                     model: import.meta.env.VITE_OPENROUTER_MODEL,
                     messages: [
-                        { role: 'system', content: buildSystemPrompt(nopolContext.current, slotContext.current, duplicateContext.current) },
+                        { role: 'system', content: buildSystemPrompt(nopolContext.current, slotContext.current, duplicateContext.current, currentLangRef.current) },
                         ...conversationHistory.current
                     ],
                     temperature: 0.8,
@@ -2516,20 +2763,17 @@ INSTRUKSI WAJIB UNTUK DINA:
 
                 // --- Display response to user ---
                 if (bookingPhoneRejected) {
+                    const activeUi = UI_TRANSLATIONS[currentLangRef.current] || UI_TRANSLATIONS.id;
                     if (verificationAttempts.current > 0) {
                         // Phone verification MISMATCH — show rejection with attempts
                         const attemptsLeft = 3 - verificationAttempts.current;
-                        let rejectionText;
-
-                        if (attemptsLeft > 0) {
-                            rejectionText = `Mohon maaf, **verifikasi nomor telepon belum sesuai** \u{1F512}\n\nNomor telepon yang Anda masukkan tidak cocok dengan data yang terdaftar untuk kendaraan ini.\n\nSilakan coba masukkan kembali nomor telepon Anda yang benar. *(Kesempatan tersisa: ${attemptsLeft}x)*`;
-                        } else {
-                            rejectionText = `Mohon maaf, verifikasi nomor telepon telah **gagal 3 kali** \u{1F512}\n\nDemi keamanan, booking service tidak dapat diproses saat ini. Pastikan Anda adalah pemilik kendaraan yang terdaftar.\n\nTerima kasih atas pengertiannya. \u{1F64F}`;
-                        }
+                        const rejectionText = attemptsLeft > 0
+                            ? activeUi.phoneMismatch(attemptsLeft)
+                            : activeUi.phoneFailed;
 
                         setQuickQuestions(attemptsLeft > 0
-                            ? ['Coba lagi', 'Hubungi CS']
-                            : ['Booking ulang', 'Hubungi CS', 'Info lainnya']
+                            ? [activeUi.tryAgain, activeUi.contactCS]
+                            : [activeUi.rebook, activeUi.contactCS, activeUi.otherInfo]
                         );
                         setMessages(prev => [...prev, {
                             id: Date.now() + 1,
@@ -2541,9 +2785,9 @@ INSTRUKSI WAJIB UNTUK DINA:
                     } else {
                         // Customer NEVER typed a phone number — AI skipped verification
                         // Replace AI's fake confirmation with a phone verification request
-                        const phoneRequestText = `Terima kasih atas data booking-nya! \u{1F64F}\n\nSebelum kami proses, untuk **keamanan dan verifikasi**, mohon Bapak/Ibu bisa mengirimkan **nomor telepon lengkap** yang terdaftar untuk kendaraan ini ya \u{1F512}\n\nIni untuk memastikan bahwa booking service dilakukan oleh pemilik kendaraan yang sah.`;
+                        const phoneRequestText = activeUi.phoneRequest;
 
-                        setQuickQuestions(['08xxxxxxxxxx', 'Hubungi CS']);
+                        setQuickQuestions(['08xxxxxxxxxx', activeUi.contactCS]);
                         setMessages(prev => [...prev, {
                             id: Date.now() + 1,
                             type: 'bot',
@@ -2572,10 +2816,11 @@ INSTRUKSI WAJIB UNTUK DINA:
             }
         } catch (error) {
             console.error('API Error:', error);
+            const activeUi = UI_TRANSLATIONS[currentLangRef.current] || UI_TRANSLATIONS.id;
             setMessages(prev => [...prev, {
                 id: Date.now() + 1,
                 type: 'bot',
-                text: 'Mohon maaf, DINA sedang mengalami gangguan teknis. Silakan hubungi kami langsung melalui WhatsApp atau kunjungi **Dwindo Bintaro**.',
+                text: activeUi.techError,
                 showWhatsAppButton: true
             }]);
         } finally {
@@ -3019,13 +3264,58 @@ INSTRUKSI WAJIB UNTUK DINA:
                             }`}
                     >
                         {/* Header */}
-                        <div className="bg-[#111111] p-4 flex justify-between items-center">
+                        <div className="bg-[#111111] p-4 flex justify-between items-center relative">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-[#E60012] flex items-center justify-center" style={{ clipPath: ANGULAR_CLIP }}>
                                     <MessageSquare size={16} className="text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="font-display font-bold text-white text-[14px] tracking-widest uppercase">DINA</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-display font-bold text-white text-[14px] tracking-widest uppercase">DINA</h3>
+                                        {/* Dynamic Language Pill / Selector */}
+                                        <div className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowLangMenu(!showLangMenu)}
+                                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold bg-white/10 hover:bg-white/20 text-gray-200 border border-white/20 tracking-wider uppercase transition-colors"
+                                                title={`Bahasa aktif: ${SUPPORTED_LANGS[currentLang]?.name || currentLang}. Klik untuk memilih manual.`}
+                                            >
+                                                {SUPPORTED_LANGS[currentLang]?.flag ? (
+                                                    <img src={SUPPORTED_LANGS[currentLang].flag} alt={currentLang} className="w-3.5 h-3.5 object-cover rounded-full shrink-0" />
+                                                ) : (
+                                                    <span>🌐</span>
+                                                )}
+                                                <span>{currentLang.toUpperCase()}</span>
+                                            </button>
+
+                                            {/* Dropdown Menu */}
+                                            {showLangMenu && (
+                                                <div className="absolute left-0 mt-1.5 w-44 bg-[#1E1E1E] border border-gray-700 rounded-lg shadow-xl py-1 z-50 text-[11px]">
+                                                    <div className="px-2 py-1 text-[9px] uppercase font-bold text-gray-400 border-b border-gray-800">
+                                                        Deteksi Otomatis Aktif
+                                                    </div>
+                                                    {Object.entries(SUPPORTED_LANGS).map(([code, item]) => (
+                                                        <button
+                                                            key={code}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                currentLangRef.current = code;
+                                                                setCurrentLang(code);
+                                                                setShowLangMenu(false);
+                                                            }}
+                                                            className={`w-full text-left px-2.5 py-1.5 flex items-center justify-between hover:bg-white/10 transition-colors ${currentLang === code ? 'text-[#E60012] font-bold' : 'text-gray-200'}`}
+                                                        >
+                                                            <span className="flex items-center gap-2">
+                                                                <img src={item.flag} alt={item.name} className="w-4 h-4 object-cover rounded-full shrink-0" />
+                                                                <span>{item.name}</span>
+                                                            </span>
+                                                            {currentLang === code && <Check size={12} />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                     <p className="text-[10px] text-gray-400">Dwindo Intelligent Assistant</p>
                                 </div>
                             </div>
@@ -3093,7 +3383,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                                                 style={{ clipPath: ANGULAR_CLIP }}
                                             >
                                                 <MapPin size={14} />
-                                                Kirim Lokasi Saya
+                                                {activeTranslations.emergencyLocation || 'Kirim Lokasi Saya'}
                                             </button>
                                         )}
 
@@ -3105,7 +3395,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                                                 style={{ clipPath: ANGULAR_CLIP }}
                                             >
                                                 <MessageSquare size={14} />
-                                                Tanya CS
+                                                {activeTranslations.contactCS || 'Tanya CS'}
                                             </button>
                                         )}
 
@@ -3119,7 +3409,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                                                     style={{ clipPath: ANGULAR_CLIP }}
                                                 >
                                                     <Calendar size={14} />
-                                                    Booking Service
+                                                    {activeTranslations.bookingService || 'Booking Service'}
                                                 </a>
                                                 <a
                                                     href="https://wa.me/6287782788383?text=Halo%20Dwindo%2C%20saya%20butuh%20bantuan"
@@ -3129,7 +3419,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                                                     style={{ clipPath: ANGULAR_CLIP }}
                                                 >
                                                     <Phone size={14} />
-                                                    Hubungi CS Kami
+                                                    {activeTranslations.contactCS || 'Hubungi CS Kami'}
                                                 </a>
                                             </div>
                                         )}
@@ -3142,7 +3432,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                                                 style={{ clipPath: ANGULAR_CLIP }}
                                             >
                                                 <Calculator size={14} />
-                                                Mulai Simulasi Kredit
+                                                {activeTranslations.creditSim || 'Mulai Simulasi Kredit'}
                                             </button>
                                         )}
 
@@ -3222,7 +3512,7 @@ INSTRUKSI WAJIB UNTUK DINA:
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder="Ketik pesan Anda..."
+                                placeholder={activeTranslations.placeholder || 'Ketik pesan Anda...'}
                                 disabled={isLoading}
                                 className="flex-1 bg-transparent text-[16px] md:text-[13px] outline-none focus:border-[#E60012] transition-colors disabled:opacity-50"
                             />
