@@ -27,7 +27,7 @@ const servicesData = [
         id: "03",
         title: "Promo",
         desc: "Informasi program penjualan dan cicilan paling update.",
-        img: "/media/services/promo.jpg",
+        img: "https://csdwindo.com/wp/uploads/url_6aebff9f7892a0.12786862.webp",
         icon: Tag,
         cta: "Lihat Promo"
     },

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { MapPin, Phone, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Phone, ShieldCheck, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import SimulasiKreditModal from '../SimulasiKreditModal';
 import dealerData from '../../../knowledge/lokasi_dealer.json';
@@ -16,10 +17,39 @@ const Youtube = ({ size = 24, className = '' }) => (
 
 const Footer = () => {
     const [isSimulasiOpen, setIsSimulasiOpen] = useState(false);
-    const mainBranch = dealerData?.branches?.[0] || {
-        name: 'Dwindo Bintaro',
-        address: 'Jl. MH. Thamrin Blok A-01, Bintaro Jaya Sektor 7 (Jl. HR Rasuna Said, Pd. Jaya, Kec. Pd. Aren), Kota Tangerang Selatan, Banten 15220',
-        phone: '021-7458383'
+    const [activeBranchIndex, setActiveBranchIndex] = useState(0);
+    const [isBranchHovered, setIsBranchHovered] = useState(false);
+    const [isBranchManual, setIsBranchManual] = useState(false);
+
+    const branches = dealerData?.branches || [
+        {
+            name: 'Dwindo Bintaro',
+            address: 'Jl. MH. Thamrin Blok A-01, Bintaro Jaya Sektor 7 (Jl. HR Rasuna Said, Pd. Jaya, Kec. Pd. Aren), Kota Tangerang Selatan, Banten 15220',
+            phone: '021-7458383'
+        },
+        {
+            name: 'Dwindo Radin Inten',
+            address: 'Jl. Radin Inten II, RT.8/RW.7, Duren Sawit, Kec. Duren Sawit, Kota Jakarta Timur, DKI Jakarta 13440',
+            phone: '021-29483888'
+        },
+        {
+            name: 'Dwindo Cakung',
+            address: 'Jl. Raya Bekasi No.KM.26, RT.6/RW.1, Ujung Menteng, Kec. Cakung, Kota Jakarta Timur, DKI Jakarta 13960',
+            phone: '021-22461888'
+        }
+    ];
+
+    useEffect(() => {
+        if (isBranchHovered || isBranchManual || branches.length === 0) return;
+        const interval = setInterval(() => {
+            setActiveBranchIndex(prev => ((prev + 1) % branches.length));
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [isBranchHovered, isBranchManual, branches.length]);
+
+    const handleAccordionToggle = (index) => {
+        setIsBranchManual(true);
+        setActiveBranchIndex(prev => (prev === index ? null : index));
     };
 
     const handleTestDriveClick = (e) => {
@@ -148,39 +178,79 @@ const Footer = () => {
 
                         <div>
                             <h2 className="font-display font-bold text-white uppercase text-[12px] tracking-[0.2em] mb-8">
-                                Hubungi Kami (NAP Resmi)
+                                Hubungi Kami
                             </h2>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <MapPin size={16} className="text-[#E60012] mt-0.5 shrink-0" />
-                                    <p className="text-gray-400 text-xs leading-relaxed">
-                                        <strong className="text-white block mb-0.5">{mainBranch.name}:</strong>
-                                        {mainBranch.address}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <Phone size={16} className="text-[#E60012] shrink-0" />
-                                    <a
-                                        href={`tel:${mainBranch.phone.replace(/[^0-9+]/g, '')}`}
-                                        onClick={() => trackConversion('click_dealer_phone', { branch: mainBranch.name })}
-                                        className="text-gray-300 hover:text-white font-semibold text-xs transition-colors"
-                                    >
-                                        {mainBranch.phone}
-                                    </a>
-                                </div>
-                                <div className="pt-2 border-t border-white/10 text-[11px] text-gray-400 space-y-1">
-                                    <div>
-                                        <strong className="text-gray-300">Radin Inten:</strong> 021-29483888
-                                    </div>
-                                    <div>
-                                        <strong className="text-gray-300">Cakung:</strong> 021-22461888
-                                    </div>
-                                </div>
+                            <div
+                                className="space-y-2.5"
+                                onMouseEnter={() => setIsBranchHovered(true)}
+                                onMouseLeave={() => setIsBranchHovered(false)}
+                            >
+                                {branches.map((branch, idx) => {
+                                    const isOpen = activeBranchIndex === idx;
+                                    return (
+                                        <div
+                                            key={branch.name || idx}
+                                            className={`rounded-xl border transition-all duration-200 overflow-hidden ${isOpen
+                                                ? 'bg-white/[0.05] border-white/20 shadow-md'
+                                                : 'bg-white/[0.015] border-white/5 hover:border-white/15'
+                                                }`}
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAccordionToggle(idx)}
+                                                className="w-full flex items-center justify-between px-3 py-2.5 text-left cursor-pointer group"
+                                            >
+                                                <span className={`text-xs font-semibold flex items-center gap-2 transition-colors ${isOpen ? 'text-white' : 'text-gray-300 group-hover:text-white'
+                                                    }`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full transition-colors ${isOpen ? 'bg-[#E60012]' : 'bg-gray-500'
+                                                        }`} />
+                                                    {branch.name}
+                                                </span>
+                                                <ChevronDown
+                                                    size={14}
+                                                    className={`text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#E60012]' : ''
+                                                        }`}
+                                                />
+                                            </button>
+
+                                            <AnimatePresence initial={false}>
+                                                {isOpen && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div className="px-3 pb-3 pt-1 space-y-2 border-t border-white/5">
+                                                            <div className="flex items-start gap-2.5">
+                                                                <MapPin size={14} className="text-[#E60012] mt-0.5 shrink-0" />
+                                                                <p className="text-gray-400 text-[11px] leading-relaxed">
+                                                                    {branch.address}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2.5">
+                                                                <Phone size={14} className="text-[#E60012] shrink-0" />
+                                                                <a
+                                                                    href={`tel:${branch.phone.replace(/[^0-9+]/g, '')}`}
+                                                                    onClick={() => trackConversion('click_dealer_phone', { branch: branch.name })}
+                                                                    className="text-gray-300 hover:text-white font-semibold text-[11px] transition-colors"
+                                                                >
+                                                                    {branch.phone}
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="pt-0 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex flex-col sm:flex-row items-center gap-4 text-[10px] text-gray-500 font-display font-bold uppercase tracking-widest">
                             <span>&copy; {new Date().getFullYear()} PT Dwindo Berlian Samjaya - CS Dept. All Rights Reserved.</span>
                         </div>

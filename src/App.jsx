@@ -34,6 +34,7 @@ const KnowledgeHub = lazy(() =>
 );
 const Users = lazy(() => import('./pages/panel/Users'));
 const PanelPriceList = lazy(() => import('./pages/panel/PanelPriceList'));
+const PanelPromo = lazy(() => import('./pages/panel/PanelPromo'));
 const DataBookingLegacy = lazy(() => import('./pages/panel/DataBookingLegacy'));
 const AnalisisBooking = lazy(() => import('./pages/panel/AnalisisBooking'));
 const SalesSurvey = lazy(() => import('./pages/panel/SalesSurvey'));
@@ -102,7 +103,7 @@ const panelChildRoutes = (
 
         {/* Knowledge base sub-routes */}
         <Route path="knowledge/price-list" element={<PanelPriceList />} />
-        <Route path="knowledge/promo" element={<KnowledgeHub title="Promo" />} />
+        <Route path="knowledge/promo" element={<PanelPromo />} />
         <Route path="knowledge/fitur" element={<KnowledgeHub title="Fitur" />} />
         <Route path="knowledge/service" element={<KnowledgeHub title="Service" />} />
     </>

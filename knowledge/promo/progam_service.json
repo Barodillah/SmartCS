@@ -1,0 +1,176 @@
+{
+  "schema_version": "2.0",
+  "document_title": "Knowledge Base Promo & Program Service Bengkel Resmi Mitsubishi Dwindo",
+  "language": "id-ID",
+  "periode": "November 2026",
+  "dealer_group": "PT Dwindo Berlian Samjaya",
+  "brand": "Mitsubishi Motors & Mitsubishi Fuso Authorized Dealer",
+  "branches": [
+    "Dwindo Bintaro",
+    "Dwindo Radin Inten",
+    "Dwindo Cakung"
+  ],
+  "booking_url": "/booking",
+  "campaigns": [
+    {
+      "campaign_id": "promo_service_dwindo_2026",
+      "campaign_name": "Promo Servis Hebat Mitsubishi Dwindo",
+      "category": "service_promotion",
+      "headline": "Diskon Spesial Servis & Ganti Oli s/d 10%",
+      "subheadline": "Hemat, Berkualitas, dan Bergaransi Resmi Mitsubishi",
+      "validity": {
+        "periode": "November 2026",
+        "status": "aktif",
+        "note": "Berlaku di seluruh bengkel resmi Mitsubishi Dwindo (Bintaro, Radin Inten, dan Cakung)."
+      },
+      "general_benefits": [
+        "Diskon paket servis berkala & ganti oli hingga 10%",
+        "Gratis 7 Titik Pengecekan Sistem AC Mobil",
+        "Gratis Fogging Interior (Sterilisasi Kabin)",
+        "Dikerjakan langsung oleh teknisi bersertifikasi resmi Mitsubishi Motors",
+        "Jaminan 100% suku cadang asli (Mitsubishi Motors Genuine Parts)"
+      ],
+      "packages": [
+        {
+          "package_id": "paket_xpander_xforce",
+          "name": "Paket Servis Hemat Xpander & Xforce",
+          "eligible_models": [
+            "Mitsubishi Xpander",
+            "Mitsubishi Xpander Cross",
+            "Mitsubishi Xforce"
+          ],
+          "promo_price_idr": 1089900,
+          "normal_price_idr": 1211000,
+          "discount_idr": 121100,
+          "discount_percent": 10,
+          "included": [
+            "Jasa servis ganti oli dan inspeksi berkala",
+            "Oli mesin Mitsubishi Motors Genuine Oil",
+            "Filter oli asli Mitsubishi",
+            "Gasket drain plug"
+          ]
+        },
+        {
+          "package_id": "paket_pajero",
+          "name": "Paket Servis Hemat Pajero Sport",
+          "eligible_models": [
+            "Mitsubishi Pajero Sport",
+            "Mitsubishi All New Pajero Sport (ANPS)",
+            "Mitsubishi Pajero Sport CR45"
+          ],
+          "promo_price_idr": 1806300,
+          "normal_price_idr": 2007000,
+          "discount_idr": 200700,
+          "discount_percent": 10,
+          "included": [
+            "Jasa servis ganti oli dan inspeksi berkala",
+            "Oli mesin diesel Mitsubishi Motors Genuine Oil",
+            "Filter oli asli Mitsubishi",
+            "Gasket drain plug"
+          ]
+        }
+      ],
+      "free_ac_check": {
+        "name": "Gratis 7 Titik Pengecekan AC",
+        "price_idr": 0,
+        "inspection_points": [
+          "Blower AC",
+          "Cabin air filter (filter kabin)",
+          "Evaporator AC",
+          "Kondensor AC",
+          "Suhu hembusan blower AC",
+          "Kecepatan hembusan blower AC",
+          "Tekanan freon AC"
+        ]
+      },
+      "free_fogging": {
+        "name": "Gratis Fogging Interior",
+        "price_idr": 0,
+        "description": "Pembersihan udara kabin dan sterilisasi bakteri serta bau di interior mobil."
+      }
+    },
+    {
+      "campaign_id": "recall_field_fix_l300",
+      "campaign_name": "Program Recall Field Fix Mitsubishi L300",
+      "category": "recall_service",
+      "vehicle_models": [
+        "Mitsubishi L300"
+      ],
+      "validity": {
+        "periode": "Program Kampanye Resmi MMKSI",
+        "status": "aktif",
+        "note": "Perlu pengecekan nomor rangka (VIN) untuk memastikan unit terdaftar dalam program recall."
+      },
+      "description": "Program perbaikan resmi (Field Fix) untuk penggantian komponen tertentu pada armada Mitsubishi L300 yang terdaftar dalam program recall, 100% GRATIS tanpa biaya jasa maupun suku cadang.",
+      "benefits": [
+        "Gratis total biaya jasa dan suku cadang pengganti",
+        "Dikerjakan oleh teknisi bersertifikasi Mitsubishi",
+        "Menjaga performa, keandalan, dan keselamatan kerja armada niaga Anda",
+        "Pencatatan riwayat servis resmi di database Mitsubishi Motors"
+      ],
+      "cost": {
+        "customer_charge": 0,
+        "display": "GRATIS / Rp 0 (untuk kendaraan yang terdaftar)"
+      },
+      "customer_steps": [
+        "Siapkan nomor rangka kendaraan (VIN) Mitsubishi L300 Anda (tertera pada STNK).",
+        "Informasikan nomor rangka kepada DINA atau service advisor Dwindo untuk verifikasi status recall.",
+        "Jika unit terdaftar, jadwalkan kedatangan ke bengkel resmi Dwindo (Bintaro, Radin Inten, atau Cakung) untuk perbaikan gratis."
+      ]
+    },
+    {
+      "campaign_id": "extended_smart_package_promo",
+      "campaign_name": "Program Extended SMART Package (Paket Hemat Servis Pasca Garansi)",
+      "category": "extended_warranty_service",
+      "vehicle_models": [
+        "Mitsubishi Xpander",
+        "Mitsubishi Xpander Cross",
+        "Mitsubishi Pajero Sport"
+      ],
+      "validity": {
+        "periode": "Program Resmi Berjalan",
+        "status": "aktif",
+        "note": "Khusus untuk kendaraan yang telah melewati 50.000 km / 3 tahun (habis masa free service)."
+      },
+      "description": "Solusi cerdas dan hemat perawatan berkala setelah masa garansi/free service berakhir. Dapatkan penghematan biaya perawatan hingga 27%, gratis suku cadang & oli, tambahan perpanjangan garansi hingga 1 tahun / 20.000 km, diskon ban 30%, diskon aki/baterai 10%, dan layanan darurat 24HES.",
+      "benefits": [
+        "Hemat hingga 27% biaya perawatan berkala",
+        "Gratis jasa servis dan suku cadang perawatan berkala",
+        "Perpanjangan masa garansi (Extended Warranty) 1 tahun / 20.000 km",
+        "Diskon 30% untuk penggantian ban",
+        "Diskon 10% untuk penggantian aki/baterai",
+        "Layanan darurat 24 Jam (24 Hours Emergency Service / 24HES)"
+      ]
+    }
+  ],
+  "faq": [
+    {
+      "question": "Apa saja promo service yang sedang berlaku di Mitsubishi Dwindo?",
+      "answer": "Saat ini tersedia Promo Servis Hebat Dwindo: diskon s/d 10% paket ganti oli (Xpander/Cross/Xforce Rp 1.089.900, Pajero Sport Rp 1.806.300), GRATIS 7 pengecekan AC, dan GRATIS fogging interior di seluruh cabang Dwindo (Bintaro, Radin Inten, Cakung). Tersedia pula program Recall Field Fix Gratis untuk Mitsubishi L300 dan Extended SMART Package (hemat servis s/d 27%)."
+    },
+    {
+      "question": "Berapa biaya promo paket ganti oli Xpander dan Xforce?",
+      "answer": "Biaya promo Paket Servis Hemat Xpander & Xforce adalah Rp 1.089.900 (harga normal Rp 1.211.000, hemat 10%). Paket sudah mencakup jasa servis, oli mesin resmi Mitsubishi Motors Genuine Oil, filter oli, dan gasket drain plug."
+    },
+    {
+      "question": "Berapa biaya promo paket ganti oli Pajero Sport?",
+      "answer": "Biaya promo Paket Servis Hemat Pajero Sport adalah Rp 1.806.300 (harga normal Rp 2.007.000, hemat 10%). Paket sudah mencakup jasa servis, oli mesin diesel resmi Mitsubishi, filter oli asli, dan gasket drain plug."
+    },
+    {
+      "question": "Apakah pengecekan AC dan fogging benar-benar gratis?",
+      "answer": "Ya, 100% gratis saat melakukan perawatan di bengkel resmi Dwindo. Pengecekan AC meliputi 7 titik krusial (blower, filter kabin, evaporator, kondensor, suhu hembusan, kecepatan hembusan, dan tekanan freon), serta fogging disinfektan untuk sterilisasi udara kabin."
+    },
+    {
+      "question": "Bagaimana cara klaim Recall Field Fix L300?",
+      "answer": "Cukup berikan nomor rangka kendaraan L300 Anda (tertera pada STNK) kepada DINA atau Service Advisor Dwindo untuk diverifikasi. Jika terdaftar, seluruh perbaikan dan penggantian suku cadang 100% GRATIS."
+    },
+    {
+      "question": "Di mana saja promo service ini berlaku?",
+      "answer": "Berlaku di seluruh cabang bengkel resmi PT Dwindo Berlian Samjaya: Dwindo Bintaro (Tangerang Selatan), Dwindo Radin Inten (Jakarta Timur), dan Dwindo Cakung (Jakarta Timur)."
+    },
+    {
+      "question": "Bagaimana cara mendaftar atau booking promo service?",
+      "answer": "Pelanggan bisa langsung melakukan Booking Service Online melalui website kami di menu Booking Service (/booking), atau cukup sampaikan tanggal rencana kunjungan, cabang pilihan, dan data kendaraan kepada DINA di chat ini."
+    }
+  ]
+}

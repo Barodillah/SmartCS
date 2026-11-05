@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare, Wind, HelpCircle, ShieldCheck, MapPin } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, CheckCircle, Search, AlertCircle, Phone, Info, Clock, Wrench, ChevronRight, Check, X, ChevronDown, MessageSquare, Wind, HelpCircle, ShieldCheck, MapPin, Home } from 'lucide-react';
 import CustomDatePicker from '../components/ui/CustomDatePicker';
 import SEOHead from '../components/seo/SEOHead';
 import ContextualFAQ from '../components/sections/ContextualFAQ';
@@ -901,11 +901,11 @@ export default function BookingService() {
                         <button
                             type="button"
                             onClick={() => setShowBranchDropdown(prev => !prev)}
-                            className="text-xs font-semibold px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg flex items-center gap-1.5 transition-colors border border-red-100"
+                            className="text-base sm:text-lg font-bold px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl flex items-center gap-2 transition-colors border border-red-100"
                         >
-                            <MapPin className="w-3.5 h-3.5 shrink-0" />
+                            <MapPin className="w-5 h-5 shrink-0" />
                             <span>{selectedBranch}</span>
-                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showBranchDropdown ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${showBranchDropdown ? 'rotate-180' : ''}`} />
                         </button>
 
                         <AnimatePresence>
@@ -920,9 +920,9 @@ export default function BookingService() {
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 6, scale: 0.96 }}
                                         transition={{ duration: 0.15 }}
-                                        className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 overflow-hidden"
+                                        className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 overflow-hidden"
                                     >
-                                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-50">
+                                        <div className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-50">
                                             Pilih Cabang Bengkel
                                         </div>
                                         {BRANCH_OPTIONS.map((branch) => {
@@ -940,17 +940,16 @@ export default function BookingService() {
                                                             checkDuplicateNopol(formData.tanggal, branch);
                                                         }
                                                     }}
-                                                    className={`w-full px-3 py-2.5 text-left text-xs flex items-center justify-between transition-colors ${
-                                                        isSelected
-                                                            ? 'bg-red-50/80 text-red-600 font-bold'
-                                                            : 'text-gray-700 hover:bg-gray-50 font-medium'
-                                                    }`}
+                                                    className={`w-full px-3.5 py-3 text-left text-sm sm:text-base flex items-center justify-between transition-colors ${isSelected
+                                                        ? 'bg-red-50/80 text-red-600 font-bold'
+                                                        : 'text-gray-700 hover:bg-gray-50 font-medium'
+                                                        }`}
                                                 >
-                                                    <span className="flex items-center gap-2">
-                                                        <MapPin className={`w-3.5 h-3.5 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
+                                                    <span className="flex items-center gap-2.5">
+                                                        <MapPin className={`w-4 h-4 ${isSelected ? 'text-red-600' : 'text-gray-400'}`} />
                                                         {branch}
                                                     </span>
-                                                    {isSelected && <Check className="w-3.5 h-3.5 text-red-600" />}
+                                                    {isSelected && <Check className="w-4 h-4 text-red-600" />}
                                                 </button>
                                             );
                                         })}
@@ -1052,9 +1051,22 @@ export default function BookingService() {
                                 </div>
                                 <div className="text-sm text-gray-600">
                                     <span className="font-semibold text-gray-900 block mb-0.5">Booking Service Resmi</span>
-                                    Layanan ini khusus untuk pelayanan service di bengkel resmi Mitsubishi {selectedBranch}.
+                                    Layanan ini khusus untuk pelayanan service di bengkel resmi Mitsubishi Dwindo Jakarta.
                                 </div>
                             </div>
+
+                            {/* Tombol Kembali ke Beranda */}
+                            <div className="pt-2 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/')}
+                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all shadow-xs"
+                                >
+                                    <Home className="w-4 h-4 text-gray-500" />
+                                    <span>Kembali ke Beranda</span>
+                                </button>
+                            </div>
+
                         </motion.div>
                     )}
 
@@ -1331,11 +1343,10 @@ export default function BookingService() {
                                                             });
                                                         }
                                                     }}
-                                                    className={`relative p-3 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
-                                                        isSelected
-                                                            ? 'bg-amber-100/70 border-amber-500 shadow-xs ring-2 ring-amber-200'
-                                                            : 'bg-white border-gray-200 hover:border-amber-300'
-                                                    }`}
+                                                    className={`relative p-3 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${isSelected
+                                                        ? 'bg-amber-100/70 border-amber-500 shadow-xs ring-2 ring-amber-200'
+                                                        : 'bg-white border-gray-200 hover:border-amber-300'
+                                                        }`}
                                                 >
                                                     {tier.isRecommended && (
                                                         <span className="absolute -top-2.5 right-2 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-red-600 text-white rounded-full shadow-xs">
@@ -1357,9 +1368,8 @@ export default function BookingService() {
                                                         <span className={`text-[10px] ${isSelected ? 'text-amber-700 font-semibold' : 'text-gray-400'}`}>
                                                             {isSelected ? '✓ Terpilih' : 'Pilih paket'}
                                                         </span>
-                                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${
-                                                            isSelected ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-300 bg-white'
-                                                        }`}>
+                                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${isSelected ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-300 bg-white'
+                                                            }`}>
                                                             {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                                                         </div>
                                                     </div>
@@ -1959,17 +1969,15 @@ export default function BookingService() {
                                                     <div
                                                         key={item.id}
                                                         onClick={() => handleToggleAdditionalService(item)}
-                                                        className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${
-                                                            isSelected
-                                                                ? 'bg-blue-50/70 border-blue-500 shadow-xs'
-                                                                : 'bg-white border-gray-100 hover:border-blue-200'
-                                                        }`}
+                                                        className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${isSelected
+                                                            ? 'bg-blue-50/70 border-blue-500 shadow-xs'
+                                                            : 'bg-white border-gray-100 hover:border-blue-200'
+                                                            }`}
                                                     >
-                                                        <div className={`w-5 h-5 rounded-full flex shrink-0 items-center justify-center border-2 mt-0.5 transition-colors ${
-                                                            isSelected
-                                                                ? 'bg-blue-600 border-blue-600 text-white'
-                                                                : 'border-gray-300 bg-white'
-                                                        }`}>
+                                                        <div className={`w-5 h-5 rounded-full flex shrink-0 items-center justify-center border-2 mt-0.5 transition-colors ${isSelected
+                                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                                            : 'border-gray-300 bg-white'
+                                                            }`}>
                                                             {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -2111,7 +2119,7 @@ export default function BookingService() {
 
             <ContextualFAQ
                 title="Pertanyaan Umum Seputar Booking Service & Bengkel Resmi"
-                subtitle="Informasi jadwal operasional bengkel 3S Dwindo Bintaro, AC Care, dan Extended SMART Package."
+                subtitle="Informasi jadwal operasional bengkel 3S Dwindo Jakarta, AC Care, dan Extended SMART Package."
                 faqs={BOOKING_FAQS}
             />
 

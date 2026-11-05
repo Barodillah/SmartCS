@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check, Calendar } from 'lucide-react';
+import { MessageSquare, X, ArrowRight, Maximize2, Minimize2, Loader2, MapPin, Navigation, Phone, RotateCcw, Calculator, Check, Calendar, AlertTriangle } from 'lucide-react';
 import { ANGULAR_CLIP } from '../utils/constants';
 import { parseChatMarkdown } from '../utils/markdownParser';
 let priceListData = defaultPriceListData;
+let promoData = defaultPromoData;
+let referralData = defaultReferralData;
+let promoServiceData = defaultPromoServiceData;
+let extraPromoData = {};
 let aiArticleData = [];
 import defaultPriceListData from '../../knowledge/price_list.json';
 import dealerData from '../../knowledge/lokasi_dealer.json';
-import promoData from '../../knowledge/promo/promo_dsf_april_2026.json';
-import referralData from '../../knowledge/promo/progam_referral.json';
+import defaultPromoData from '../../knowledge/promo/promo_dsf.json';
+import defaultReferralData from '../../knowledge/promo/progam_referral.json';
+import defaultPromoServiceData from '../../knowledge/promo/progam_service.json';
 import destinatorData from '../../knowledge/fitur/destinator.json';
+import newXforceData from '../../knowledge/fitur/new_xforce.json';
 import simulasiKreditData from '../../knowledge/simulasi_kredit.json';
 import sparepartData from '../../knowledge/sparepart.json';
 import perawatanBerkalaData from '../../knowledge/mitsubishi_perawatan_berkala.json';
@@ -239,7 +245,7 @@ const fetchNopolData = async (nopol) => {
 
 // --- Build Fitur/Feature Context ---
 const buildFiturContext = () => {
-    const allFitur = [destinatorData];
+    const allFitur = [destinatorData, newXforceData];
     let text = '';
 
     // Generic deep traversal to extract all text from any JSON structure
@@ -268,6 +274,8 @@ const buildFiturContext = () => {
                             result += `  - FAQ "${item.perceived_weakness}": ${item.selling_point_pivot}\n`;
                         } else if (item.aspek && item.pengalihan_selling_point) {
                             result += `  - FAQ "${item.aspek}": ${item.pengalihan_selling_point}\n`;
+                        } else if (item.question && item.answer) {
+                            result += `  - Tanya: "${item.question}" → Jawab: ${item.answer}\n`;
                         } else {
                             // Generic object in array
                             const vals = Object.values(item).filter(v => typeof v === 'string');
@@ -300,6 +308,35 @@ const buildFiturContext = () => {
         text += '\n';
     }
     return text;
+};
+
+// --- Fetch Dynamic Promo Data (Built-in + Custom app_data) ---
+const fetchPromoDataDynamic = async () => {
+    try {
+        const res = await fetch(`https://csdwindo.com/api/promo/index.php?_t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        });
+        const data = await res.json();
+        if (data.status && data.data) {
+            const promos = data.data.promos || data.data;
+            if (promos.promo_dsf) promoData = promos.promo_dsf;
+            if (promos.progam_service) promoServiceData = promos.progam_service;
+            if (promos.progam_referral) referralData = promos.progam_referral;
+
+            extraPromoData = {};
+            for (const [key, val] of Object.entries(promos)) {
+                if (!['promo_dsf', 'progam_service', 'progam_referral'].includes(key) && val) {
+                    extraPromoData[key] = val;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Failed to fetch dynamic promo data', e);
+    }
 };
 
 // --- Build System Prompt with Data Context ---
@@ -356,40 +393,211 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
     };
 
     const buildPromoContext = () => {
-        let text = `Periode Promo: ${promoData.meta.periode}\n\n`;
-        promoData.models.forEach(model => {
-            text += `**PROMO ${model.name.toUpperCase()}**\n`;
-            if (model.programs.cashback) text += `- Cashback tersedia\n`;
-            if (model.programs.trade_in) text += `- Program Trade-in: ${model.programs.trade_in}\n`;
+        if (!promoData || !promoData.models) return '';
+        let text = `Periode Promo: ${promoData.meta?.periode || 'November 2026'}\n\n`;
 
-            const finance = model.programs.finance;
-            if (finance) {
-                if (finance.dp_ringan) text += `- DP Ringan: mulai ${finance.dp_ringan.dp_min} (tenor hingga ${finance.dp_ringan.tenor_max || '7 tahun'})\n`;
-                if (finance.bunga_ringan) text += `- Bunga Ringan: mulai ${finance.bunga_ringan.interest_start}\n`;
-                if (finance.bunga_0) {
-                    const b0 = Array.isArray(finance.bunga_0) ? finance.bunga_0.join(', ') : `tenor ${finance.bunga_0.tenor} (DP ${finance.bunga_0.dp_min})`;
-                    text += `- Bunga 0%: ${b0}\n`;
-                }
-                if (finance.smart_cash) text += `- Smart Cash: Bunga ${finance.smart_cash.interest}, DP mulai ${finance.smart_cash.dp_min || '65%'}\n`;
+        const formatPrograms = (programs, prefix = '') => {
+            let pText = '';
+            if (!programs) return pText;
+
+            if (programs.cashback) {
+                const cbAmount = typeof programs.cashback === 'object' ? programs.cashback.amount : programs.cashback;
+                pText += `${prefix}- Cashback: ${cbAmount ? `Rp ${Number(cbAmount).toLocaleString('id-ID')}` : 'Tersedia'}\n`;
             }
 
-            if (model.benefits && model.benefits.length > 0) {
-                text += `- Keuntungan tambahan: ${model.benefits.join(', ')}\n`;
+            if (programs.trade_in) {
+                const ti = typeof programs.trade_in === 'object'
+                    ? (programs.trade_in.provider ? `${programs.trade_in.provider} (${programs.trade_in.area || ''})` : 'Tersedia')
+                    : String(programs.trade_in);
+                pText += `${prefix}- Program Trade-in: ${ti}\n`;
+            }
+
+            const finance = programs.finance;
+            if (finance) {
+                if (finance.dp_ringan) {
+                    const dpMin = typeof finance.dp_ringan === 'object' ? finance.dp_ringan.dp_min : finance.dp_ringan;
+                    pText += `${prefix}- DP Ringan: mulai ${dpMin} (tenor hingga ${finance.dp_ringan?.tenor_max || '7 tahun'})\n`;
+                }
+                if (finance.bunga_ringan) {
+                    const bMin = typeof finance.bunga_ringan === 'object' ? finance.bunga_ringan.interest_start : finance.bunga_ringan;
+                    pText += `${prefix}- Bunga Ringan: mulai ${bMin}\n`;
+                }
+                if (finance.bunga_0) {
+                    let b0Str = '';
+                    if (Array.isArray(finance.bunga_0)) {
+                        b0Str = finance.bunga_0.map(b => typeof b === 'object' ? (b.tenor || b.note || '0%') : String(b)).join(', ');
+                    } else if (typeof finance.bunga_0 === 'object') {
+                        b0Str = `tenor ${finance.bunga_0.tenor || ''} (DP ${finance.bunga_0.dp_min?.['1_tahun'] || finance.bunga_0.dp_min || ''})`;
+                    } else {
+                        b0Str = String(finance.bunga_0);
+                    }
+                    pText += `${prefix}- Bunga 0%: ${b0Str}\n`;
+                }
+                if (finance.smart_cash) {
+                    const scInterest = typeof finance.smart_cash === 'object' ? finance.smart_cash.interest : finance.smart_cash;
+                    pText += `${prefix}- Smart Cash: Bunga ${scInterest || '0%'}\n`;
+                }
+            }
+            return pText;
+        };
+
+        (promoData.models || []).forEach(model => {
+            text += `**PROMO ${model.name.toUpperCase()}**\n`;
+
+            // If model has direct programs
+            if (model.programs) {
+                text += formatPrograms(model.programs);
+            }
+
+            // If model has variants (e.g. New Xforce)
+            if (model.variants && Array.isArray(model.variants)) {
+                model.variants.forEach(variant => {
+                    text += `* Varian ${variant.name}:\n`;
+                    if (variant.programs) {
+                        text += formatPrograms(variant.programs, '  ');
+                    }
+                    if (variant.benefits && variant.benefits.length > 0) {
+                        text += `  - Keuntungan varian: ${variant.benefits.join(', ')}\n`;
+                    }
+                });
+            }
+
+            const allBenefits = model.benefits || model.common_benefits;
+            if (allBenefits && allBenefits.length > 0) {
+                text += `- Keuntungan tambahan: ${allBenefits.join(', ')}\n`;
             }
             text += '\n';
         });
         return text;
     };
 
+    const buildPromoServiceContext = () => {
+        if (!promoServiceData || !promoServiceData.campaigns) return '';
+        let text = `Periode Promo Servis: ${promoServiceData.periode || 'November 2026'} (Berlaku di Dwindo Bintaro, Radin Inten, Cakung)\n\n`;
+
+        promoServiceData.campaigns.forEach(c => {
+            text += `**${c.campaign_name.toUpperCase()}**\n`;
+            if (c.headline) text += `- Headline: ${c.headline}\n`;
+            if (c.description) text += `- Deskripsi: ${c.description}\n`;
+            if (c.general_benefits && c.general_benefits.length > 0) {
+                text += `- Benefit: ${c.general_benefits.join(', ')}\n`;
+            }
+            if (c.packages && c.packages.length > 0) {
+                text += `- Pilihan Paket Servis Hemat:\n`;
+                c.packages.forEach(pkg => {
+                    text += `  • ${pkg.name}: Rp ${pkg.promo_price_idr.toLocaleString('id-ID')} (Normal Rp ${pkg.normal_price_idr.toLocaleString('id-ID')}, Diskon ${pkg.discount_percent}%). Termasuk: ${pkg.included.join(', ')}. Model: ${pkg.eligible_models.join(', ')}\n`;
+                });
+            }
+            if (c.free_ac_check) {
+                text += `- ${c.free_ac_check.name}: Rp ${c.free_ac_check.price_idr} (${c.free_ac_check.inspection_points.join(', ')})\n`;
+            }
+            if (c.free_fogging) {
+                text += `- ${c.free_fogging.name}: Rp ${c.free_fogging.price_idr || 0} (${c.free_fogging.description || ''})\n`;
+            }
+            if (c.cost && c.cost.display) {
+                text += `- Biaya: ${c.cost.display}\n`;
+            }
+            if (c.customer_steps && c.customer_steps.length > 0) {
+                text += `- Langkah Klaim: ${c.customer_steps.join(' -> ')}\n`;
+            }
+            text += '\n';
+        });
+
+        if (promoServiceData.faq && promoServiceData.faq.length > 0) {
+            text += `**FAQ Promo Servis:**\n`;
+            promoServiceData.faq.forEach(f => {
+                text += `Q: ${f.question}\nA: ${f.answer}\n\n`;
+            });
+        }
+
+        return text;
+    };
+
     const buildReferralContext = () => {
+        if (!referralData || !referralData.program) return '';
         const p = referralData.program;
-        let text = `**${p.name.toUpperCase()}**\n`;
-        text += `- Reward: ${p.reward}\n`;
-        text += `- Periode: ${p.period.start} s/d ${p.period.end}\n`;
-        text += `- Ringkasan: ${p.summary}\n`;
-        text += `- Benefit: ${referralData.benefits.join(', ')}\n\n`;
-        text += `**Syarat Referrer:** ${referralData.requirements.referrer.join(', ')}\n`;
-        text += `**Syarat Receiver:** ${referralData.requirements.receiver.join(', ')}\n`;
+        let text = `**${p.name ? p.name.toUpperCase() : 'REFERRAL'}**\n`;
+        text += `- Reward: ${p.reward || '-'}\n`;
+        text += `- Periode: ${p.period?.start || ''} s/d ${p.period?.end || ''}\n`;
+        text += `- Ringkasan: ${p.summary || '-'}\n`;
+        if (referralData.benefits) text += `- Benefit: ${referralData.benefits.join(', ')}\n\n`;
+        if (referralData.requirements?.referrer) text += `**Syarat Referrer:** ${referralData.requirements.referrer.join(', ')}\n`;
+        if (referralData.requirements?.receiver) text += `**Syarat Receiver:** ${referralData.requirements.receiver.join(', ')}\n`;
+        return text;
+    };
+
+    const buildExtraPromoContext = () => {
+        if (!extraPromoData || Object.keys(extraPromoData).length === 0) return '';
+        let text = `\n### DAFTAR PROMO TAMBAHAN & SPESIAL DWYNDO (AKTIF):\n`;
+        text += `*(PENTING: Data berikut adalah promo resmi yang sedang berlangsung. Jika customer menanyakan promo, promo service, promo akhir tahun, natal & tahun baru, diskon sparepart/jasa, atau promo khusus lainnya, kamu WAJIB menyampaikan detail promo ini!)*\n\n`;
+
+        for (const [key, val] of Object.entries(extraPromoData)) {
+            if (!val) continue;
+            const docTitle = val.document_title || val.title || val.name || val.program?.name || key.replace(/^(promo_|progam_)/, '').replace(/_/g, ' ').toUpperCase();
+            text += `#### Program: ${docTitle}\n`;
+            if (val.periode) text += `- **Periode Berlaku**: ${val.periode}\n`;
+            if (val.description) text += `- **Deskripsi Promo**: ${val.description}\n`;
+
+            // Format items array (seperti pada Promo Service Natal dan Tahun Baru)
+            if (Array.isArray(val.items) && val.items.length > 0) {
+                text += `- **Detail & Penawaran Diskon**:\n`;
+                val.items.forEach((item, idx) => {
+                    if (typeof item === 'string') {
+                        text += `  • ${item}\n`;
+                    } else if (typeof item === 'object') {
+                        const itemName = item.item_name || item.name || item.title || `Penawaran ${idx + 1}`;
+                        text += `  • **${itemName}**:`;
+                        if (item.details) text += ` ${item.details}`;
+                        if (item.target_vehicle) text += ` | Berlaku untuk: ${item.target_vehicle}`;
+                        if (item.condition) text += ` | Syarat: ${item.condition}`;
+                        if (item.promo_price_idr || item.price) {
+                            text += ` | Harga: Rp ${Number(item.promo_price_idr || item.price).toLocaleString('id-ID')}`;
+                        }
+                        if (item.discount_percent) text += ` | Diskon: ${item.discount_percent}%`;
+                        text += `\n`;
+                    }
+                });
+            }
+
+            // Format packages array
+            if (Array.isArray(val.packages) && val.packages.length > 0) {
+                text += `- **Pilihan Paket Promo**:\n`;
+                val.packages.forEach(pkg => {
+                    text += `  • **${pkg.name}**: Rp ${Number(pkg.promo_price_idr || pkg.price || 0).toLocaleString('id-ID')}`;
+                    if (pkg.normal_price_idr) text += ` (Normal Rp ${Number(pkg.normal_price_idr).toLocaleString('id-ID')})`;
+                    if (pkg.included) text += ` - Termasuk: ${Array.isArray(pkg.included) ? pkg.included.join(', ') : pkg.included}`;
+                    if (pkg.eligible_models) text += ` | Model: ${Array.isArray(pkg.eligible_models) ? pkg.eligible_models.join(', ') : pkg.eligible_models}`;
+                    text += `\n`;
+                });
+            }
+
+            // Format campaigns array
+            if (Array.isArray(val.campaigns) && val.campaigns.length > 0) {
+                val.campaigns.forEach(camp => {
+                    text += `- **${camp.campaign_name || 'Kampanye'}**: ${camp.headline || camp.description || ''}\n`;
+                });
+            }
+
+            // Format benefits array
+            if (Array.isArray(val.benefits) && val.benefits.length > 0) {
+                text += `- **Keuntungan Tambahan**: ${val.benefits.join(', ')}\n`;
+            }
+
+            // Fallback dump other relevant keys
+            const knownKeys = ['document_title', 'title', 'name', 'periode', 'description', 'items', 'packages', 'campaigns', 'benefits'];
+            const remaining = {};
+            for (const [k, v] of Object.entries(val)) {
+                if (!knownKeys.includes(k) && v) {
+                    remaining[k] = v;
+                }
+            }
+            if (Object.keys(remaining).length > 0) {
+                try {
+                    text += `- **Keterangan Lain**: ${JSON.stringify(remaining)}\n`;
+                } catch (e) {}
+            }
+            text += `\n`;
+        }
         return text;
     };
 
@@ -687,11 +895,34 @@ const buildSystemPrompt = (nopolContext = '', slotContext = '', duplicateContext
 ## Strategi Jawaban — PENTING
 - **Fokuskan tujuan user terlebih dahulu.** Jangan langsung dump semua informasi.
 - Jika user bertanya soal **harga/info unit**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail harga lengkap untuk unit tersebut saja.
-- Jika user bertanya soal **promo**: Tanyakan dulu **unit/model apa** yang diminati. Baru setelah tahu, berikan detail promo untuk unit tersebut dari data referensi promo.
+- Jika user bertanya soal **promo**:
+  * **Jika menanyakan "promo service" / "promo servis" / "promo bengkel" / "diskon ganti oli" / "servis hemat" / promo musiman / promo akhir tahun / natal / tahun baru:**
+    WAJIB sampaikan seluruh promo service yang sedang aktif di Dwindo, mencakup:
+    1. **Promo Tambahan & Musiman yang Sedang Aktif** (WAJIB periksa bagian "DAFTAR PROMO TAMBAHAN & SPESIAL DWYNDO"):
+       - Jika ada promo musiman/khusus (seperti **Promo Service Natal dan Tahun Baru**: Diskon 25% Sparepart & 25% Jasa Service untuk semua varian Mitsubishi dengan booking service berkala, atau promo kustom lainnya), WAJIB sampaikan ini sebagai poin utama/terdepan!
+    2. **Paket Servis Hemat & Ganti Oli (Diskon 10%):**
+       - Paket Xpander & Xforce: Rp 1.089.900 (normal Rp 1.211.000, hemat 10%). Sudah termasuk jasa servis inspeksi berkala, Oli Mesin Mitsubishi Genuine Oil, filter oli asli, dan gasket drain plug.
+       - Paket Pajero Sport: Rp 1.806.300 (normal Rp 2.007.000, hemat 10%). Sudah termasuk jasa servis inspeksi berkala, Oli Mesin Diesel Mitsubishi Genuine Oil, filter oli asli, dan gasket drain plug.
+    3. **Gratis 7 Titik Pengecekan AC:** Blower AC, filter kabin, evaporator, kondensor, suhu hembusan, kecepatan blower, tekanan freon.
+    4. **Gratis Fogging Interior:** Sterilisasi kabin dari kuman dan bau.
+    5. **Program Recall Field Fix Mitsubishi L300:** 100% GRATIS biaya jasa dan komponen perbaikan (verifikasi dengan nomor rangka/VIN di STNK).
+    6. **Extended SMART Package:** Paket hemat perawatan untuk kendaraan di atas 50.000 km (hemat biaya s/d 27%, gratis servis & suku cadang, tambahan garansi 1 th/20.000 km, diskon ban 30%, diskon aki 10%, layanan 24HES).
+    7. **Ajakan Aksi:** Sampaikan bahwa promo berlaku di seluruh bengkel resmi Dwindo (Bintaro, Radin Inten, Cakung), lalu tawarkan apakah ingin booking via website di menu Booking Service (/booking) atau langsung dibantu booking oleh DINA.
+  * **Jika user hanya bertanya umum "ada promo apa? / promo apa saja?" tanpa spesifik unit atau service:**
+    Sampaikan dengan ramah pilihan promo yang ada di Dwindo:
+    - **Promo Service & Perawatan Bengkel** (termasuk promo aktif seperti Promo Natal & Tahun Baru diskon 25% sparepart & jasa, serta paket hemat ganti oli diskon 10%, free cek AC, free fogging).
+    - **Promo Pembelian Kendaraan Baru** (diskon bunga 0%, DP ringan, cashback unit baru).
+    Tanyakan dengan ramah mana yang ingin diketahui lebih lanjut!
+  * **Jika user mencari promo pembelian unit kendaraan:** Tanyakan unit/model apa yang diminati, baru setelah tahu berikan detail promo unit tersebut dari data referensi promo penjualan.
 - Jika user bertanya soal **biaya service, estimasi service, perawatan berkala, apa saja yang dikerjakan saat service, service berapa km**: INI BUKAN BOOKING. Ini adalah pertanyaan informasi. Jawab langsung dari **Data Perawatan Berkala** di bawah. JANGAN menanyakan nopol. JANGAN masuk ke alur booking.
 - Jika user secara eksplisit ingin **booking service / daftar service / jadwalkan service / buat janji service**: BARU ikuti alur booking service di bawah (langsung minta nopol, jenis service, tanggal, dan jam sekaligus).
 - Jika user ingin **cek status booking / cek booking service / apakah booking sudah terdaftar / sudah terdaftar belum**: ikuti **Alur Cek Status Booking Service** di bawah.
 - **BEDAKAN DENGAN JELAS:** "tanya biaya service" ≠ "booking service". "Mau tahu service 60.000 km" ≠ "mau booking service". Hanya jika customer menyatakan ingin **menjadwalkan/mendaftar/booking**, barulah masuk alur booking.
+- Jika user bertanya **fitur / spesifikasi kendaraan (NEW XFORCE, Destinator, dll)**:
+  * Jelaskan keunggulan dan fitur secara lugas, informatif, dan terstruktur sesuai data **Fitur & Spesifikasi Kendaraan** di bawah.
+  * **Khusus NEW XFORCE:**
+    - Jelaskan pilihan varian: **HEV (Full Hybrid Parallel 1.6L + Motor Listrik 115 HP/255 Nm)** dengan efisiensi hingga **24 km/liter (daya jelajah 1.000+ km)** dan garansi baterai HEV hingga **10 Tahun / 200.000 km**, serta pilihan **ICE (Bensin 1.5L MIVEC CVT)**.
+    - Sebutkan fitur unggulan: **Frameless Panoramic Roof dengan tirai elektrik (Power Sunshade)**, **Dynamic Sound Yamaha Premium 8-speaker**, **Dual Zone Auto AC NanoeX**, **Multi Around Monitor (Kamera 360)**, **7 Drive Modes** (Normal, Wet, Gravel, Mud, Tarmac, EV Priority, Charge), **Ground Clearance 222 mm**, **Radius Putar lincah 5.2 m**, **Active Yaw Control (AYC)**, dan **Diamond Sense ADAS**.
 - Jika user bertanya **lokasi/alamat**: Langsung berikan informasi cabang dealer yang relevan.
 - Jika user bertanya **test drive**: Tanyakan model yang diminati dan jadwal yang diinginkan, lalu minta nama & nomor HP.
 
@@ -989,8 +1220,14 @@ ${buildCommercialPriceContext()}
 ### Lokasi Dealer
 ${buildDealerContext()}
 
-### Program Promo (Periode ${promoData.meta.periode})
+### Program Promo Penjualan Kendaraan Baru (Periode ${promoData?.meta?.periode || 'November 2026'})
 ${buildPromoContext()}
+
+### Program Promo Service Bengkel Resmi Dwindo (Periode ${promoServiceData.periode || 'November 2026'})
+${buildPromoServiceContext()}
+
+### DAFTAR PROMO TAMBAHAN & SPESIAL DWYNDO (BERLAKU SAAT INI)
+${buildExtraPromoContext()}
 
 ### Program Referral
 ${buildReferralContext()}
@@ -1050,8 +1287,10 @@ Data perawatan berkala memiliki **2 varian Pajero Sport** yang BERBEDA:
   6. Jika model kendaraan **TIDAK ADA di data** perawatan berkala, informasikan bahwa estimasi perawatan untuk model tersebut belum tersedia di sistem DINA, dan **arahkan customer untuk menghubungi CS langsung**. Sertakan tag **[WHATSAPP]**.
   7. **JANGAN pernah mengarang estimasi biaya service yang tidak ada di data.**
   8. Saat menampilkan estimasi, gunakan format yang rapi dan mudah dibaca (list/tabel). Sampaikan bahwa biaya adalah **estimasi** dan bisa berbeda tergantung kondisi aktual kendaraan.
-  9. **Follow-up:** Setelah menjawab pertanyaan service berkala, tawarkan customer untuk **booking service** langsung. Contoh: "Apakah Bapak/Ibu ingin langsung booking service di Mitsubishi Dwindo Bintaro? 😊"
-  10. **PENTING — Perpanjangan Smart Paket Service:** Jika customer menanyakan biaya service di **KM di atas 50.000 km** (artinya sudah di luar masa free service), atau jika customer **menanyakan promo service / paket hemat service**, WAJIB tawarkan program **Perpanjangan Smart Paket Service**. Jelaskan keuntungannya (hemat hingga 27%, gratis suku cadang & jasa sesuai ketentuan, perpanjangan garansi, diskon ban & baterai, layanan 24HES). Sebutkan pilihan paket (2XPM, 4XPM, 6XPM) beserta harganya sesuai model kendaraan. Gunakan data dari **Perpanjangan Smart Paket Service** di atas.
+  9. **Follow-up:** Setelah menjawab pertanyaan service berkala, tawarkan customer untuk **booking service** langsung. Contoh: "Apakah Bapak/Ibu ingin langsung booking service di bengkel resmi Mitsubishi Dwindo (Bintaro, Radin Inten, atau Cakung)? 😊"
+  10. **PENTING — Promo Service, Promo Tambahan, & Perpanjangan Smart Paket Service:**
+      - Jika customer **menanyakan promo service / diskon service / servis hemat / promo bengkel / promo natal / promo tahun baru / promo musiman**: WAJIB jelaskan promo tambahan yang ada di data (seperti **Promo Service Natal dan Tahun Baru**: diskon 25% sparepart & jasa service untuk semua varian Mitsubishi dengan booking periodical maintenance, serta promo tambahan lainnya yang tercantum) dan juga jelaskan **Promo Servis Hebat Dwindo** (Paket ganti oli diskon 10%: Xpander & Xforce Rp 1.089.900, Pajero Sport Rp 1.806.300; GRATIS 7 pengecekan AC; GRATIS fogging sterilisasi kabin; serta Recall L300 gratis).
+      - Jika customer menanyakan biaya service di **KM di atas 50.000 km** (di luar masa free service) atau menanyakan paket hemat perawatan jangka panjang: WAJIB tawarkan program **Perpanjangan Smart Paket Service (Extended SMART Package)** (hemat s/d 27%, gratis suku cadang & jasa, perpanjangan garansi 1 th/20.000 km, diskon ban 30% & aki 10%, 24HES). Sebutkan pilihan paket (2XPM, 4XPM, 6XPM) beserta harganya sesuai model kendaraan dari data **Perpanjangan Smart Paket Service** di atas.
   11. **SOFT SELLING AC (HALUS):** Setelah memberikan estimasi service berkala, sisipkan tawaran perawatan AC dengan sangat halus. Contoh: "Oh ya, sambil service berkala nanti, apakah AC kendaraannya juga masih nyaman? Kalau mau sekalian perawatan AC, kami punya paket **AC Clean** mulai dari Rp 338.000 😊". Cukup 1 kalimat saja, jangan memaksa. Jika customer tidak merespons tentang AC, lanjutkan tanpa mengulangi.
 
 ## Alur Keluhan AC / Kondisi AC (PENTING — SOFT SELLING)
@@ -1197,6 +1436,22 @@ const VirtualCS = () => {
     const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
     const [questionFormData, setQuestionFormData] = useState({ name: '', phone: '', question: '' });
     const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
+
+    // Emergency Manual Form States
+    const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+    const [emergencyMsgId, setEmergencyMsgId] = useState(null);
+    const [emergencyFormData, setEmergencyFormData] = useState({
+        name: '',
+        phone: '',
+        nopol: '',
+        vehicleType: '',
+        location: '',
+        latitude: null,
+        longitude: null,
+        issue: ''
+    });
+    const [isSubmittingEmergency, setIsSubmittingEmergency] = useState(false);
+    const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
     const [isChatReady, setIsChatReady] = useState(false);
     const [leadSavedAlert, setLeadSavedAlert] = useState({ show: false, label: '' });
     const [sessionId, setSessionId] = useState(null);
@@ -1215,12 +1470,15 @@ const VirtualCS = () => {
     const pendingBookingData = useRef(null);
 
     useEffect(() => {
-        const handleOpenDina = () => setIsOpen(true);
+        const handleOpenDina = () => {
+            setIsOpen(true);
+            fetchPromoDataDynamic();
+        };
         window.addEventListener('openDinaChat', handleOpenDina);
         return () => window.removeEventListener('openDinaChat', handleOpenDina);
     }, []);
 
-    // Fetch dynamic price list on mount
+    // Fetch dynamic price list & promo data on mount
     useEffect(() => {
         fetch('https://csdwindo.com/api/pricelist/index.php')
             .then(res => res.json())
@@ -1230,6 +1488,8 @@ const VirtualCS = () => {
                 }
             })
             .catch(e => console.error('Failed to fetch dynamic price list', e));
+
+        fetchPromoDataDynamic();
 
         // Initial fetch for general articles
         fetchAiArticles();
@@ -1552,6 +1812,109 @@ const VirtualCS = () => {
             console.error('Failed to submit question:', err);
         } finally {
             setIsSubmittingQuestion(false);
+        }
+    };
+
+    // Handle Emergency Manual Form Submit
+    const handleEmergencySubmit = async (e) => {
+        e.preventDefault();
+        if (!emergencyFormData.name || !emergencyFormData.phone || !emergencyFormData.nopol || !emergencyFormData.location || !emergencyFormData.issue) {
+            alert('Mohon lengkapi semua data form bantuan darurat.');
+            return;
+        }
+
+        setIsSubmittingEmergency(true);
+        try {
+            const sid = sessionIdRef.current || sessionId || localStorage.getItem('dina_active_session');
+
+            // Save lead to database
+            if (sid) {
+                await chatAPI.saveLead({
+                    session_id: sid,
+                    label: 'emergency',
+                    customer_name: emergencyFormData.name,
+                    customer_phone: normalizePhone(emergencyFormData.phone),
+                    data: {
+                        nopol: emergencyFormData.nopol.toUpperCase(),
+                        vehicle_type: emergencyFormData.vehicleType,
+                        location: emergencyFormData.location,
+                        latitude: emergencyFormData.latitude,
+                        longitude: emergencyFormData.longitude,
+                        maps_url: emergencyFormData.latitude && emergencyFormData.longitude ? `https://www.google.com/maps?q=${emergencyFormData.latitude},${emergencyFormData.longitude}` : null,
+                        issue: emergencyFormData.issue
+                    }
+                });
+                setLeadSavedAlert({ show: true, label: 'emergency' });
+                setTimeout(() => setLeadSavedAlert({ show: false, label: '' }), 5000);
+            }
+
+            // Hide emergency button from triggering bot message if any
+            if (emergencyMsgId) {
+                setMessages(prev => prev.map(m => m.id === emergencyMsgId ? { ...m, showLocationButton: false } : m));
+            }
+
+            // Build structured text message
+            let userMsgText = `🚨 *LAPORAN BANTUAN DARURAT*\n\n` +
+                `• *Nama*: ${emergencyFormData.name}\n` +
+                `• *No. WhatsApp*: ${emergencyFormData.phone}\n` +
+                `• *Nopol*: ${emergencyFormData.nopol.toUpperCase()}\n` +
+                `• *Kendaraan*: ${emergencyFormData.vehicleType || '-'}\n` +
+                `• *Lokasi*: ${emergencyFormData.location}\n`;
+
+            if (emergencyFormData.latitude && emergencyFormData.longitude) {
+                userMsgText += `• *Titik Maps*: https://www.google.com/maps?q=${emergencyFormData.latitude},${emergencyFormData.longitude}\n`;
+            }
+
+            userMsgText += `• *Keluhan*: ${emergencyFormData.issue}`;
+
+            // Add map message directly if coordinates exist
+            if (emergencyFormData.latitude && emergencyFormData.longitude) {
+                setMessages(prev => [...prev, {
+                    id: Date.now() + 1,
+                    type: 'location',
+                    lat: emergencyFormData.latitude,
+                    lng: emergencyFormData.longitude
+                }]);
+            }
+
+            // Inject high-priority system instruction to DINA AI
+            conversationHistory.current.push({
+                role: 'system',
+                content: `[SISTEM] 🚨 FORMULIR BANTUAN DARURAT RESMI DITERIMA:
+Nama: ${emergencyFormData.name}
+WhatsApp: ${emergencyFormData.phone}
+Nopol: ${emergencyFormData.nopol.toUpperCase()}
+Unit Kendaraan: ${emergencyFormData.vehicleType}
+Lokasi: ${emergencyFormData.location}
+${emergencyFormData.latitude ? `Koordinat Maps: https://www.google.com/maps?q=${emergencyFormData.latitude},${emergencyFormData.longitude}` : ''}
+Keluhan: ${emergencyFormData.issue}
+
+INSTRUKSI WAJIB UNTUK DINA:
+1. Tanggapi dengan penuh empati, tenang, ramah, dan sangat sigap.
+2. Pastikan customer merasa aman bahwa laporannya SUDAH TERCATAT dan tim darurat / derek resmi Bengkel Dwindo sedang diberitahu untuk segera menghubungi nomor WhatsApp customer (${emergencyFormData.phone}).
+3. Berikan saran keselamatan darurat singkat (nyalakan lampu hazard, pasang segitiga pengaman jika di jalan tol/raya, dan tetap di tempat aman).
+4. Berikan kontak darurat hotline WhatsApp resmi Dwindo (+62 877-8278-8383) bila situasi mendesak.`
+            });
+
+            // Trigger AI chat response
+            handleSend(userMsgText);
+
+            setIsEmergencyModalOpen(false);
+            setEmergencyFormData({
+                name: '',
+                phone: '',
+                nopol: '',
+                vehicleType: '',
+                location: '',
+                latitude: null,
+                longitude: null,
+                issue: ''
+            });
+        } catch (err) {
+            console.error('Failed to submit emergency form:', err);
+            alert('Terjadi kendala saat mengirim laporan darurat. Silakan hubungi CS langsung.');
+        } finally {
+            setIsSubmittingEmergency(false);
         }
     };
 
@@ -1982,6 +2345,13 @@ const VirtualCS = () => {
             }
         }
 
+        // Ensure dynamic promo data is fresh and up-to-date
+        try {
+            if (Object.keys(extraPromoData).length === 0 || /promo|servis|service|diskon|natal|tahun baru|akhir tahun/i.test(text)) {
+                await fetchPromoDataDynamic();
+            }
+        } catch (e) {}
+
         try {
             const response = await fetch('https://csdwindo.com/api/proxy_ai.php', {
                 method: 'POST',
@@ -2275,6 +2645,298 @@ const VirtualCS = () => {
         );
     };
 
+    // Draggable Leaflet Map Modal for Emergency Location Picking
+    const DraggableMapModal = ({ isOpen, onClose, onSelectLocation, initialCoords }) => {
+        const mapContainerRef = useRef(null);
+        const mapInstanceRef = useRef(null);
+        const markerRef = useRef(null);
+
+        const [coords, setCoords] = useState(initialCoords || { lat: -6.2088, lng: 106.8456 });
+        const [addressPreview, setAddressPreview] = useState('');
+        const [isLocating, setIsLocating] = useState(false);
+
+        const fetchAddressName = async (lat, lng) => {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                    headers: { 'Accept-Language': 'id-ID,id;q=0.9,en;q=0.8' }
+                });
+                const data = await res.json();
+                if (data && data.display_name) {
+                    const parts = data.display_name.split(', ');
+                    const shortAddr = parts.slice(0, 4).join(', ');
+                    setAddressPreview(shortAddr || data.display_name);
+                }
+            } catch (e) {
+                setAddressPreview(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+            }
+        };
+
+        useEffect(() => {
+            if (!isOpen) {
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.remove();
+                    mapInstanceRef.current = null;
+                    markerRef.current = null;
+                }
+                setIsLocating(false);
+                return;
+            }
+
+            let isCancelled = false;
+            let startLat = initialCoords?.lat || -6.2088;
+            let startLng = initialCoords?.lng || 106.8456;
+            setCoords({ lat: startLat, lng: startLng });
+            fetchAddressName(startLat, startLng);
+
+            // Inisialisasi peta Leaflet
+            const timer = setTimeout(() => {
+                if (!mapContainerRef.current || isCancelled) return;
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.remove();
+                    mapInstanceRef.current = null;
+                }
+
+                const map = L.map(mapContainerRef.current, {
+                    zoomControl: true,
+                    attributionControl: false
+                }).setView([startLat, startLng], 15);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(map);
+
+                const redPinIcon = L.divIcon({
+                    html: `<div style="width:28px;height:28px;background:#E60012;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:8px;height:8px;background:white;border-radius:50%;transform:rotate(45deg);"></div>
+                    </div>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 28],
+                    className: ''
+                });
+
+                const marker = L.marker([startLat, startLng], {
+                    draggable: true,
+                    icon: redPinIcon
+                }).addTo(map);
+
+                marker.bindPopup("<b>Titik Anda</b><br>Geser ke lokasi yang tepat").openPopup();
+
+                marker.on('dragend', (e) => {
+                    const pos = e.target.getLatLng();
+                    setCoords({ lat: pos.lat, lng: pos.lng });
+                    fetchAddressName(pos.lat, pos.lng);
+                });
+
+                map.on('click', (e) => {
+                    marker.setLatLng(e.latlng);
+                    setCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
+                    fetchAddressName(e.latlng.lat, e.latlng.lng);
+                });
+
+                mapInstanceRef.current = map;
+                markerRef.current = marker;
+
+                setTimeout(() => {
+                    if (mapInstanceRef.current && !isCancelled) {
+                        mapInstanceRef.current.invalidateSize();
+                    }
+                }, 300);
+
+                // Auto-detect current location on first open if no initial coordinates are passed
+                if (navigator.geolocation && (!initialCoords || !initialCoords.lat)) {
+                    setIsLocating(true);
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            if (isCancelled) return;
+                            setIsLocating(false);
+                            const { latitude, longitude } = pos.coords;
+                            setCoords({ lat: latitude, lng: longitude });
+                            fetchAddressName(latitude, longitude);
+
+                            if (mapInstanceRef.current && markerRef.current) {
+                                mapInstanceRef.current.setView([latitude, longitude], 16);
+                                markerRef.current.setLatLng([latitude, longitude]);
+                                markerRef.current.bindPopup("<b>📍 Lokasi Anda Terdeteksi</b><br>Geser pin jika perlu disesuaikan").openPopup();
+                            }
+                        },
+                        (err) => {
+                            if (isCancelled) return;
+                            setIsLocating(false);
+                            console.log('Auto geolocation skipped/denied:', err.message);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                    );
+                }
+            }, 150);
+
+            // Also trigger geolocation early in parallel if supported
+            if (navigator.geolocation && (!initialCoords || !initialCoords.lat)) {
+                setIsLocating(true);
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        if (isCancelled) return;
+                        setIsLocating(false);
+                        const { latitude, longitude } = pos.coords;
+                        startLat = latitude;
+                        startLng = longitude;
+                        setCoords({ lat: latitude, lng: longitude });
+                        fetchAddressName(latitude, longitude);
+
+                        if (mapInstanceRef.current && markerRef.current) {
+                            mapInstanceRef.current.setView([latitude, longitude], 16);
+                            markerRef.current.setLatLng([latitude, longitude]);
+                            markerRef.current.bindPopup("<b>📍 Lokasi Anda Terdeteksi</b><br>Geser pin jika perlu disesuaikan").openPopup();
+                        }
+                    },
+                    (err) => {
+                        if (isCancelled) return;
+                        setIsLocating(false);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            }
+
+            return () => {
+                isCancelled = true;
+                clearTimeout(timer);
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.remove();
+                    mapInstanceRef.current = null;
+                    markerRef.current = null;
+                }
+            };
+        }, [isOpen]);
+
+        const handleLocateMe = () => {
+            if (!navigator.geolocation) {
+                alert('Perangkat Anda tidak mendukung fitur deteksi GPS.');
+                return;
+            }
+            setIsLocating(true);
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setIsLocating(false);
+                    const { latitude, longitude } = pos.coords;
+                    setCoords({ lat: latitude, lng: longitude });
+                    fetchAddressName(latitude, longitude);
+                    if (mapInstanceRef.current && markerRef.current) {
+                        mapInstanceRef.current.setView([latitude, longitude], 16);
+                        markerRef.current.setLatLng([latitude, longitude]);
+                        markerRef.current.bindPopup("<b>📍 Lokasi Anda Terdeteksi</b><br>Geser pin jika perlu disesuaikan").openPopup();
+                    }
+                },
+                (err) => {
+                    setIsLocating(false);
+                    alert('Tidak dapat mendeteksi lokasi GPS otomatis. Mohon aktifkan izin lokasi browser atau geser pin secara manual.');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        };
+
+        if (!isOpen) return null;
+
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/75 z-[130] backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+                    onClick={onClose}
+                >
+                    <motion.div
+                        initial={{ scale: 0.95, y: 15 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.95, y: 15 }}
+                        className="bg-white w-full max-w-lg overflow-hidden flex flex-col shadow-2xl relative rounded-2xl border border-gray-200"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="bg-[#111111] p-3.5 sm:p-4 text-white flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-2">
+                                <MapPin size={18} className="text-[#E60012]" />
+                                <h3 className="font-display font-bold uppercase tracking-wider text-xs sm:text-sm">
+                                    Geser Pin ke Lokasi Anda
+                                </h3>
+                            </div>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white p-1">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Subheader Toolbar */}
+                        <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-2 text-xs">
+                            <div className="min-w-0 flex items-center gap-1.5">
+                                {isLocating ? (
+                                    <span className="text-[#E60012] font-semibold text-[11px] flex items-center gap-1.5 animate-pulse">
+                                        <Loader2 size={12} className="animate-spin text-[#E60012]" />
+                                        Mendeteksi lokasi GPS Anda...
+                                    </span>
+                                ) : (
+                                    <span className="text-gray-500 text-[11px] truncate">
+                                        Geser titik merah atau klik peta untuk menyesuaikan:
+                                    </span>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleLocateMe}
+                                disabled={isLocating}
+                                className="px-2.5 py-1 bg-white border border-gray-300 hover:border-red-500 text-gray-700 hover:text-red-600 rounded-lg font-semibold text-[11px] flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                            >
+                                {isLocating ? <Loader2 size={12} className="animate-spin text-red-600" /> : <Navigation size={12} className="text-red-600" />}
+                                <span>{isLocating ? 'Mendeteksi...' : 'Deteksi GPS Saya'}</span>
+                            </button>
+                        </div>
+
+                        {/* Leaflet Map Area */}
+                        <div className="relative">
+                            <div ref={mapContainerRef} style={{ width: '100%', height: '280px' }} />
+                        </div>
+
+                        {/* Footer Address Info & Actions */}
+                        <div className="p-3.5 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1 text-left w-full sm:w-auto">
+                                <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                    Koordinat Terpilih:
+                                </div>
+                                <div className="font-mono text-xs font-semibold text-gray-800 truncate">
+                                    {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                                </div>
+                                {addressPreview && (
+                                    <div className="text-[11px] text-gray-500 truncate mt-0.5">
+                                        {addressPreview}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-3.5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onSelectLocation(coords, addressPreview);
+                                        onClose();
+                                    }}
+                                    className="px-4 py-2 bg-[#E60012] hover:bg-[#B5000F] text-white font-display font-bold uppercase tracking-wider text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-colors"
+                                >
+                                    <Check size={14} />
+                                    Gunakan Titik Ini
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        );
+    };
+
     // Leaflet map component
     const LocationMap = ({ lat, lng }) => {
         const mapRef = useRef(null);
@@ -2419,22 +3081,19 @@ const VirtualCS = () => {
                                         {/* Emergency Location Button */}
                                         {msg.showLocationButton && (
                                             <button
-                                                onClick={() => handleShareLocation(msg.id)}
-                                                disabled={msg.locationLoading}
-                                                className="mt-2 flex items-center gap-2 px-4 py-2 bg-[#E60012] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#B5000F] transition-colors disabled:opacity-60"
+                                                onClick={() => {
+                                                    setEmergencyMsgId(msg.id);
+                                                    setEmergencyFormData(prev => ({
+                                                        ...prev,
+                                                        nopol: prev.nopol || (detectedNopolRef.current || '')
+                                                    }));
+                                                    setIsEmergencyModalOpen(true);
+                                                }}
+                                                className="mt-2 flex items-center gap-2 px-4 py-2 bg-[#E60012] text-white text-[11px] font-display font-bold uppercase tracking-wider hover:bg-[#B5000F] transition-colors"
                                                 style={{ clipPath: ANGULAR_CLIP }}
                                             >
-                                                {msg.locationLoading ? (
-                                                    <>
-                                                        <Loader2 size={14} className="animate-spin" />
-                                                        Mengakses Lokasi...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <MapPin size={14} />
-                                                        Berikan Lokasi Saya
-                                                    </>
-                                                )}
+                                                <MapPin size={14} />
+                                                Kirim Lokasi Saya
                                             </button>
                                         )}
 
@@ -2712,6 +3371,168 @@ const VirtualCS = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Emergency Assistance Modal */}
+            <AnimatePresence>
+                {isEmergencyModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+                        onClick={() => setIsEmergencyModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-sm overflow-hidden flex flex-col max-h-[85vh] shadow-2xl relative"
+                            onClick={e => e.stopPropagation()}
+                            style={{ borderRadius: '16px' }}
+                        >
+                            <div className="bg-[#111111] p-4 text-white flex justify-between items-center shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle size={18} className="text-[#E60012]" />
+                                    <h3 className="font-display font-bold uppercase tracking-wider text-sm">
+                                        Bantuan Stooring Service On Road
+                                    </h3>
+                                </div>
+                                <button onClick={() => setIsEmergencyModalOpen(false)} className="text-gray-400 hover:text-white">
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                                <form onSubmit={handleEmergencySubmit} className="space-y-3.5">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={emergencyFormData.name}
+                                            onChange={e => setEmergencyFormData(prev => ({ ...prev, name: e.target.value.toUpperCase() }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012]"
+                                            placeholder="Masukkan nama Anda..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nomor WhatsApp</label>
+                                        <input
+                                            type="tel"
+                                            required
+                                            value={emergencyFormData.phone}
+                                            inputMode="numeric"
+                                            onChange={e => setEmergencyFormData(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012]"
+                                            placeholder="08..."
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nomor Polisi (Nopol)</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={emergencyFormData.nopol}
+                                            onChange={e => setEmergencyFormData(prev => ({ ...prev, nopol: e.target.value.toUpperCase() }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-[#E60012]"
+                                            placeholder="B 1234 ABC"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Tipe Kendaraan</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={emergencyFormData.vehicleType}
+                                            onChange={e => setEmergencyFormData(prev => ({ ...prev, vehicleType: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012]"
+                                            placeholder="Contoh: Xpander, Pajero Sport, dll"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Lokasi Saat Ini</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsMapPickerOpen(true)}
+                                                className="text-[11px] font-bold text-[#E60012] hover:text-[#B5000F] flex items-center gap-1 transition-colors"
+                                            >
+                                                <MapPin size={12} />
+                                                <span>{emergencyFormData.latitude ? 'Ubah di Peta' : 'Ambil Titik di Peta'}</span>
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            required
+                                            value={emergencyFormData.location}
+                                            onChange={e => setEmergencyFormData(prev => ({ ...prev, location: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012] h-20 resize-none leading-relaxed"
+                                            placeholder="Nama jalan, patokan terdekat, KM jalan tol, dll..."
+                                        />
+
+                                        {emergencyFormData.latitude && emergencyFormData.longitude && (
+                                            <div className="mt-1.5 p-2 bg-emerald-50 border border-emerald-200 rounded flex items-center justify-between text-xs">
+                                                <div className="flex items-center gap-1.5 text-emerald-800">
+                                                    <Check size={13} className="text-emerald-600 shrink-0" />
+                                                    <span className="font-mono text-[11px]">
+                                                        {emergencyFormData.latitude.toFixed(6)}, {emergencyFormData.longitude.toFixed(6)}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsMapPickerOpen(true)}
+                                                    className="text-[11px] font-bold text-emerald-700 hover:underline"
+                                                >
+                                                    Geser Pin
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Keluhan / Kondisi Darurat</label>
+                                        <textarea
+                                            required
+                                            value={emergencyFormData.issue}
+                                            onChange={e => setEmergencyFormData(prev => ({ ...prev, issue: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-[#E60012] h-20 resize-none leading-relaxed"
+                                            placeholder="Jelaskan kendala mobil (mogok, ban bocor, overheat, dll)..."
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingEmergency}
+                                        className="w-full py-3 mt-2 bg-[#E60012] hover:bg-[#B5000F] text-white font-display font-bold uppercase tracking-widest text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                        style={{ clipPath: ANGULAR_CLIP }}
+                                    >
+                                        {isSubmittingEmergency ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />}
+                                        Kirim Laporan Darurat
+                                    </button>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Draggable Map Modal */}
+            <DraggableMapModal
+                isOpen={isMapPickerOpen}
+                onClose={() => setIsMapPickerOpen(false)}
+                initialCoords={emergencyFormData.latitude && emergencyFormData.longitude ? { lat: emergencyFormData.latitude, lng: emergencyFormData.longitude } : null}
+                onSelectLocation={(coords, address) => {
+                    setEmergencyFormData(prev => ({
+                        ...prev,
+                        latitude: coords.lat,
+                        longitude: coords.lng,
+                        location: prev.location ? prev.location : (address || `Koordinat: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`)
+                    }));
+                }}
+            />
         </div>
     );
 };

@@ -15,7 +15,7 @@ const STEPS = [
         phase: 'Pengalaman',
         title: '20+ Tahun Pengalaman',
         description: 'Lebih dari dua dekade kami hadir melayani keluarga Indonesia. Dedikasi kami dalam menghadirkan standar global Mitsubishi Motors secara konsisten telah membuktikan bahwa kualitas, keamanan, dan kepuasan pelanggan adalah urat nadi layanan kami.',
-        image: '/media/bintarobg.png',
+        image: 'https://csdwindo.com/wp/uploads/asset_6aebfe2f9c8a67.43716063.webp',
     },
     {
         id: '02',
@@ -30,7 +30,7 @@ const STEPS = [
         icon: MapPin,
         phase: 'Lokasi',
         title: 'Lokasi Strategis',
-        description: 'Terletak di jantung bisnis Bintaro dengan akses mobilitas yang sangat mudah. Lounge premium, ruang tunggu yang nyaman, hingga zona perawatan ekspres khusus kami rancang untuk kelancaran investasi waktu berharga Anda.',
+        description: 'Hadir di jaringan strategis Jakarta dan sekitarnya melalui cabang Bintaro, Radin Inten, dan Cakung dengan akses mobilitas yang mudah. Dilengkapi fasilitas modern, lounge premium yang nyaman, hingga zona perawatan berstandar global Mitsubishi Motors untuk melayani seluruh kebutuhan berkendara Anda.',
         image: '/media/bintaro-jaya.png',
     }
 ];
@@ -163,7 +163,7 @@ const Advantage = () => {
                             <SectionTag>Keunggulan</SectionTag>
                         </div>
                         <h2 className="font-display font-extrabold text-[36px] sm:text-[42px] lg:text-[48px] text-[#111111] uppercase leading-tight mb-6 mt-4">
-                            Mengapa Dwindo Bintaro?
+                            Mengapa Dwindo?
                         </h2>
 
                         <div className="hidden md:flex flex-col gap-6 flex-1 md:flex-none pl-8 relative">

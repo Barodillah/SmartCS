@@ -3,7 +3,7 @@ import dealerData from '../../knowledge/lokasi_dealer.json';
 export const SITE_URL = 'https://csdwindo.com';
 export const ORG_ID = `${SITE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
-export const BRAND_NAME = 'Mitsubishi Motors Dwindo Bintaro';
+export const BRAND_NAME = 'Mitsubishi Motors Dwindo Jakarta';
 export const LEGAL_NAME = 'PT Dwindo Berlian Samjaya';
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/dina.png`;
 export const LOGO_URL = `${SITE_URL}/logo/logo_dwindo.png`;
@@ -97,12 +97,12 @@ export const getAutoDealerGraphNodes = () => {
         },
         ...(b.latitude && b.longitude
             ? {
-                  geo: {
-                      '@type': 'GeoCoordinates',
-                      latitude: Number(b.latitude),
-                      longitude: Number(b.longitude)
-                  }
-              }
+                geo: {
+                    '@type': 'GeoCoordinates',
+                    latitude: Number(b.latitude),
+                    longitude: Number(b.longitude)
+                }
+            }
             : {}),
         openingHoursSpecification: [
             {
@@ -147,7 +147,7 @@ export const getFaqNode = (faqs = []) => ({
 // ── Data FAQ Kontekstual & Pusat (Berbasis Knowledge Base) ──
 export const PRICE_LIST_FAQS = [
     {
-        q: 'Apakah harga OTR Mitsubishi di Dwindo Bintaro sudah termasuk gratis biaya servis berkala?',
+        q: 'Apakah harga OTR Mitsubishi di Dwindo Jakarta sudah termasuk gratis biaya servis berkala?',
         a: 'Ya. Setiap pembelian unit baru kendaraan penumpang Mitsubishi Motors dilengkapi paket SMART Package yang mencakup gratis biaya jasa dan suku cadang perawatan berkala mulai 10.000 KM hingga 50.000 KM atau 4 tahun (mana yang tercapai lebih dulu sesuai buku servis).'
     },
     {
@@ -166,7 +166,7 @@ export const PRICE_LIST_FAQS = [
 
 export const BOOKING_FAQS = [
     {
-        q: 'Kapan saja jam operasional dan slot booking service di bengkel resmi Mitsubishi Dwindo Bintaro?',
+        q: 'Kapan saja jam operasional dan slot booking service di bengkel resmi Mitsubishi Dwindo Jakarta?',
         a: 'Slot booking service online tersedia setiap Senin–Sabtu pada pukul 08:00, 09:00, 10:00, 11:00, dan 13:00 WIB (khusus servis ringan non-kelipatan 20.000 KM), serta hari Minggu pukul 08:00 hingga 11:00 WIB.'
     },
     {
@@ -178,14 +178,14 @@ export const BOOKING_FAQS = [
         a: 'Extended SMART Package adalah paket perpanjangan servis berkala untuk mobil Mitsubishi yang telah melewati 50.000 KM atau 4 tahun. Tersedia pilihan 1XPM (6 bulan) hingga 6XPM (36 bulan) mulai Rp 1.387.500 untuk Xpander dan Rp 2.497.500 untuk Pajero Sport, menghemat biaya hingga 25–27% ditambah perpanjangan garansi item terbatas 1 tahun/30.000 KM.'
     },
     {
-        q: 'Berapa biaya paket perawatan AC (AC Clean & AC Care) di bengkel Dwindo Bintaro?',
+        q: 'Berapa biaya paket perawatan AC (AC Clean & AC Care) di bengkel Dwindo Jakarta?',
         a: 'Tersedia paket AC Care (sterilisasi kabin) Rp 195.000, Cooling Grid Cleaner Rp 273.000, AC Clean (pembersihan evaporator & blower) Rp 338.000, serta paket AC Fresh Berat mulai Rp 1.040.000.'
     }
 ];
 
 export const AKSESORIS_FAQS = [
     {
-        q: 'Apakah pemasangan aksesoris resmi di Dwindo Bintaro memengaruhi garansi kelistrikan dan bodi mobil?',
+        q: 'Apakah pemasangan aksesoris resmi di Dwindo Jakarta memengaruhi garansi kelistrikan dan bodi mobil?',
         a: 'Tidak. Seluruh aksesoris asli Mitsubishi Motors dirancang secara presisi (plug-and-play) dan dipasang oleh teknisi tersertifikasi di bengkel resmi PT Dwindo Berlian Samjaya sehingga garansi resmi kendaraan tetap terjaga.'
     },
     {
@@ -207,12 +207,12 @@ export const ALL_FAQS_CATEGORIZED = [
                 a: 'PT Dwindo Berlian Samjaya memiliki 3 cabang resmi 3S: (1) Dwindo Bintaro di Jl. MH. Thamrin Blok A-01, Bintaro Jaya Sektor 7 (Jl. HR Rasuna Said, Pd. Jaya, Kec. Pd. Aren), Kota Tangerang Selatan 15220, Telp: (021) 745-8383; (2) Dwindo Radin Inten di Jl. Radin Inten II, Duren Sawit, Jakarta Timur 13440, Telp: (021) 2948-3888; dan (3) Dwindo Cakung di Jl. Raya Bekasi KM 26, Ujung Menteng, Cakung, Jakarta Timur 13960, Telp: (021) 2246-1888.'
             },
             {
-                q: 'Bagaimana cara memastikan transaksi pembelian mobil di Dwindo Bintaro aman dan resmi?',
+                q: 'Bagaimana cara memastikan transaksi pembelian mobil di Dwindo Jakarta aman dan resmi?',
                 a: 'Pastikan seluruh pembayaran booking fee, uang muka (DP), maupun pelunasan unit hanya ditransfer ke rekening bank perusahaan resmi atas nama PT Dwindo Berlian Samjaya. Kami tidak pernah menggunakan rekening pribadi untuk pembayaran transaksi kendaraan.'
             },
             {
                 q: 'Apa itu asisten virtual DINA (Dwindo Intelligent Assistant)?',
-                a: 'DINA adalah asisten virtual berbasis AI resmi dari Mitsubishi Motors Dwindo Bintaro yang aktif 24/7 di situs csdwindo.com untuk membantu cek harga OTR, promo bulanan, simulasi kredit, cek stok suku cadang, penjadwalan test drive, dan booking service.'
+                a: 'DINA adalah asisten virtual berbasis AI resmi dari Mitsubishi Motors Dwindo Jakarta yang aktif 24/7 di situs csdwindo.com untuk membantu cek harga OTR, promo bulanan, simulasi kredit, cek stok suku cadang, penjadwalan test drive, dan booking service.'
             }
         ]
     },

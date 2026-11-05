@@ -31,9 +31,9 @@ const Updates = () => {
 
     useEffect(() => {
         const ctx = gsap.context(() => {
-            gsap.fromTo('.update-header', 
+            gsap.fromTo('.update-header',
                 { opacity: 0, y: 30 },
-                { 
+                {
                     opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
                     scrollTrigger: {
                         trigger: sectionRef.current,
@@ -67,7 +67,7 @@ const Updates = () => {
                             Kabar Terbaru
                         </h2>
                         <p className="text-gray-600 mt-4 text-lg">
-                            Dapatkan informasi terkini seputar berita, kegiatan komunitas, dan tips bermanfaat dari Dwindo Bintaro.
+                            Dapatkan informasi terkini seputar berita, kegiatan komunitas, dan tips bermanfaat dari Dwindo Jakarta.
                         </p>
                     </div>
                     <Link to="/artikel" className="mt-6 md:mt-0 flex items-center gap-2 font-display font-bold text-[#E60012] uppercase tracking-wide group hover:text-[#111111] transition-colors">
@@ -78,16 +78,16 @@ const Updates = () => {
 
                 <div className="articles-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {articles.map((article) => (
-                        <Link 
-                            key={article.id} 
+                        <Link
+                            key={article.id}
                             to={`/artikel/${article.slug || article.id}`}
                             className="article-card group drop-shadow-sm hover:drop-shadow-xl transition-all duration-500 cursor-pointer flex flex-col"
                         >
                             <div className="bg-white flex flex-col flex-1 relative overflow-hidden" style={{ clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))" }}>
                                 <div className="relative h-64 overflow-hidden">
                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
-                                    <img 
-                                        src={article.image} 
+                                    <img
+                                        src={article.image}
                                         alt={article.title}
                                         width="640"
                                         height="360"
@@ -96,15 +96,15 @@ const Updates = () => {
                                         className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
                                     />
                                     <div className="absolute top-5 left-5 z-20">
-                                        <div 
-                                            className="bg-white/95 backdrop-blur text-[#111111] font-display font-bold text-xs uppercase tracking-wider py-2 px-4 inline-block" 
+                                        <div
+                                            className="bg-white/95 backdrop-blur text-[#111111] font-display font-bold text-xs uppercase tracking-wider py-2 px-4 inline-block"
                                             style={{ clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" }}
                                         >
                                             {article.category}
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="p-6 lg:p-8 flex flex-col flex-1 border-t-0 border-gray-100/50">
                                     <div className="flex items-center gap-4 text-sm text-gray-500 mb-4 font-medium">
                                         <div className="flex items-center gap-1.5">
@@ -116,15 +116,15 @@ const Updates = () => {
                                             {article.read_time || '3 min read'}
                                         </div>
                                     </div>
-                                    
+
                                     <h3 className="font-display font-bold text-xl lg:text-2xl text-[#111111] leading-snug mb-3 group-hover:text-[#E60012] transition-colors line-clamp-2">
                                         {article.title}
                                     </h3>
-                                    
+
                                     <p className="text-gray-600 line-clamp-3 mb-6 flex-1">
                                         {article.subtitle}
                                     </p>
-                                    
+
                                     <div className="mt-auto flex items-center font-display font-bold text-sm uppercase tracking-wide text-[#111111] group-hover:text-[#E60012] transition-colors">
                                         Baca Selengkapnya
                                         <ArrowRight size={16} className="ml-2 transform group-hover:translate-x-1 transition-transform" />

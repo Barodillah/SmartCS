@@ -1,0 +1,128 @@
+{
+  "schema_version": "2.0",
+  "document_id": "new_xforce",
+  "document_title": "Knowledge Base Fitur & Spesifikasi Mitsubishi NEW XFORCE",
+  "language": "id-ID",
+  "content_type": "product_feature_knowledge",
+  "source": {
+    "document_title": "Mitsubishi Knowledge Clinic (BKC) - Mitsubishi Dwindo",
+    "scope": "Fitur, teknologi hybrid HEV & bensin ICE, kenyamanan, varian, dan purnajual NEW XFORCE"
+  },
+  "kendaraan": {
+    "model_identity": {
+      "full_name": "Mitsubishi NEW XFORCE",
+      "brand": "Mitsubishi Motors",
+      "market_segment": "Compact SUV 5-Seater Premium (Pilihan Powertrain HEV & ICE)",
+      "positioning": "Infinite Xcitement — Compact SUV tercanggih dengan kombinasi kenyamanan kabin superior, efisiensi tinggi, dan teknologi keselamatan modern",
+      "concept": "Silky and Solid",
+      "manufacturing": "Indonesia (MMKI Cikarang)"
+    },
+    "powertrain_options": {
+      "hev_hybrid": {
+        "type": "Full Hybrid (Parallel) — Mitsubishi Motors HEV System",
+        "description": "Kendaraan dapat digerakkan secara otomatis oleh mesin bensin, motor listrik, atau perpaduan keduanya untuk mencapai tenaga responsif dan efisiensi konsumsi BBM terbaik.",
+        "engine": "1.6L 4A92 DOHC 16-Valve (107 HP / 134 Nm)",
+        "electric_motor": "High Performance Electric Motor (115 HP / 255 Nm torsi instan)",
+        "hybrid_drive_modes": [
+          { "mode": "EV Drive", "description": "Digerakkan 100% oleh motor listrik murni tanpa suara mesin" },
+          { "mode": "Series Drive", "description": "Mesin bensin menyala sebagai generator untuk mengisi baterai dan memberi daya motor listrik" },
+          { "mode": "Parallel Drive", "description": "Mesin dan motor listrik bekerja serentak memberikan akselerasi bertenaga" },
+          { "mode": "Engine Drive", "description": "Mesin bensin bekerja langsung menggerakkan roda saat kecepatan tinggi konstan di jalan tol" },
+          { "mode": "Regenerative Brake", "description": "Energi pengereman diubah otomatis menjadi daya listrik untuk mengisi baterai" }
+        ],
+        "claimed_efficiency": "24 km/liter dengan estimasi jarak tempuh 1.000+ km dalam 1 kali pengisian penuh bensin & baterai",
+        "transmission": "Shift by Wire (tuas transmisi elektronik satu sentuhan modern, presisi, dan aman)"
+      },
+      "ice_gasoline": {
+        "type": "Mesin Bensin Konvensional (ICE)",
+        "engine": "1.5L 4A91 MIVEC DOHC 16-Valve (105 PS @ 6.000 rpm / 141 Nm @ 4.000 rpm)",
+        "transmission": "CVT (Continuously Variable Transmission) halus dan responsif",
+        "update_terbaru": "Tetap disempurnakan dengan Frameless Panoramic Roof, Improved Suspension yang lebih empuk, Multi Around Monitor (Kamera 360), dan Driver Power Seat"
+      }
+    },
+    "driving_dynamics": {
+      "drive_modes": [
+        { "mode": "Normal", "description": "Keseimbangan berkendara optimal untuk harian (tersedia di seluruh varian)" },
+        { "mode": "Wet", "description": "Mencegah selip dan menjaga kestabilan maksimal saat hujan atau jalan basah/tergenang" },
+        { "mode": "Gravel", "description": "Meningkatkan cengkeraman traksi di permukaan jalan berbatu atau tidak rata" },
+        { "mode": "Mud", "description": "Traksi tinggi untuk meloloskan diri dari permukaan jalan berlumpur atau lunak" },
+        { "mode": "Tarmac", "description": "Respons akselerasi dan kemudi lebih tajam di jalan aspal berliku (khusus varian Hybrid)" },
+        { "mode": "EV Priority Mode", "description": "Memaksa kendaraan melaju murni dengan baterai hingga kecepatan >100 km/jam tanpa interupsi mesin bensin (khusus varian Hybrid)" },
+        { "mode": "Charge Mode", "description": "Mengisi daya baterai secara cepat saat mobil berhenti atau berjalan hingga kapasitas SOC 5/6 (khusus varian Hybrid)" }
+      ],
+      "active_yaw_control": "Active Yaw Control (AYC) adaptasi teknologi Mitsubishi Lancer Evolution X untuk mengendalikan distribusi torsi dan pengereman roda depan demi stabilitas menikung yang presisi",
+      "turning_radius": "5.2 meter (radius putar paling lincah di kelasnya, memudahkan putar balik dan parkir di ruang sempit)",
+      "ground_clearance": "222 mm (ground clearance tinggi memberikan ketenangan melewati jalan rusak, polisi tidur tinggi, maupun banjir ringan)",
+      "suspension": "Improved Suspension yang diracik khusus lebih empuk tanpa mengorbankan stabilitas di jalan aspal, beton, maupun bergelombang"
+    },
+    "interior_features": {
+      "panoramic_roof": "Frameless Panoramic Roof with Power Sunshade elektrik (satu-satunya Compact SUV 5-seater merek Jepang dengan panoramic roof)",
+      "infotainment": "12.3 Inch Smartphone-link Display Audio (SDA) dengan konektivitas Apple CarPlay & Android Auto Wireless",
+      "instrument_cluster": "8 Inch Digital Meter Cluster dengan grafis modern dan informasi driving mode lengkap",
+      "audio_system": "Dynamic Sound Yamaha Premium 8-speaker kolaborasi eksklusif dengan Yamaha (4 preset audio: Signature, Lively, Powerful, Relaxing)",
+      "air_conditioning": "Dual Zone Auto A/C dengan teknologi pemurni udara NanoeX (membunuh bakteri & menghilangkan bau; tersedia di varian atas)",
+      "seats": "Synthetic Leather dengan Anti-Temperature Rise Function (kursi adem tidak menyerap panas saat dijemur) serta 8-Way Driver Power Seat elektrik",
+      "convenience": "Hands-free Power Tailgate dengan kick sensor / one-touch, 20 kompartemen penyimpanan kabin, Center Console Cooler Box (pendingin minuman), Wireless Charger, dan bagasi lega 329 liter dengan pelipatan 40:20:40"
+    },
+    "safety_diamond_sense": {
+      "suite_name": "Mitsubishi Diamond Sense (ADAS)",
+      "active_safety_features": [
+        "Adaptive Cruise Control (ACC)",
+        "Forward Collision Mitigation (FCM)",
+        "Blind Spot Warning (BSW)",
+        "Rear Cross Traffic Alert (RCTA)",
+        "Automatic High Beam (AHB)",
+        "Lead Car Departure Notification (LCDN)",
+        "Multi Around Monitor (MAM / Kamera 360 derajat)",
+        "Auto Headlamp & Rain Sensor"
+      ],
+      "passive_safety": {
+        "airbags": "4 Airbags (tipe Exceed) / 6 Airbags (tipe Ultimate, Ultimate Premium, dan e:Hybrid)",
+        "body_structure": "RISE (Reinforced Impact Safety Evolution) Body berstandar keselamatan global"
+      }
+    },
+    "after_sales_benefits": [
+      "Gratis Jasa Servis & Suku Cadang (SMART Package) 4 Tahun / 50.000 km",
+      "Garansi Kendaraan 3 Tahun / 100.000 km",
+      "Garansi Khusus Baterai HEV hingga 10 Tahun / 200.000 km",
+      "Garansi Baterai 12V 2 Tahun / 50.000 km",
+      "Layanan Darurat 24 Jam (24 Hours Emergency Roadside Assistance / ERA) 3 Tahun",
+      "Garansi Ban 1 Tahun / 20.000 km",
+      "Perpanjangan Masa Garansi Resmi 1 Tahun / 20.000 km"
+    ],
+    "faq": [
+      {
+        "question": "Apakah Mitsubishi NEW XFORCE tersedia varian Hybrid (HEV)?",
+        "answer": "Ya, NEW XFORCE memiliki pilihan varian HEV dengan sistem Full Hybrid Parallel (mesin 1.6L + motor listrik 115 HP/255 Nm) serta tetap menyediakan pilihan mesin bensin konvensional (ICE 1.5L)."
+      },
+      {
+        "question": "Berapa konsumsi bahan bakar NEW XFORCE HEV?",
+        "answer": "Berdasarkan materi resmi, NEW XFORCE HEV mampu mencapai konsumsi BBM hingga 24 km/liter dan daya jelajah lebih dari 1.000 km dalam sekali pengisian penuh bensin dan baterai."
+      },
+      {
+        "question": "Apakah NEW XFORCE HEV perlu dicas di stasiun pengisian listrik (SPKLU)?",
+        "answer": "Tidak perlu. Sistem HEV NEW XFORCE adalah Full Hybrid mandiri yang baterainya terisi otomatis secara cerdas melalui regenerative braking saat pengereman dan putaran mesin, atau melalui Charge Mode."
+      },
+      {
+        "question": "Berapa lama garansi baterai hybrid NEW XFORCE HEV?",
+        "answer": "Baterai HEV NEW XFORCE dilindungi garansi resmi sangat panjang hingga 10 Tahun atau 200.000 km (mana yang tercapai lebih dulu)."
+      },
+      {
+        "question": "Apakah NEW XFORCE memiliki Panoramic Roof?",
+        "answer": "Ya, memiliki Frameless Panoramic Roof yang dilengkapi tirai Power Sunshade elektrik, sehingga sangat praktis tanpa perlu bongkar-pasang manual."
+      },
+      {
+        "question": "Berapa radius putar dan ground clearance NEW XFORCE?",
+        "answer": "Radius putarnya hanya 5,2 meter (sangat lincah untuk putar balik & jalan sempit) dengan ground clearance tinggi 222 mm yang aman melintasi beragam medan jalan."
+      },
+      {
+        "question": "Apa saja mode berkendara (Drive Modes) pada NEW XFORCE?",
+        "answer": "Terdapat hingga 7 Drive Modes: Normal, Wet, Gravel, Mud, serta Tarmac, EV Priority, dan Charge Mode (khusus varian Hybrid)."
+      },
+      {
+        "question": "Apakah sistem audio Yamaha tersedia pada NEW XFORCE?",
+        "answer": "Ya, dilengkapi sistem audio premium Dynamic Sound Yamaha Premium 8-speaker dengan 4 preset karakter suara (Signature, Lively, Powerful, Relaxing) untuk pengalaman audio kelas konser musik."
+      }
+    ]
+  }
+}

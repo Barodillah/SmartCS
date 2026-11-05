@@ -1,0 +1,419 @@
+{
+    "meta": {
+        "brand": "Mitsubishi Motors",
+        "distributor": "PT Mitsubishi Motors Krama Yudha Sales Indonesia (MMKSI)",
+        "periode": "Oktober 2026",
+        "note": "Semua program berlaku dengan syarat dan ketentuan. Program gratis 1 tahun Asuransi Kecelakaan Diri dan 1 tahun Asuransi Ban (Tokio Marine) tidak berlaku mulai 1 September 2026."
+    },
+    "models": [
+        {
+            "name": "Destinator",
+            "slug": "destinator",
+            "programs": {
+                "trade_in": {
+                    "provider": "DSS Motor",
+                    "area": "Jabodetabek & Bandung"
+                },
+                "cashback": {
+                    "amount": 5000000,
+                    "condition": "Khusus pembelian dengan skema Bunga Paket leasing DSF yang pengajuan pembiayaannya disetujui DSF pada periode Oktober 2026 (benefit diberikan setelah pembukaan faktur)."
+                },
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "scheme": "ADDM",
+                        "tenor_max": "6 tahun"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "1.99%",
+                        "tenor_max": "6 tahun",
+                        "note": "Bunga mulai dari 1.99% (tenor 1 tahun)."
+                    },
+                    "bunga_0": [
+                        {
+                            "tenor": "1 tahun",
+                            "dp_min": "65%"
+                        },
+                        {
+                            "tenor": "hingga 2 tahun",
+                            "note": "Bunga spesial"
+                        }
+                    ],
+                    "smart_cash": {
+                        "interest": "0% 1 tahun",
+                        "dp": {
+                            "exceed_gls": "65%",
+                            "ultimate": "70%"
+                        },
+                        "bonus": [
+                            "Asuransi All Risk",
+                            "Potongan biaya admin"
+                        ],
+                        "area": "Pulau Jawa",
+                        "exclude": [
+                            "Ultimate Premium"
+                        ]
+                    }
+                },
+                "benefits": [
+                    "Gratis kaca film Solargard",
+                    "Gratis servis hingga 60.000 km / 4 tahun",
+                    "Garansi kendaraan hingga 100.000 km / 3 tahun",
+                    "Perpanjangan garansi kendaraan 20.000 km / 1 tahun",
+                    "Paket SMART untuk Perawatan/Servis Berkala hingga 60.000 km / 4 tahun (Biaya jasa, Suku cadang, Mitsubishi Motors Genuine Oil & Brake Fluid, Chemical item: Engine Flush setiap 40.000 km)",
+                    "Garansi kerusakan ban 1 pcs hingga 20.000 km / 1 tahun"
+                ]
+            }
+        },
+        {
+            "name": "New Xforce",
+            "slug": "new-xforce",
+            "variants": [
+                {
+                    "name": "Ultimate & Exceed",
+                    "programs": {
+                        "finance": {
+                            "provider": "PT Dipo Star Finance",
+                            "special_package": {
+                                "dp_min": "10%",
+                                "scheme": [
+                                    "ADDB",
+                                    "ADDM"
+                                ],
+                                "interest_start": "1.75%",
+                                "tenor_max": "6 tahun",
+                                "note": "Bunga ringan mulai dari 1.75% (tenor 1 tahun)."
+                            },
+                            "smart_cash": {
+                                "interest": "0% hingga 2 tahun",
+                                "dp_min": "55%",
+                                "bonus": [
+                                    "Asuransi All Risk",
+                                    "Potongan biaya admin khusus tenor 1 tahun"
+                                ]
+                            },
+                            "h1t": {
+                                "dp_min": "50%",
+                                "interest": "0%",
+                                "scheme": "DP 50%, angsuran 5%, cicilan akhir maksimal 45%"
+                            },
+                            "balloon_payment": {
+                                "dp_min": "10%",
+                                "residual_value_max": "40%",
+                                "residual_payment_tenor": "hingga 3 tahun"
+                            },
+                            "special_launching": {
+                                "voucher_bensin": 1000000,
+                                "potongan_biaya_admin": 1500000,
+                                "valid_until": "2026-10-31",
+                                "note": "Untuk pengajuan pembiayaan yang disetujui pada periode 1 September–31 Oktober 2026."
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Hybrid (HEV)",
+                    "programs": {
+                        "finance": {
+                            "provider": "PT Dipo Star Finance",
+                            "dp_ringan": {
+                                "dp_min": "10%",
+                                "scheme": "ADDM",
+                                "tenor_max": "5 tahun"
+                            },
+                            "bunga_ringan": {
+                                "dp_min": "20%",
+                                "interest_start": "2.44%",
+                                "tenor_max": "1 tahun"
+                            },
+                            "smart_cash": {
+                                "interest": "0% hingga 2 tahun",
+                                "dp_min": "65%",
+                                "bonus": [
+                                    "Asuransi",
+                                    "Potongan biaya admin khusus tenor 1 tahun"
+                                ]
+                            },
+                            "h1t": {
+                                "dp_min": "50%",
+                                "interest": "0%",
+                                "scheme": "DP 50%, angsuran 5%, cicilan akhir maksimal 45%"
+                            }
+                        },
+                        "benefits": [
+                            "Garansi baterai HEV hingga 5+5 tahun / 200.000 km",
+                            "Gratis pengecekan baterai HEV mulai tahun ke-3 hingga 5 tahun / 100.000 km"
+                        ]
+                    }
+                }
+            ],
+            "common_benefits": [
+                "Gratis kaca film Solargard",
+                "Gratis servis hingga 50.000 km / 4 tahun",
+                "Garansi kendaraan hingga 100.000 km / 3 tahun",
+                "Perpanjangan garansi kendaraan 20.000 km / 1 tahun",
+                "Paket SMART untuk Perawatan/Servis Berkala hingga 50.000 km / 4 tahun (Biaya jasa, Suku cadang, Mitsubishi Motors Genuine Oil & Brake Fluid)",
+                "Garansi kerusakan ban 1 pcs hingga 20.000 km / 1 tahun"
+            ]
+        },
+        {
+            "name": "Xpander Cross",
+            "slug": "xpander-cross",
+            "programs": {
+                "trade_in": {
+                    "provider": "DSS Motor",
+                    "area": "Jabodetabek & Bandung"
+                },
+                "cashback": {
+                    "amount": 4000000,
+                    "condition": "Khusus pembelian dengan skema Bunga Paket leasing DSF yang pengajuan pembiayaannya disetujui DSF pada periode Oktober 2026 (benefit diberikan setelah pembukaan faktur)."
+                },
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "note": "Tidak berlaku di seluruh cabang",
+                        "tenor_range": "6-7 tahun",
+                        "tenor_min_dp": "20%"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "2.44%",
+                        "tenor_max": "1 tahun"
+                    },
+                    "bunga_0": [
+                        {
+                            "tenor": "1 tahun",
+                            "dp_min": "55%"
+                        },
+                        {
+                            "tenor": "2 tahun",
+                            "dp_min": "65%"
+                        }
+                    ],
+                    "potongan_biaya_admin": {
+                        "condition": "Khusus tenor 1 tahun",
+                        "dp_min": "55%"
+                    },
+                    "h1t": {
+                        "dp_min": "50%",
+                        "area": [
+                            "Jabodetabek",
+                            "Banten",
+                            "Sumatera"
+                        ],
+                        "interest": "0%",
+                        "scheme": "DP 50%, angsuran 5%, cicilan akhir maksimal 45%"
+                    }
+                },
+                "benefits": [
+                    "Gratis kaca film WINCOS",
+                    "Gratis servis hingga 50.000 km / 4 tahun",
+                    "Garansi kendaraan hingga 100.000 km / 3 tahun",
+                    "Paket SMART untuk Perawatan/Servis Berkala hingga 50.000 km / 4 tahun (Biaya jasa, Suku cadang, Mitsubishi Motors Genuine Oil & Brake Fluid, Chemical item: Engine Flush setiap 20.000 km)"
+                ]
+            }
+        },
+        {
+            "name": "Xpander",
+            "slug": "xpander",
+            "programs": {
+                "trade_in": {
+                    "provider": "DSS Motor",
+                    "area": "Jabodetabek & Bandung"
+                },
+                "cashback": {
+                    "amount": 4000000,
+                    "condition": "Khusus pembelian dengan skema Bunga Paket leasing DSF yang pengajuan pembiayaannya disetujui DSF pada periode Oktober 2026 (benefit diberikan setelah pembukaan faktur)."
+                },
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "note": "Tidak berlaku di seluruh cabang",
+                        "tenor_range": "6-7 tahun",
+                        "tenor_min_dp": "20%"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "2.44%",
+                        "tenor_max": "1 tahun"
+                    },
+                    "bunga_0": [
+                        {
+                            "tenor": "1 tahun",
+                            "dp_min": "55%"
+                        },
+                        {
+                            "tenor": "2 tahun",
+                            "dp_min": "65%"
+                        },
+                        {
+                            "variant": "Exceed",
+                            "tenor": "hingga 3 tahun",
+                            "dp_min": {
+                                "1_tahun": "30%",
+                                "2_tahun": "60%",
+                                "3_tahun": "70%"
+                            }
+                        }
+                    ],
+                    "potongan_biaya_admin": {
+                        "condition": "Khusus tenor 1 tahun",
+                        "dp_min": "55%"
+                    },
+                    "h1t": {
+                        "dp_min": "50%",
+                        "area": [
+                            "Jabodetabek",
+                            "Banten",
+                            "Sumatera"
+                        ],
+                        "interest": "0%",
+                        "scheme": "DP 50%, angsuran 5%, cicilan akhir maksimal 45%"
+                    }
+                },
+                "benefits": [
+                    "Gratis kaca film WINCOS",
+                    "Gratis servis hingga 50.000 km / 4 tahun",
+                    "Garansi kendaraan hingga 100.000 km / 3 tahun",
+                    "Paket SMART untuk Perawatan/Servis Berkala hingga 50.000 km / 4 tahun (Biaya jasa, Suku cadang, Mitsubishi Motors Genuine Oil & Brake Fluid, Chemical item: Engine Flush setiap 20.000 km)"
+                ]
+            }
+        },
+        {
+            "name": "Pajero Sport",
+            "slug": "pajero-sport",
+            "programs": {
+                "trade_in": {
+                    "provider": "DSS Motor",
+                    "area": "Jabodetabek & Bandung"
+                },
+                "cashback": {
+                    "amount": 5000000,
+                    "condition": "Khusus varian Exceed (AT/MT) dan Dakar 4x2, untuk pembelian dengan skema Bunga Paket leasing DSF yang pengajuan pembiayaannya disetujui DSF pada periode Oktober 2026 (benefit diberikan setelah pembukaan faktur)."
+                },
+                "free_insurance": {
+                    "type": "All Risk 1 tahun",
+                    "condition": "Khusus varian Dakar 4x2 (S&K berlaku)."
+                },
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "15%",
+                        "package_name": "Paket A"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "1.99%",
+                        "tenor_max": "1 tahun",
+                        "note": "Untuk varian Dakar 4x2, Exceed, dan GLX."
+                    },
+                    "bunga_0": {
+                        "variant": "Dakar 4x2 AT",
+                        "tenor": "2 tahun",
+                        "dp_min": {
+                            "1_tahun": "50%",
+                            "2_tahun": "70%"
+                        }
+                    },
+                    "bonus_asuransi": {
+                        "duration": "1 tahun",
+                        "condition": "Untuk semua tenor dan Paket DSF."
+                    },
+                    "h1t": {
+                        "dp_min": "50%",
+                        "area": [
+                            "Jabodetabek",
+                            "Banten",
+                            "Sumatera"
+                        ],
+                        "interest": "0%",
+                        "scheme": "DP 50%, angsuran 5%, cicilan akhir maksimal 45%"
+                    }
+                },
+                "benefits": [
+                    "Gratis kaca film Solargard",
+                    "Gratis servis hingga 50.000 km / 4 tahun",
+                    "Garansi kendaraan hingga 100.000 km / 3 tahun",
+                    "Paket SMART untuk Perawatan/Servis Berkala hingga 50.000 km / 4 tahun (Biaya jasa, Suku cadang, Mitsubishi Motors Genuine Oil & Brake Fluid, Chemical item: Engine Flush dan Diesel System Cleaner masing-masing setiap 20.000 km)"
+                ]
+            }
+        },
+        {
+            "name": "Triton",
+            "slug": "triton",
+            "programs": {
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "15%",
+                        "interest_start": "4.45%",
+                        "package_name": "Paket A"
+                    },
+                    "bunga_0": {
+                        "variant": [
+                            "DC GLS",
+                            "DC HDX",
+                            "SC HDX",
+                            "SC GLX"
+                        ],
+                        "tenor": "hingga 2 tahun",
+                        "dp_min": {
+                            "1_tahun": "40%",
+                            "2_tahun": "60%"
+                        }
+                    }
+                },
+                "benefits": [
+                    "Gratis suku cadang hingga 40.000 km / 3 tahun (semua varian)",
+                    "Hadiah langsung ban MT (khusus varian DC HDX dan SC HDX)"
+                ]
+            }
+        },
+        {
+            "name": "L300",
+            "slug": "l300",
+            "programs": {
+                "finance": {
+                    "provider": "PT Dipo Star Finance",
+                    "dp_ringan": {
+                        "dp_min": "10%",
+                        "note": "Tidak berlaku di seluruh cabang",
+                        "package_name": "Paket C"
+                    },
+                    "bunga_ringan": {
+                        "dp_min": "20%",
+                        "interest_start": "5.95%",
+                        "tenor_max": "1 tahun",
+                        "package_name": "Paket B"
+                    },
+                    "bunga_0": {
+                        "condition": "Khusus tanpa karoseri",
+                        "tenor": "hingga 3 tahun",
+                        "dp_min": {
+                            "1_tahun": "45%",
+                            "2_tahun": "65%",
+                            "3_tahun": "75%"
+                        }
+                    },
+                    "smart_cash": {
+                        "dp_min": "55%",
+                        "interest": "0% 1 tahun",
+                        "bonus": [
+                            "Asuransi 1 tahun (TLO)",
+                            "Potongan biaya admin"
+                        ]
+                    }
+                },
+                "alternative_finance": "Tersedia program pembiayaan dari perusahaan pembiayaan lain untuk area tertentu.",
+                "cashback_alternative": {
+                    "amount": 5000000,
+                    "condition": "Apabila tidak memilih program paket leasing."
+                }
+            }
+        }
+    ]
+}
