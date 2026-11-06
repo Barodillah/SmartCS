@@ -8,6 +8,15 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  server: {
+    proxy: {
+      '/api-monitor': {
+        target: 'https://dwindo.co.id/2slmonitor/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-monitor/, '')
+      }
+    }
+  },
   css: {
     transformer: 'lightningcss',
     lightningcss: {

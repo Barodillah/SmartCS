@@ -21,6 +21,7 @@ import CustomerSurvey from './pages/CustomerSurvey';
 // Lazy-loaded Standalone & Admin/CS Panel Views (isolated from public bundle)
 const WaBlast = lazy(() => import('./pages/WaBlast'));
 const SA = lazy(() => import('./pages/SA'));
+const MonitorSales = lazy(() => import('./pages/MonitorSales'));
 const PanelLayout = lazy(() => import('./components/layout/PanelLayout'));
 const Dashboard = lazy(() => import('./pages/panel/Dashboard'));
 const PanelChat = lazy(() => import('./pages/panel/PanelChat'));
@@ -131,6 +132,7 @@ function App() {
                             </Route>
                             <Route path="/sa" element={<SA />} />
                             <Route path="/wa-blast" element={<WaBlast />} />
+                            <Route path="/monitor" element={<MonitorSales />} />
                             <Route path="/cetak" element={<Cetak />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </>
@@ -162,6 +164,9 @@ function App() {
 
                             {/* Standalone Route for WA Blast Public */}
                             <Route path="/wa-blast" element={<WaBlast />} />
+
+                            {/* Standalone Route for Sales Monitor */}
+                            <Route path="/monitor" element={<MonitorSales />} />
 
                             {/* Admin/CS Panel Routes */}
                             <Route path="/panel" element={<PanelLayout />}>
