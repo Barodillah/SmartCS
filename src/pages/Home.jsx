@@ -4,6 +4,7 @@ import Services from '../components/sections/Services';
 import FeaturedModels from '../components/sections/FeaturedModels';
 import VirtualCSHub from '../components/sections/VirtualCSHub';
 import Advantage from '../components/sections/Advantage';
+import GoogleReviews from '../components/sections/GoogleReviews';
 import Updates from '../components/sections/Updates';
 import ContextualFAQ from '../components/sections/ContextualFAQ';
 import SEOHead from '../components/seo/SEOHead';
@@ -31,6 +32,7 @@ const Home = () => {
             <FeaturedModels />
             <VirtualCSHub />
             <Advantage />
+            <GoogleReviews />
             <Updates />
             <ContextualFAQ
                 title="Pertanyaan Populer Seputar Mitsubishi Dwindo"
